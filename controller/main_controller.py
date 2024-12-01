@@ -11,7 +11,7 @@ from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 
 
-VALID_API_TYPES = {"insert", "select", "update", "delete", "upsert", "merge"}
+VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
 
 class TAPIController:
