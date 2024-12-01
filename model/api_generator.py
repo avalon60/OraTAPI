@@ -212,7 +212,7 @@ class ApiGenerator:
         ts_len = len(STAB)
         dash_line = 80 - ts_len
 
-        comment = ""
+        comment = "\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
         comment += f"{STAB}-- {tapi_description} TAPI for: {self.schema_name.lower()}.{self.table.table_name.lower()}\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
