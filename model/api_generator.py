@@ -162,6 +162,21 @@ class ApiGenerator:
                            config_manager=config_manager,
                            trace=trace)
 
+    def _column_assignment(self, operation_type: str, column_name: str):
+        """The _column_assignment method, resolves the assignment for a specific column, for use in an insert (create),
+        update (modify), upsert (create/modify), or merge (create/modify) APIs.
+        :param operation_type: Must be create or modify
+        :param column_name: The table column name.
+        :return: """
+        valid_operations_list = ["create", "update"]
+        valid_operations = ', '.join(valid_operations_list)
+        if operation_type not in valid_operations_list:
+            message = f'Invalid operation type, "{operation_type}". Valid operation types: {valid_operations}'
+            raise ValueError("Operation type ")
+        column_name_lc = column_name.lower()
+        assignment = f'p_{column_name_lc}'
+        return assignment
+
     def _package_api_template(self, template_category: str, template_type: str, template_name: str) -> str:
         """
         Reads and returns the content of a specified template file. The "package" templates are used to format the
@@ -197,7 +212,7 @@ class ApiGenerator:
         ts_len = len(STAB)
         dash_line = 80 - ts_len
 
-        comment = ""
+        comment = "\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
         comment += f"{STAB}-- {tapi_description} TAPI for: {self.schema_name.lower()}.{self.table.table_name.lower()}\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
@@ -279,7 +294,6 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}is\n'
-        signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
@@ -626,9 +640,9 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+            if self.noop_column_string and column_name not in self.table.in_out_parameters_list:
                 param = f"{param:<80}"
-                param += f'{STAB} := {default_value}'
+                param += f"{STAB} := '{self.noop_column_string}'"
 
             signature += param + '\n'
             param = ''
@@ -787,9 +801,11 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+            if (self.noop_column_string and column_name not in self.table.in_out_parameters_list
+                  and column_name not in self.table.out_parameters_list):
                 param = f"{param:<80}"
-                param += f'{STAB} := {default_value}'
+                param += f"{STAB} := '{self.noop_column_string}'"
+
 
             signature += param + '\n'
             param = ''
@@ -949,9 +965,10 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+            if (self.noop_column_string and column_name not in self.table.in_out_parameters_list
+                  and column_name not in self.table.out_parameters_list):
                 param = f"{param:<80}"
-                param += f'{STAB} := {default_value}'
+                param += f"{STAB} := '{self.noop_column_string}'"
 
             signature += param + '\n'
             param = ''
@@ -1073,11 +1090,11 @@ class ApiGenerator:
 
     def _insert_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
         procedure_signature = self._insert_api_sig(signature_type=signature_type, package_spec=False,
-                                                   procedure_name=procedure_name) + "\n"
+                                                   procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"insert_{signature_type}")
         procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
-
+        procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
         return procedure_body_template
 
     def _select_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
@@ -1167,7 +1184,7 @@ class ApiGenerator:
                                         )
 
         # Append the package footer
-        package_body += package_footer_template + "\n"
+        package_body += '\n' + package_footer_template
 
         return package_body
 

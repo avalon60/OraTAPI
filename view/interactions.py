@@ -66,7 +66,8 @@ class Interactions:
         :returns: Parsed arguments for the application
         """
         default_api_types = self.config_manager.config_value(config_section="api_controls",
-                                                             config_key="default_api_types")
+                                                             config_key="default_api_types").strip()
+        print(f'default_api_types = {default_api_types}')
 
         # Argument parser setup
         parser = argparse.ArgumentParser(description="Oracle Table API Generator")
@@ -86,13 +87,15 @@ class Interactions:
         parser.add_argument('-s', '--save_connection', action='store_true', default=False,
                             help="Save/update the connection for future use. Connections are only saved after a successful connection.")
         parser.add_argument('-S', '--schema_name', type=str, help="Database schema name of the tables.", required=True)
-        parser.add_argument('-t', '--table_names', type=str, help="Comma-separated list of table names (default: '%')",
+
+        parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names (default: all)",
                             default='%')
+
         parser.add_argument('-u', '--db_username', type=str, help="Database username")
         parser.add_argument('-F', '--force_overwrite', action='store_true', default=False,
                             help="Force overwrite of existing files (default: False)")
         parser.add_argument('-T', '--api_types', type=str, default=default_api_types,
-                            help="Comma-separated list of API types (e.g., 'create,read'). Must be one or more of: create, read, update, delete, merge.")
+                            help="Comma-separated list of API types (e.g., create,read). Must be one or more of: create, read, update, upsert,delete, merge.")
 
         args = parser.parse_args()
 

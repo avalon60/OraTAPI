@@ -1,7 +1,7 @@
 %procedure_signature%
-
--- #update#
+%STAB%-- #update#
 %STAB%begin
+
 %STAB%%STAB%update %table_name_lc%
 %STAB%%STAB%set
 %STAB%%STAB%%STAB%%STAB%%update_assignments%
