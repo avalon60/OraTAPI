@@ -117,7 +117,6 @@ class TAPIController:
 
         :param table_name: str, The table name to generate APIs for
         """
-        template_category = "basic"  # Example logic for template category
         api_controller = ApiGenerator(
             database_session=self.db_session,
             schema_name=self.schema_name,
