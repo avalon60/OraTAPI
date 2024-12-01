@@ -1,0 +1,72 @@
+[behaviour]
+# skip_on_missing_table: If set to true and a specified table is not found, then report the table as missing
+# but continue processing. If set to false, and error is reported and processing is terminated.
+skip_on_missing_table = false
+
+[copyright]
+# company_name: Modify company name to reflect your company
+company_name = Clive`s Software Emporium
+# copyright_year: set to a static year or the word current, to reflect the date the TAPI was generated.
+copyright_year = current
+
+[formatting]
+tab_spaces = 3
+
+[file_controls]
+# The root location where the generated files are to be written.
+default_staging_dir = staging
+# The suffix properties are appended to the respective files.
+body_suffix = .sql
+spec_suffix = .sql
+# spec_dir/body_dir: these define the locations where the package specification and package body files are to be
+# written. Simple names (no slashes) are assumed to below the install home directory of OraTAPI.
+spec_dir = package_spec
+body_dir = package_body
+
+[api_controls]
+# API naming properties follow. Set these to the preferred procedure names, of the APIs
+delete_procname = del
+select_procname = get
+insert_procname = ins
+merge_procname = mrg
+update_procname = upd
+upsert_procname = ups
+
+# trigger_maintained is a comma separated list of columns which are not to be included in the TAPI logic.
+# These are columns typically auto-maintained by triggers. However, these are included in get APIs.
+trigger_maintained = created_by, created_on, updated_by, updated_on
+
+# row_vers_column_name: For optimistic locking (optional). Name the optimistic column name.
+# Leave empty or comment out, if not implemented. Update TAPIs, return this as an "out" parameter.
+row_vers_column_name = row_version
+tapi_increment_row_version = true
+# tapi_incr_row_version: Define whether row_version is to be incremented via TAPI (sometimes triggers are used).
+tapi_incr_row_version = true
+
+
+# signature_types: One of more comma separated values. Valid values: rowtype, coltype. Default (if this property
+# is empty, is rowtype. The value coltype causes parameter signatures with a parameter for each table column.
+# Used for the select, insert, update and merge APIs. Including rowtype, causes signatures based on primary keys
+# and a table rowtype.
+signature_types = rowtype, coltype
+
+# include_defaults: Set to true, to have parameter defaults, reflect those in the data dictionary.
+include_defaults = true
+
+# noop_column_string: If set, parameter defaults for non-key column parameters are defined as <no_column_op_string>.
+# If the default is detected, then the column value in the database is preserved. This provides a mechanism of
+# avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
+# signature_types property).
+noop_column_string = #NO~OP#
+
+# default_api_types: Specifies the default of which APIs to include to the package.
+# Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
+default_api_types = insert, select, update, delete, upsert, merge
+
+# include_rowid: If set to true, an optional p_rowid IN/OUT parameter is included to APIs.
+include_rowid = true
+
+[key_columns]
+# return_pk_columns: If set to true, causes primary/unique keys to be in/out parameters. Returning the values.
+# This applies to APIs which modify data.
+return_key_columns = true

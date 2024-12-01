@@ -1,0 +1,16 @@
+%procedure_signature%
+
+-- #insert#
+%STAB%begin
+%STAB%%STAB%insert into %table_name_lc%
+%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%column_list%
+%STAB%%STAB%%STAB%)
+%STAB%%STAB%values
+%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%parameter_list%
+%STAB%%STAB%%STAB%)
+%STAB%%STAB%returning %column_list%;
+%STAB%%STAB%     into %parameter_list%;
+
+%STAB%end %procedure_name%;

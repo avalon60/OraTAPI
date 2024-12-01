@@ -1,0 +1,12 @@
+
+.idea/
+
+lib/__pycache__/
+
+apex_test_train.py
+
+config/case_notes.txt
+
+model/__pycache__/
+
+view/__pycache__/

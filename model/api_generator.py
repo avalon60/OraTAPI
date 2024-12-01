@@ -1,0 +1,1262 @@
+# api_controller.py
+
+__author__ = "Clive Bostock"
+__date__ = "2024-11-09"
+__description__ = "Generates the API code."
+import oracledb
+from model.config_manager import ConfigManager
+from model.db_objects import Table
+from model.session_manager import DBSession
+from lib.file_system_utils import project_home
+from datetime import datetime
+from typing import Any, Dict
+from copy import deepcopy
+
+# Define our substitution placeholder string for indent spaces.
+# The number of spaces for an indent tab, is defined in OraTAPI.ini
+IDNT = '%indent_spaces%'
+
+# Get the current date
+date_now = datetime.now()
+
+# Format the date as DD-Mon-YYYY
+current_date = date_now.strftime("%d-%b-%Y")
+
+
+def inject_values(substitutions: Dict[str, Any], target_string: str) -> str:
+    """
+    Recursively walk through a nested dictionary to replace placeholders in the text template.
+
+    :param substitutions: The dictionary of substitutions (optionally nested).
+    :type substitutions: (Dict[str, Any])
+    :param target_string: A string with %key% placeholders, for substitutions based on the supplied dictionary.
+    :type target_string: str
+    :return: The template contents with placeholders replaced by corresponding values.
+    :rtype: str
+    """
+    for key, value in substitutions.items():
+        if isinstance(value, dict):
+            # Recursively walk the nested dictionary
+            target_string = inject_values(value, target_string)
+        else:
+            # Replace the placeholder with the value
+            placeholder = f"%{key}%"
+            target_string = target_string.replace(placeholder, str(value))
+    return target_string
+
+class ApiGenerator:
+    def __init__(self,
+                 database_session: DBSession,
+                 schema_name: str,
+                 table_name: str,
+                 config_manager: ConfigManager,
+                 options_dict: dict,
+                 trace: bool = False):
+        """
+
+        :param database_session: A DBSession instance for connecting to the database.
+        :param schema_name: Schema Name of the table.
+        :param table_name: Table name of the table for which we need to generate a TAPI
+        :param config_manager: A ConfigManager as established by the controller.
+        :param options_dict: The dictionary of our command line options.
+        :param trace: Enables trace/debug output when set to True.
+        """
+        self.proj_home = project_home()  # project_home returns a Path object
+        proj_config_file = self.proj_home / 'config' / 'OraTAPI.ini'
+        self.options_dict = deepcopy(options_dict)
+        self.config_manager = config_manager
+        self.schema_name = schema_name
+        package_owner_lc = options_dict["package_owner"].lower()
+
+
+        self.config_manager = ConfigManager(config_file_path=proj_config_file)
+        self.table = Table(database_session=database_session, schema_name=self.schema_name ,
+                           table_name=table_name, config_manager=config_manager, trace=trace)
+
+        trigger_maintained = self.config_manager.config_value(config_section="api_controls",
+                                                            config_key="trigger_maintained")
+        trigger_maintained = trigger_maintained.replace(' ', '')
+        self.trigger_maintained = trigger_maintained.lower().split(',')
+
+        signature_types = self.config_manager.config_value(config_section="api_controls",
+                                                            config_key="signature_types")
+
+        signature_types = signature_types.replace(' ', '')
+        self.signature_types = signature_types.lower().split(',')
+
+        self.indent_spaces = self.config_manager.config_value(config_section="formatting", config_key="indent_spaces")
+        try:
+            self.indent_spaces = int(self.indent_spaces)
+        except ValueError:
+            message = f'The formatting.indent_spaces value, "{self.indent_spaces}", retrieved from OraTAPI.ini, is non-integer!'
+            raise ValueError(message)
+
+        # These next 2 are used in template substitutions.
+        self.sig_suffix = self.config_manager.config_value(config_section="file_controls", config_key="spec_suffix")
+        self.body_suffix = self.config_manager.config_value(config_section="file_controls", config_key="body_suffix")
+
+        include_defaults = self.config_manager.config_value(config_section="api_controls",
+                                                                 config_key="include_defaults")
+        self.include_defaults = True if include_defaults == 'true' else False
+
+        return_key_columns = self.config_manager.config_value(config_section="api_controls",
+                                                                   config_key="return_key_columns")
+        self.return_key_columns = True if return_key_columns == 'true' else False
+
+        self.noop_column_string = self.config_manager.config_value(config_section="api_controls",
+                                                                   config_key="noop_column_string",
+                                                                   default='')
+
+        self.row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
+                                                                     config_key="row_vers_column_name",
+                                                                     default=None)
+
+        # API naming properties follow. Set these to the preferred procedure names, of the APIs
+        self.delete_procname = self.config_manager.config_value(config_section="api_controls",
+                                                                config_key="delete_procname",
+                                                                default="del")
+        self.select_procname = self.config_manager.config_value(config_section="api_controls",
+                                                                config_key="select_procname",
+                                                                default="del")
+        self.insert_procname = self.config_manager.config_value(config_section="api_controls",
+                                                                config_key="insert_procname",
+                                                                default="del")
+        self.merge_procname = self.config_manager.config_value(config_section="api_controls",
+                                                               config_key="merge_procname",
+                                                               default="del")
+        self.update_procname = self.config_manager.config_value(config_section="api_controls",
+                                                                config_key="update_procname",
+                                                                default="del")
+
+        self.upsert_procname = self.config_manager.config_value(config_section="api_controls",
+                                                                config_key="upsert_procname",
+                                                                default="ups")
+
+
+        # Populate self.global_substitutions with the .ini file contents.
+        # We will use these to inject values into the templates.
+        self.global_substitutions = self.config_manager.config_dictionary()
+        self.include_rowid = self.global_substitutions["include_rowid"]
+        self.include_rowid = True if self.include_rowid == 'true' else False
+        # Set soft tabs spaces for indent
+        self.global_substitutions["STAB"] = ' ' * int(self.global_substitutions["indent_spaces"])
+        self.global_substitutions["package_owner_lc"] = package_owner_lc
+
+
+        self.merged_dict = self.global_substitutions | self.options_dict
+        # Check to see if the copyright date is expected to be set to today's date.
+        # If not set as "current_date", we assume it's a static date.
+        if self.global_substitutions["copyright_year"] == "current":
+            self.global_substitutions["copyright_year"] = current_date
+
+        self.global_substitutions["spec_suffix"] = self.sig_suffix
+        self.global_substitutions["body_suffix"] = self.body_suffix
+        self.global_substitutions["run_date_time"] = current_date
+        self.global_substitutions["table_name_lc"] = table_name.lower()
+        self.global_substitutions["schema_name_lc"] = self.schema_name.lower()
+
+
+        self.table = Table(database_session=database_session,
+                           schema_name=schema_name,
+                           table_name=table_name,
+                           config_manager=config_manager,
+                           trace=trace)
+
+    def _package_api_template(self, template_category: str, template_type: str, template_name: str) -> str:
+        """
+        Reads and returns the content of a specified template file. The "package" templates are used to format the
+        package header and footer components.
+
+        :param template_category: Maps to one of the templates' subdirectories (e.g., "package", "procedures").
+        :type template_category: str
+        :param template_type: The template type, e.g., "body" or "spec".
+        :type template_type: str
+        :param template_name: The name of the template file to read.
+        :type template_name: str
+        :return: The content of the template file.
+        :rtype: str
+        :raises FileNotFoundError: If the template file is not found.
+        :raises IOError: If the file cannot be read for any reason.
+        """
+
+        # Define the template file path
+        template_name = template_name.replace(".tpt", "") + ".tpt"
+        proj_templates = self.proj_home / 'templates' /  template_category / template_type
+        template_path = proj_templates / template_name
+
+        try:
+            # Read the template file
+            return template_path.read_text()
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Template file not found: {template_path}")
+        except IOError as e:
+            raise IOError(f"Failed to read template file: {template_path}. Error: {e}")
+
+    def comment_tapi(self, tapi_description:str):
+        STAB = self.global_substitutions["STAB"]
+        ts_len = len(STAB)
+        dash_line = 80 - ts_len
+
+        comment = ""
+        comment += f"{STAB}" + "-" * dash_line + "\n"
+        comment += f"{STAB}-- {tapi_description} TAPI for: {self.schema_name.lower()}.{self.table.table_name.lower()}\n"
+        comment += f"{STAB}" + "-" * dash_line + "\n"
+        return comment
+
+    def _delete_api_sig(self,
+                        signature_type: str,
+                        package_spec: bool = True,
+                        inc_comments: bool = True,
+                        procedure_name:str = 'del') -> str:
+        """
+        Processes the `delete` API specification.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        For deletes, the signature_type has no effect.
+
+
+        :param signature_type: Defines the type of signature.
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the delete procedure.
+        :return: A string containing the `delete` API fragment
+        :rtype: str
+        """
+        STAB = self.global_substitutions["STAB"]
+
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Delete')
+
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
+            if not column_name in self.table.pk_columns_list:
+                continue
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if col_position > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out' if is_pk_column else f'{STAB}in    '
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value:
+                param += f'{STAB} := {default_value}'
+            signature += param + '\n'
+            param = ''
+
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+
+        return signature
+
+    def _insert_api_coltype_sig(self,
+                               package_spec: bool = True,
+                               inc_comments: bool = True,
+                               procedure_name:str = 'ins') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_row_version_column = self.table.column_property_value(column_name=column_name,
+                                                                     property_name="is_row_version_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+
+            if is_key_col:
+                in_out = f'{STAB}in out'
+            elif is_row_version_column:
+                in_out = f'{STAB}   out'
+            else:
+                in_out = f'{STAB}in    '
+
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+                param = f"{param:<80}"
+                param += f'{STAB} := {default_value}'
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})'
+
+        return signature
+
+    def _insert_api_rowtype_sig(self,
+                               package_spec: bool = True,
+                               inc_comments: bool = True,
+                               procedure_name:str = 'ins') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+            if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
+                continue
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        leader = f', '
+        param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+        in_out = f'{STAB}in out'
+        param += in_out
+        param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _insert_api_sig(self,
+                        signature_type: str,
+                        package_spec: bool = True,
+                        inc_comments: bool = True,
+                        procedure_name:str = 'ins') -> str:
+        """
+        Processes the `insert` API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        The signature_type defines the type of signature: "rowtype" indicates that the procedure signature is based, on
+        all column parameters contained in a %rowtype container. If set to "coltype" then there is a parameter per
+        table column.
+
+        :param signature_type: This should be presented a "rowtype" or "coltype".
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
+        signature = ''
+        if signature_type == 'coltype':
+            signature = self._insert_api_coltype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+        else:
+            signature = self._insert_api_rowtype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+
+
+        return signature
+
+    def _select_api_coltype_sig(self,
+                               package_spec: bool = True,
+                               inc_comments: bool = True,
+                               procedure_name:str = 'sel') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_row_version_column = self.table.column_property_value(column_name=column_name,
+                                                                     property_name="is_row_version_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+
+            if is_key_col:
+                in_out = f'{STAB}in out'
+            else:
+                in_out = f'{STAB}   out'
+
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+                param = f"{param:<80}"
+                param += f'{STAB} := {default_value}'
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _select_api_rowtype_sig(self,
+                               package_spec: bool = True,
+                               inc_comments: bool = True,
+                               procedure_name:str = 'sel') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+            if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
+                continue
+            processed_columns += 1
+            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
+            column_name_lc = column_name.lower()
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        leader = f', '
+        param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+        in_out = f'{STAB}   out'
+        param += in_out
+        param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _select_api_sig(self,
+                        signature_type: str,
+                        package_spec: bool = True,
+                        inc_comments: bool = True,
+                        procedure_name:str = 'get') -> str:
+        """
+        Processes the `select` API specification.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        The signature_type defines the type of signature: "rowtype" indicates that the procedure signature is based, on
+        all column parameters contained in a %rowtype container. If set to "coltype" then there is a parameter per
+        table column.
+
+        :param signature_type: This should be presented a "rowtype" or "coltype".
+        :param package_spec: If set to True, the generated code snippet, is for a procedure specification.
+        :param inc_comments: Set to True to include basic comments before the procedure.
+        :param procedure_name: The name to assign to the select procedure.
+        :return: A string containing the `select` API signature fragment
+        :rtype: str
+        """
+
+        signature = ''
+        if signature_type == 'coltype':
+            signature = self._select_api_coltype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+        else:
+            signature = self._select_api_rowtype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+
+
+        return signature
+
+    def _update_api_coltype_sig(self,
+                                package_spec: bool = True,
+                                inc_comments: bool = True,
+                                procedure_name:str = 'upd') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_row_version_column = self.table.column_property_value(column_name=column_name,
+                                                                     property_name="is_row_version_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+
+            if is_key_col:
+                in_out = f'{STAB}in out'
+            elif is_row_version_column:
+                in_out = f'{STAB}   out'
+            else:
+                in_out = f'{STAB}in    '
+
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+                param = f"{param:<80}"
+                param += f'{STAB} := {default_value}'
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _update_api_rowtype_sig(self,
+                               package_spec: bool = True,
+                               inc_comments: bool = True,
+                               procedure_name:str = 'upd') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Update')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+            if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
+                continue
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        leader = f', '
+        param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+        in_out = f'{STAB}in out'
+        param += in_out
+        param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _update_api_sig(self,
+                        signature_type: str,
+                        package_spec: bool = True,
+                        inc_comments: bool = True,
+                        procedure_name:str = 'upd') -> str:
+        """
+        Processes the `upsert` API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        The signature_type defines the type of signature: "rowtype" indicates that the procedure signature is based, on
+        all column parameters contained in a %rowtype container. If set to "coltype" then there is a parameter per
+        table column.
+
+        :param signature_type: This should be presented a "rowtype" or "coltype".
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
+        signature = ''
+        if signature_type == 'coltype':
+            signature = self._update_api_coltype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+        else:
+            signature = self._update_api_rowtype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+
+
+        return signature
+
+    def _upsert_api_coltype_sig(self,
+                                package_spec: bool = True,
+                                inc_comments: bool = True,
+                                procedure_name:str = 'ups') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_row_version_column = self.table.column_property_value(column_name=column_name,
+                                                                     property_name="is_row_version_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+
+            if is_key_col:
+                in_out = f'{STAB}in out'
+            elif is_row_version_column:
+                in_out = f'{STAB}   out'
+            else:
+                in_out = f'{STAB}in    '
+
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+                param = f"{param:<80}"
+                param += f'{STAB} := {default_value}'
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _upsert_api_rowtype_sig(self,
+                               package_spec: bool = True,
+                               inc_comments: bool = True,
+                               procedure_name:str = 'ups') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Upsert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+            if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
+                continue
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        leader = f', '
+        param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+        in_out = f'{STAB}in out'
+        param += in_out
+        param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+
+    def _upsert_api_sig(self,
+                        signature_type: str,
+                        package_spec: bool = True,
+                        inc_comments: bool = True,
+                        procedure_name:str = 'ups') -> str:
+        """
+        Processes the `upsert` API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        The signature_type defines the type of signature: "rowtype" indicates that the procedure signature is based, on
+        all column parameters contained in a %rowtype container. If set to "coltype" then there is a parameter per
+        table column.
+
+        :param signature_type: This should be presented a "rowtype" or "coltype".
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
+        signature = ''
+        if signature_type == 'coltype':
+            signature = self._upsert_api_coltype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+        else:
+            signature = self._upsert_api_rowtype_sig(package_spec=package_spec,
+                                                     inc_comments=inc_comments,
+                                                     procedure_name=procedure_name)
+
+
+        return signature
+
+    def _merge_api_coltype_sig(self,
+                                package_spec: bool = True,
+                                inc_comments: bool = True,
+                                procedure_name: str = 'mrg') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Insert')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start=1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_row_version_column = self.table.column_property_value(column_name=column_name,
+                                                                     property_name="is_row_version_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+
+            if is_key_col:
+                in_out = f'{STAB}in out'
+            elif is_row_version_column:
+                in_out = f'{STAB}   out'
+            else:
+                in_out = f'{STAB}in    '
+
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+                param = f"{param:<80}"
+                param += f'{STAB} := {default_value}'
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _merge_api_rowtype_sig(self,
+                                package_spec: bool = True,
+                                inc_comments: bool = True,
+                                procedure_name: str = 'mrg') -> str:
+        signature = ""
+        if inc_comments:
+            signature += self.comment_tapi(tapi_description='Update')
+
+        STAB = self.global_substitutions["STAB"]
+        signature += f'{STAB}procedure {procedure_name}\n'
+        signature += f'{STAB}is\n'
+        signature += f'{STAB}(\n'
+        table_name_lc = self.table.table_name.lower()
+
+        processed_columns = 0
+
+        for col_position, column_name in enumerate(self.table.columns_list, start=1):
+            if column_name.lower() in self.trigger_maintained:
+                continue
+            if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
+                continue
+            processed_columns += 1
+            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            column_name_lc = column_name.lower()
+            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
+            leader = f', ' if processed_columns > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+
+            signature += param + '\n'
+            param = ''
+
+        if self.include_rowid:
+            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
+            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in out'
+            param += in_out
+            param += f'{STAB}rowid'
+            signature += param + '\n'
+
+        leader = f', '
+        param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+        in_out = f'{STAB}in out'
+        param += in_out
+        param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if package_spec:
+            signature += f'{STAB})'
+            signature += ';\n'
+        else:
+            signature += f'{STAB})\n'
+
+        return signature
+
+    def _merge_api_sig(self,
+                        signature_type: str,
+                        package_spec: bool = True,
+                        inc_comments: bool = True,
+                        procedure_name: str = 'mrg') -> str:
+        """
+        Processes the `merge` API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        The signature_type defines the type of signature: "rowtype" indicates that the procedure signature is based, on
+        all column parameters contained in a %rowtype container. If set to "coltype" then there is a parameter per
+        table column.
+
+        :param signature_type: This should be presented a "rowtype" or "coltype".
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
+        signature = ''
+        if signature_type == 'coltype':
+            signature = self._merge_api_coltype_sig(package_spec=package_spec,
+                                                    inc_comments=inc_comments,
+                                                    procedure_name=procedure_name)
+        else:
+            signature = self._merge_api_rowtype_sig(package_spec=package_spec,
+                                                    inc_comments=inc_comments,
+                                                    procedure_name=procedure_name)
+
+        return signature
+
+
+    def _insert_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        procedure_signature = self._insert_api_sig(signature_type=signature_type, package_spec=False,
+                                                   procedure_name=procedure_name) + "\n"
+        procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
+                                                             template_name=f"insert_{signature_type}")
+        procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
+
+        return procedure_body_template
+
+    def _select_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        return ''
+
+    def _update_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        return ''
+
+    def _upsert_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        return ''
+
+
+    def _delete_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        return ''
+
+    def _merge_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        return ''
+
+    def gen_package_body(self) -> str:
+        """
+        Generates the package body for the APIs listed in the options dictionary.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :return: A string containing the complete package specification.
+        :rtype: str
+        """
+
+        # Map API types to corresponding methods
+        api_function_map = {
+            "insert": {"sig_function": self._insert_api_sig, "body_function": self._insert_api_body, "procedure_name": self.insert_procname},
+            "select": {"sig_function": self._select_api_sig, "body_function": self._select_api_body, "procedure_name": self.select_procname},
+            "update": {"sig_function": self._update_api_sig, "body_function": self._update_api_body, "procedure_name": self.update_procname},
+            "upsert": {"sig_function": self._update_api_sig, "body_function": self._update_api_body, "procedure_name": self.upsert_procname},
+            "delete": {"sig_function": self._delete_api_sig, "body_function": self._delete_api_body, "procedure_name": self.delete_procname},
+            "merge": {"sig_function": self._merge_api_sig,"body_function": self._merge_api_body, "procedure_name": self.merge_procname}
+        }
+
+        # Load the package header and footer templates
+        package_header_template = self._package_api_template(
+            template_category="packages",
+            template_type='body',
+            template_name="package_header"
+        )
+        package_footer_template = self._package_api_template(
+            template_category="packages",
+            template_type='body',
+            template_name="package_footer"
+        )
+
+        # Merge global and options dictionary substitutions
+        merged_dict = self.merged_dict
+
+        # Replace placeholders in the header and footer templates
+        package_header_template = inject_values(
+            substitutions=self.global_substitutions,
+            target_string=package_header_template
+        )
+        package_footer_template = inject_values(
+            substitutions=self.global_substitutions,
+            target_string=package_footer_template
+        )
+
+        # Start building the package specification
+        package_body = package_header_template
+
+
+        # Generate API fragments for each specified API in the options
+        api_types = self.options_dict.get("api_types", [])
+        for api_type in api_types:
+            mapping = api_function_map.get(api_type)
+            sig_func = mapping["sig_function"]
+            body_func = mapping["body_function"]
+            procedure_name = mapping["procedure_name"]
+            for sig_count, sig_type in enumerate(self.signature_types, start=1):
+                if sig_count > 1 and api_type == "delete":
+                    continue
+                if sig_func:
+                    package_body += body_func(signature_type=sig_type,
+                                              procedure_name=procedure_name)
+                else:
+                    package_body += f"-- Unknown API type: {api_type}\n"
+            package_body = inject_values(
+                                            substitutions=merged_dict,
+                                            target_string=package_body
+                                        )
+
+        # Append the package footer
+        package_body += package_footer_template + "\n"
+
+        return package_body
+
+
+    def gen_package_spec(self) -> str:
+        """
+        Generates the package specification for the APIs listed in the options dictionary.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :return: A string containing the complete package specification.
+        :rtype: str
+        """
+
+        # Map API types to corresponding methods
+        api_function_map = {
+            "insert": {"function": self._insert_api_sig, "procedure_name": self.insert_procname},
+            "select": {"function": self._select_api_sig, "procedure_name": self.select_procname},
+            "update": {"function": self._update_api_sig, "procedure_name": self.update_procname},
+            "upsert": {"function": self._upsert_api_sig, "procedure_name": self.upsert_procname},
+            "delete": {"function": self._delete_api_sig, "procedure_name": self.delete_procname},
+            "merge": {"function": self._merge_api_sig, "procedure_name": self.merge_procname}
+        }
+
+        # Load the package header and footer templates
+        package_header_template = self._package_api_template(
+            template_category="packages",
+            template_type='spec',
+            template_name="package_header"
+        )
+        package_footer_template = self._package_api_template(
+            template_category="packages",
+            template_type='spec',
+            template_name="package_footer"
+        )
+
+        # Merge global and options dictionary substitutions
+        merged_dict = self.merged_dict
+
+        # Replace placeholders in the header and footer templates
+        package_header_template = inject_values(
+            substitutions=self.global_substitutions,
+            target_string=package_header_template
+        )
+        package_footer_template = inject_values(
+            substitutions=self.global_substitutions,
+            target_string=package_footer_template
+        )
+
+        # Start building the package specification
+        package_spec = package_header_template
+
+        # Generate API fragments for each specified API in the options
+        api_types = self.options_dict.get("api_types", [])
+        for api_type in api_types:
+            mapping = api_function_map.get(api_type)
+            func = mapping["function"]
+            procedure_name = mapping["procedure_name"]
+            for sig_count, sig_type in enumerate(self.signature_types, start=1):
+                if sig_count > 1 and api_type == "delete":
+                    continue
+                if func:
+                    package_spec += func(signature_type=sig_type, package_spec=True, procedure_name=procedure_name) + "\n"  # Append the generated API fragment
+                else:
+                    package_spec += f"-- Unknown API type: {api_type}\n"
+            package_spec = inject_values(
+                                            substitutions=merged_dict,
+                                            target_string=package_spec
+                                        )
+
+        # Append the package footer
+        package_spec += package_footer_template
+
+        return package_spec
+
+
+if __name__ == "__main__":
+    # Connection parameters
+    dsn = "localhost:1245/UTPLSQL"
+    username = "aut"
+    password = "Wibble123"
+
+    # Initialise the DB session
+    db_session = DBSession(dsn=dsn, db_username=username, db_password=password)
+    opts_dict = {}
+    api_generator = ApiGenerator(database_session=db_session, schema_name = 'AUT', table_name = 'EMPLOYEES',
+                                 options_dict=opts_dict, config_manager=None)
+
+    template = api_generator._package_api_template(template_category='packages', template_type='body',
+                                                   template_name='package_header')
+    print(template)
