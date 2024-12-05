@@ -32,6 +32,7 @@ class TAPIController:
         self.db_username = options_dict['db_username']
         self.db_password = options_dict['db_password']
         self.package_owner = options_dict['package_owner']
+        self.package_owner = options_dict['package_owner']
         self.dsn = options_dict['dsn']
         self.save_connection = options_dict['save_connection']
         self.schema_name = str(options_dict['schema_name']).upper()
@@ -150,10 +151,8 @@ class TAPIController:
             result = cursor.fetchone()
             return result[0] > 0
 
-
 def main():
     TAPIController()
-
 
 if __name__ == "__main__":
     main()

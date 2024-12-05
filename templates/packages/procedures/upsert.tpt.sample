@@ -1,0 +1,27 @@
+%procedure_signature%
+%STAB%-- #upsert#
+%STAB%%STAB%begin
+
+%STAB%%STAB%%STAB%update %table_name_lc%
+%STAB%%STAB%%STAB%%set
+%STAB%%STAB%%STAB%%STAB%%STAB%%update_assignments%
+%STAB%%STAB%%STAB%where
+%STAB%%STAB%%STAB%%STAB%%STAB%%key_predicates%
+%STAB%%STAB%%STAB%returning %return_column_list%;
+%STAB%%STAB%%STAB%into %return_parameter_list%;
+
+%STAB%%STAB%%STAB%if sql%rowcount = 0
+%STAB%%STAB%%STAB%then
+%STAB%%STAB%%STAB%%STAB%insert into %table_name_lc%
+%STAB%%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%column_list%
+%STAB%%STAB%%STAB%%STAB%%STAB%)
+%STAB%%STAB%%STAB%%STAB%values
+%STAB%%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%parameter_list%
+%STAB%%STAB%%STAB%%STAB%%STAB%)
+%STAB%%STAB%%STAB%%STAB%returning %return_column_list%;
+%STAB%%STAB%%STAB%%STAB%     into %return_parameter_list%;
+%STAB%%STAB%end if;
+
+%STAB%end %procedure_name%;

@@ -26,6 +26,7 @@ class Table:
         """
         self.schema_name = schema_name.upper()
         self.table_name = table_name.upper()
+        self.table_name_lc = table_name.lower()
         self.trace = trace
         self.db_session = database_session
         self.columns_dict = {}
@@ -39,8 +40,8 @@ class Table:
         self.tapi_incr_row_version = config_manager.config_value(config_section="api_controls",
                                                                 config_key="tapi_incr_row_version")
 
-        self.in_out_parameters_list = []
-        self.out_parameters_list = []
+        self.in_out_column_list = []
+        self.out_column_list = []
         self.pk_columns_list = []
 
         self.tab_col_metadata()
@@ -99,9 +100,9 @@ class Table:
                     if is_pk_column:
                         self.pk_columns_list.append(column_name)
                     if column_keyed:
-                        self.in_out_parameters_list.append(column_name)
+                        self.in_out_column_list.append(column_name)
                     if is_row_version_column:
-                        self.out_parameters_list.append(column_name)
+                        self.out_column_list.append(column_name)
 
 
                     column_list.append(column_name)

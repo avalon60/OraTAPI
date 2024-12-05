@@ -1,0 +1,30 @@
+%procedure_signature%
+%STAB%-- #merge#
+%STAB%%STAB%begin
+
+%STAB%%STAB%merge into evt_event_shape_current evt_esc
+%STAB%%STAB%using (
+%STAB%%STAB%%STAB%%STAB%select
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%parameters_as_columns%
+%STAB%%STAB%%STAB%%STAB% from dual
+%STAB%%STAB%%STAB%%STAB%) src
+%STAB%%STAB%%STAB%on
+%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%merge_on_join%
+%STAB%%STAB%%STAB%%STAB%)
+%STAB%%STAB%when matched then
+%STAB%%STAB%%STAB%update set
+%STAB%%STAB%%STAB%%STAB%%STAB%%src_target_assignments%
+%STAB%%STAB%when not matched then
+%STAB%%STAB%%STAB%insert
+%STAB%%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%target.column_list%
+%STAB%%STAB%%STAB%%STAB%%STAB%)
+%STAB%%STAB%%STAB%values
+%STAB%%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%src_column_list%
+%STAB%%STAB%%STAB%%STAB%%STAB%);
+
+-- select into here
+
+%STAB%end %procedure_name%;
