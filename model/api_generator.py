@@ -616,7 +616,7 @@ class ApiGenerator:
                                procedure_name:str = 'sel') -> str:
         signature = ""
         if inc_comments:
-            signature += self.comment_tapi(tapi_description='Insert')
+            signature += self.comment_tapi(tapi_description='Select')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
@@ -682,7 +682,7 @@ class ApiGenerator:
                                procedure_name:str = 'sel') -> str:
         signature = ""
         if inc_comments:
-            signature += self.comment_tapi(tapi_description='Insert')
+            signature += self.comment_tapi(tapi_description='Select')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
@@ -776,7 +776,7 @@ class ApiGenerator:
                                 procedure_name:str = 'upd') -> str:
         signature = ""
         if inc_comments:
-            signature += self.comment_tapi(tapi_description='Insert')
+            signature += self.comment_tapi(tapi_description='Update')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
@@ -937,7 +937,7 @@ class ApiGenerator:
                                 procedure_name:str = 'ups') -> str:
         signature = ""
         if inc_comments:
-            signature += self.comment_tapi(tapi_description='Insert')
+            signature += self.comment_tapi(tapi_description='Upsert')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
@@ -1101,7 +1101,7 @@ class ApiGenerator:
                                 procedure_name: str = 'mrg') -> str:
         signature = ""
         if inc_comments:
-            signature += self.comment_tapi(tapi_description='Insert')
+            signature += self.comment_tapi(tapi_description='Merge')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
@@ -1170,7 +1170,7 @@ class ApiGenerator:
                                 procedure_name: str = 'mrg') -> str:
         signature = ""
         if inc_comments:
-            signature += self.comment_tapi(tapi_description='Update')
+            signature += self.comment_tapi(tapi_description='Merge')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
