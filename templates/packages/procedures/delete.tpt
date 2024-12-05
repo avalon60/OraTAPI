@@ -7,4 +7,9 @@
 %STAB%%STAB%%STAB%where
 %STAB%%STAB%%STAB%%STAB%%key_predicates_string_lc%;
 
+-- %STAB%%STAB%%STAB%if sql%rowcount = 0
+-- %STAB%%STAB%%STAB%then
+-- %STAB%%STAB%%STAB%%STAB%raise NO_DATA_FOUND;
+-- %STAB%%STAB%%STAB%end if;
+
 %STAB%end %procedure_name%;
