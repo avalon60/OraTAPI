@@ -3,6 +3,9 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Generates the API code."
+
+import copy
+
 import oracledb
 from model.config_manager import ConfigManager
 from model.db_objects import Table
@@ -11,6 +14,7 @@ from lib.file_system_utils import project_home
 from datetime import datetime
 from typing import Any, Dict
 from copy import deepcopy
+from itertools import chain
 
 # Define our substitution placeholder string for indent spaces.
 # The number of spaces for an indent tab, is defined in OraTAPI.ini
@@ -23,10 +27,11 @@ date_now = datetime.now()
 current_date = date_now.strftime("%d-%b-%Y")
 
 
-def inject_values(substitutions: Dict[str, Any], target_string: str) -> str:
+def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces:int = 3) -> str:
     """
     Recursively walk through a nested dictionary to replace placeholders in the text template.
 
+    :param stab_spaces:
     :param substitutions: The dictionary of substitutions (optionally nested).
     :type substitutions: (Dict[str, Any])
     :param target_string: A string with %key% placeholders, for substitutions based on the supplied dictionary.
@@ -34,10 +39,12 @@ def inject_values(substitutions: Dict[str, Any], target_string: str) -> str:
     :return: The template contents with placeholders replaced by corresponding values.
     :rtype: str
     """
+    _substitutions = copy.deepcopy((substitutions))
+    _substitutions["STAB"] = ' ' * stab_spaces
     for key, value in substitutions.items():
         if isinstance(value, dict):
             # Recursively walk the nested dictionary
-            target_string = inject_values(value, target_string)
+            target_string = inject_values(value, target_string, stab_spaces=stab_spaces)
         else:
             # Replace the placeholder with the value
             placeholder = f"%{key}%"
@@ -73,10 +80,10 @@ class ApiGenerator:
         self.table = Table(database_session=database_session, schema_name=self.schema_name ,
                            table_name=table_name, config_manager=config_manager, trace=trace)
 
-        trigger_maintained = self.config_manager.config_value(config_section="api_controls",
-                                                            config_key="trigger_maintained")
-        trigger_maintained = trigger_maintained.replace(' ', '')
-        self.trigger_maintained = trigger_maintained.lower().split(',')
+        auto_maintained_cols = self.config_manager.config_value(config_section="api_controls",
+                                                            config_key="auto_maintained_cols")
+        auto_maintained_cols = auto_maintained_cols.replace(' ', '')
+        self.auto_maintained_cols = auto_maintained_cols.lower().split(',')
 
         signature_types = self.config_manager.config_value(config_section="api_controls",
                                                             config_key="signature_types")
@@ -110,6 +117,9 @@ class ApiGenerator:
         self.row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
                                                                      config_key="row_vers_column_name",
                                                                      default=None)
+        self.col_auto_maintain_method = self.config_manager.config_value(config_section="api_controls",
+                                                                     config_key="col_auto_maintain_method",
+                                                                     default='trigger')
 
         # API naming properties follow. Set these to the preferred procedure names, of the APIs
         self.delete_procname = self.config_manager.config_value(config_section="api_controls",
@@ -131,7 +141,6 @@ class ApiGenerator:
         self.upsert_procname = self.config_manager.config_value(config_section="api_controls",
                                                                 config_key="upsert_procname",
                                                                 default="ups")
-
 
         # Populate self.global_substitutions with the .ini file contents.
         # We will use these to inject values into the templates.
@@ -162,20 +171,177 @@ class ApiGenerator:
                            config_manager=config_manager,
                            trace=trace)
 
-    def _column_assignment(self, operation_type: str, column_name: str):
-        """The _column_assignment method, resolves the assignment for a specific column, for use in an insert (create),
+    @staticmethod
+    def _column_expression(signature_type:str, operation_type: str, column_name: str):
+        """The _column_expression method, resolves the assignment for a specific column, for use in an insert (create),
         update (modify), upsert (create/modify), or merge (create/modify) APIs.
-        :param operation_type: Must be create or modify
+        :param operation_type: Must be "create" or "modify"
         :param column_name: The table column name.
         :return: """
-        valid_operations_list = ["create", "update"]
+        valid_operations_list = [ "create", "modify"]
         valid_operations = ', '.join(valid_operations_list)
         if operation_type not in valid_operations_list:
             message = f'Invalid operation type, "{operation_type}". Valid operation types: {valid_operations}'
-            raise ValueError("Operation type ")
+            raise ValueError(message)
         column_name_lc = column_name.lower()
-        assignment = f'p_{column_name_lc}'
+        if operation_type == "create":
+            # TODO: implement the "create": column expression lookup
+            assignment = f'p_{column_name_lc}'if signature_type == "coltype" else f'p_row.{column_name_lc}'
+        else:
+            # TODO: implement the "update": column expression lookup
+            assignment = f'p_{column_name_lc}'if signature_type == "coltype" else f'p_row.{column_name_lc}'
         return assignment
+
+    def _params_string(self, signature_type:str, soft_tabs:int = 4) -> str:
+        """Returns a comma separated list of parameters"""
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        if signature_type == "coltype":
+            params_out = ""
+            for column_id, column_name in enumerate(self.table.columns_list, start=1):
+                # The first column has it's indent defined in the template
+                params_out += f"  p_{column_name}\n" if column_id == 1 else  f"{tabs}, p_{column_name}\n"
+        elif signature_type == "rowtype":
+            params_out = ""
+            for column_id, column_name in enumerate(self.table.columns_list, start=1):
+                # The first column has it's indent defined in the template
+                params_out += f"  p_row.{column_name}\n" if column_id == 1 else f"{tabs}, p_row.{column_name}\n"
+        else:
+            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
+            raise ValueError(message)
+
+        return params_out
+
+    def _column_list_string(self, soft_tabs:int = 4)-> str:
+        """Returns a line separated (\n) list of select columns"""
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        columns_out = ""
+        for column_id, column_name in enumerate(self.table.columns_list, start=1):
+            column_name_lc = column_name.lower()
+            # The first column has it's indent defined in the template
+            columns_out += f"  {column_name_lc}" if column_id == 1 else  f"\n{tabs}, {column_name_lc}"
+
+        return columns_out
+
+    def _parameter_list_string(self, signature_type:str, operation_type:str = 'create', soft_tabs:int = 4)-> str:
+        """Returns a line separated (\n) list of select columns"""
+
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        if signature_type == "coltype":
+            params_out = ""
+            for column_id, column_name in enumerate(self.table.columns_list, start=1):
+                column_name_lc = column_name.lower()
+                assignment = self._column_expression(signature_type=signature_type, operation_type=operation_type,
+                                                     column_name=column_name_lc)
+                # The first column has it's indent defined in the template
+                params_out += f"  {assignment}" if column_id == 1 else  f"\n{tabs}, {assignment}"
+        elif signature_type == "rowtype":
+            params_out = ""
+            for column_id, column_name in enumerate(self.table.columns_list, start=1):
+                column_name_lc = column_name.lower()
+                assignment = self._column_expression(signature_type=signature_type, operation_type=operation_type,
+                                                     column_name=column_name_lc)
+                # The first column has it's indent defined in the template
+                params_out += f"  {assignment}" if column_id == 1 else f"\n{tabs}, {assignment}"
+        else:
+            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
+            raise ValueError(message)
+
+        return params_out
+
+    def _predicates_string(self, signature_type:str, soft_tabs:int = 4) -> str:
+        """Returns a line separated (\n) list of the predicates"""
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        if signature_type == "coltype":
+            predicates_out = ""
+            for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
+                column_name_lc = column_name.lower()
+                # The first column has it's indent defined in the template
+                predicates_out += f"  {column_name_lc} = p_{column_name_lc}" if column_id == 1 else  f"\n{tabs}and {column_name_lc} = p_{column_name_lc}"
+        elif signature_type == "rowtype":
+            predicates_out = ""
+            for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
+                column_name_lc = column_name.lower()
+                # The first column has it's indent defined in the template
+                predicates_out += f"  {column_name_lc} = p_{column_name_lc}" if column_id == 1 else  f"\n{tabs}and {column_name_lc} = p_{column_name_lc}"
+        else:
+            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
+            raise ValueError(message)
+
+        return predicates_out
+
+    def _update_assignments_string(self, signature_type:str, operation_type:str, soft_tabs:int = 4) -> str:
+        """Returns a line separated (\n) list of the predicates"""
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        if signature_type == "coltype":
+            set_string = ""
+            column_id = 0
+            for column_name in self.table.columns_list:
+                column_name_lc = column_name.lower()
+                if column_name in self.table.pk_columns_list:
+                    continue
+                if column_name_lc == self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
+                    continue
+                column_id += 1
+                assignment = self._column_expression(signature_type=signature_type, operation_type=operation_type,
+                                                     column_name=column_name_lc)
+                # The first column has it's indent defined in the template
+                set_string += f" {column_name_lc:<30} = {assignment}" if column_id == 1 else  f"\n{tabs}, {column_name_lc:<30} = {assignment}"
+        elif signature_type == "rowtype":
+            set_string = ""
+            column_id = 0
+            for column_name in self.table.columns_list:
+                column_name_lc = column_name.lower()
+                if column_name in self.table.pk_columns_list:
+                    continue
+                if column_name_lc == self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
+                    continue
+                column_id += 1
+
+                assignment = self._column_expression(signature_type=signature_type, operation_type=operation_type,
+                                                     column_name=column_name_lc)
+                # The first column has it's indent defined in the template
+                set_string += f" {column_name_lc:<30} = {assignment}" if column_id == 1 else  f"\n{tabs}, {column_name_lc:<30} = {assignment}"
+        else:
+            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
+            raise ValueError(message)
+
+        return set_string
+
+    def _return_parameter_list(self, signature_type:str, soft_tabs:int = 4) -> str:
+        """Returns a comma separated list of the parameters into which to return the "out and "in out" values following
+        an insert/update operation."""
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        returns_out = ""
+        if signature_type == "coltype":
+            for column_id, column_name in enumerate(chain(self.table.in_out_column_list,
+                                                          self.table.out_column_list), start=1):
+                column_name_lc = column_name.lower()
+                # The first column has it's indent defined in the template
+                returns_out += f"\n{tabs}  p_{column_name_lc}" if column_id == 1 else  f"\n{tabs}, p_{column_name_lc}"
+        elif signature_type == "rowtype":
+            for column_id, column_name in enumerate(chain(self.table.in_out_column_list,
+                                                          self.table.out_column_list), start=1):
+                column_name_lc = column_name.lower()
+                # The first column has it's indent defined in the template
+                returns_out += f"\n{tabs}  p_row.{column_name_lc}" if column_id == 1 else f"\n{tabs}, p_row.{column_name_lc}"
+        else:
+            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
+            raise ValueError(message)
+        return returns_out
+
+    def _return_columns_list(self, soft_tabs:int = 4) -> str:
+        """Returns a comma separated list of the columns from which to return the "out and "in out" values following an
+        insert/update operation."""
+        tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
+        returns_out = ""
+
+        for column_id, column_name in enumerate(chain(self.table.in_out_column_list,
+                                                      self.table.out_column_list), start=1):
+            column_name_lc = column_name.lower()
+            # The first column has it's indent defined in the template
+            returns_out += f"\n{tabs}  {column_name_lc}" if column_id == 1 else  f"\n{tabs}, {column_name_lc}"
+
+        return returns_out
 
     def _package_api_template(self, template_category: str, template_type: str, template_name: str) -> str:
         """
@@ -212,7 +378,7 @@ class ApiGenerator:
         ts_len = len(STAB)
         dash_line = 80 - ts_len
 
-        comment = "\n"
+        comment = "\n\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
         comment += f"{STAB}-- {tapi_description} TAPI for: {self.schema_name.lower()}.{self.table.table_name.lower()}\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
@@ -246,7 +412,6 @@ class ApiGenerator:
             signature += self.comment_tapi(tapi_description='Delete')
 
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
@@ -279,7 +444,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
-
+            signature += f'{STAB}is'
 
         return signature
 
@@ -287,19 +452,19 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'ins') -> str:
+        """Formulates and returns the API's signature, for "coltype" signatures."""
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Insert')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
 
             processed_columns += 1
@@ -320,7 +485,7 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+            if self.include_defaults and default_value and column_name not in self.table.out_column_list:
                 param = f"{param:<80}"
                 param += f'{STAB} := {default_value}'
 
@@ -346,7 +511,8 @@ class ApiGenerator:
             signature += f'{STAB})'
             signature += ';\n'
         else:
-            signature += f'{STAB})'
+            signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -354,20 +520,20 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'ins') -> str:
+        """Formulates and returns the API's signature, for "rowtype" signatures."""
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Insert')
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
@@ -405,6 +571,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -453,14 +620,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
 
             processed_columns += 1
@@ -479,7 +645,7 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value and column_name not in self.table.out_parameters_list:
+            if self.include_defaults and default_value and column_name not in self.table.out_column_list:
                 param = f"{param:<80}"
                 param += f'{STAB} := {default_value}'
 
@@ -506,6 +672,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -519,14 +686,14 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
+
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
@@ -563,6 +730,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -612,14 +780,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
 
             processed_columns += 1
@@ -640,7 +807,7 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.noop_column_string and column_name not in self.table.in_out_parameters_list:
+            if self.noop_column_string and column_name not in self.table.in_out_column_list:
                 param = f"{param:<80}"
                 param += f"{STAB} := '{self.noop_column_string}'"
 
@@ -667,6 +834,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -680,14 +848,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
@@ -725,6 +892,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -773,14 +941,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
 
             processed_columns += 1
@@ -801,8 +968,8 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if (self.noop_column_string and column_name not in self.table.in_out_parameters_list
-                  and column_name not in self.table.out_parameters_list):
+            if (self.noop_column_string and column_name not in self.table.in_out_column_list
+                  and column_name not in self.table.out_column_list):
                 param = f"{param:<80}"
                 param += f"{STAB} := '{self.noop_column_string}'"
 
@@ -830,6 +997,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -843,14 +1011,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
@@ -888,6 +1055,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -937,14 +1105,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start=1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
 
             processed_columns += 1
@@ -965,8 +1132,8 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if (self.noop_column_string and column_name not in self.table.in_out_parameters_list
-                  and column_name not in self.table.out_parameters_list):
+            if (self.noop_column_string and column_name not in self.table.in_out_column_list
+                  and column_name not in self.table.out_column_list):
                 param = f"{param:<80}"
                 param += f"{STAB} := '{self.noop_column_string}'"
 
@@ -993,6 +1160,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -1006,14 +1174,13 @@ class ApiGenerator:
 
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
-        signature += f'{STAB}is\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start=1):
-            if column_name.lower() in self.trigger_maintained:
+            if column_name.lower() in self.auto_maintained_cols:
                 continue
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
@@ -1050,6 +1217,7 @@ class ApiGenerator:
             signature += ';\n'
         else:
             signature += f'{STAB})\n'
+            signature += f'{STAB}is'
 
         return signature
 
@@ -1089,26 +1257,176 @@ class ApiGenerator:
 
 
     def _insert_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
+        """Put together the "insert" procedure and its body"""
         procedure_signature = self._insert_api_sig(signature_type=signature_type, package_spec=False,
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
-                                                             template_name=f"insert_{signature_type}")
+                                                             template_name=f"insert")
         procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
         procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
+
+        column_list_string = self._column_list_string(soft_tabs=4)
+        parameter_list_string_lc = self._parameter_list_string(operation_type='create',
+                                                               signature_type=signature_type,
+                                                               soft_tabs=4)
+        parameter_list_string = parameter_list_string_lc.upper()
+
+        substitutions_dict = {
+                              "key_predicates_string": column_list_string.upper(),
+                              "column_list_string_lc": column_list_string,
+                              "parameter_list_string_lc": parameter_list_string_lc,
+                              "parameter_list_string": parameter_list_string,
+                              "procedure_signature": procedure_signature,
+                              "procedure_name": procedure_name,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        procedure_body_template = inject_values(substitutions=substitutions_dict,
+                                                target_string=procedure_body_template,
+                                                stab_spaces=self.indent_spaces)
+
         return procedure_body_template
 
     def _select_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        return ''
+        """Put together the "select" procedure and its body"""
+        procedure_signature = self._select_api_sig(signature_type=signature_type, package_spec=False,
+                                                   procedure_name=procedure_name) + ""
+        procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
+                                                             template_name=f"select")
+        procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
+        procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
+
+        column_list_string_lc = self._column_list_string(soft_tabs=3)
+        parameter_list_string_lc = self._parameter_list_string(signature_type=signature_type, soft_tabs=3)
+        parameter_list_string = parameter_list_string_lc.upper()
+
+        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=2)
+
+        substitutions_dict = {"column_list_string": column_list_string_lc.upper(),
+                              "column_list_string_lc": column_list_string_lc,
+                              "key_predicates_string": key_predicates_string.upper(),
+                              "key_predicates_string_lc": key_predicates_string,
+                              "parameter_list_string_lc": parameter_list_string_lc,
+                              "parameter_list_string": parameter_list_string,
+                              "procedure_signature": procedure_signature,
+                              "procedure_name": procedure_name,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        procedure_body_template = inject_values(substitutions=substitutions_dict,
+                                                target_string=procedure_body_template,
+                                                stab_spaces=self.indent_spaces)
+
+        return procedure_body_template
+
 
     def _update_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        return ''
+        """Put together the "update" procedure and its body"""
+        procedure_signature = self._select_api_sig(signature_type=signature_type, package_spec=False,
+                                                   procedure_name=procedure_name) + ""
+        procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
+                                                             template_name=f"update")
+        procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
+        procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
+        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=3)
+        update_assignments_string = self._update_assignments_string(signature_type=signature_type,
+                                                                    operation_type='modify', soft_tabs=3)
+        return_columns_list = self._return_columns_list(soft_tabs=3)
+
+        return_parameter_list = self._return_parameter_list(signature_type=signature_type,
+                                                            soft_tabs=3)
+
+        substitutions_dict = {"key_predicates_string": key_predicates_string.upper(),
+                              "key_predicates_string_lc": key_predicates_string,
+                              "update_assignments_string": update_assignments_string.upper(),
+                              "update_assignments_string_lc": update_assignments_string,
+                              "return_columns_list": return_columns_list.upper(),
+                              "return_columns_list_lc": return_columns_list,
+                              "return_parameter_list": return_parameter_list.upper(),
+                              "return_parameter_list_lc": return_parameter_list,
+                              "procedure_signature": procedure_signature,
+                              "procedure_name": procedure_name,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        procedure_body_template = inject_values(substitutions=substitutions_dict,
+                                                target_string=procedure_body_template,
+                                                stab_spaces=self.indent_spaces)
+
+
+        return procedure_body_template
+
 
     def _upsert_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        return ''
+        """Put together the "upsert" procedure and its body"""
+        procedure_signature = self._select_api_sig(signature_type=signature_type, package_spec=False,
+                                                   procedure_name=procedure_name) + ""
+        procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
+                                                             template_name=f"upsert")
+
+        column_list_string = self._column_list_string(soft_tabs=4)
+        parameter_list_string_lc = self._parameter_list_string(operation_type='create',
+                                                               signature_type=signature_type,
+                                                               soft_tabs=4)
+        parameter_list_string = parameter_list_string_lc.upper()
+
+        procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
+        procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
+        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=3)
+        update_assignments_string = self._update_assignments_string(signature_type=signature_type,
+                                                                    operation_type='modify', soft_tabs=3)
+        return_columns_list = self._return_columns_list(soft_tabs=3)
+
+        return_parameter_list = self._return_parameter_list(signature_type=signature_type,
+                                                            soft_tabs=4)
+
+        substitutions_dict = {"column_list_string_lc": column_list_string,
+                              "parameter_list_string_lc": parameter_list_string_lc,
+                              "parameter_list_string": parameter_list_string,
+                              "key_predicates_string": key_predicates_string.upper(),
+                              "key_predicates_string_lc": key_predicates_string,
+                              "update_assignments_string": update_assignments_string.upper(),
+                              "update_assignments_string_lc": update_assignments_string,
+                              "return_columns_list": return_columns_list.upper(),
+                              "return_columns_list_lc": return_columns_list,
+                              "return_parameter_list": return_parameter_list.upper(),
+                              "return_parameter_list_lc": return_parameter_list,
+                              "procedure_signature": procedure_signature,
+                              "procedure_name": procedure_name,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        procedure_body_template = inject_values(substitutions=substitutions_dict,
+                                                target_string=procedure_body_template,
+                                                stab_spaces=self.indent_spaces)
+
+
+        return procedure_body_template
 
 
     def _delete_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        return ''
+        """Put together the "delete" procedure and its body"""
+        procedure_signature = self._select_api_sig(signature_type=signature_type, package_spec=False,
+                                                   procedure_name=procedure_name) + ""
+        procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
+                                                             template_name=f"delete")
+        procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
+        procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
+        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=3)
+
+        substitutions_dict = {"key_predicates_string": key_predicates_string.upper(),
+                              "key_predicates_string_lc": key_predicates_string,
+                              "procedure_signature": procedure_signature,
+                              "procedure_name": procedure_name,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        procedure_body_template = inject_values(substitutions=substitutions_dict,
+                                                target_string=procedure_body_template,
+                                                stab_spaces=self.indent_spaces)
+
+
+        return procedure_body_template
 
     def _merge_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
         return ''
@@ -1129,7 +1447,7 @@ class ApiGenerator:
             "insert": {"sig_function": self._insert_api_sig, "body_function": self._insert_api_body, "procedure_name": self.insert_procname},
             "select": {"sig_function": self._select_api_sig, "body_function": self._select_api_body, "procedure_name": self.select_procname},
             "update": {"sig_function": self._update_api_sig, "body_function": self._update_api_body, "procedure_name": self.update_procname},
-            "upsert": {"sig_function": self._update_api_sig, "body_function": self._update_api_body, "procedure_name": self.upsert_procname},
+            "upsert": {"sig_function": self._update_api_sig, "body_function": self._upsert_api_body, "procedure_name": self.upsert_procname},
             "delete": {"sig_function": self._delete_api_sig, "body_function": self._delete_api_body, "procedure_name": self.delete_procname},
             "merge": {"sig_function": self._merge_api_sig,"body_function": self._merge_api_body, "procedure_name": self.merge_procname}
         }
@@ -1152,11 +1470,13 @@ class ApiGenerator:
         # Replace placeholders in the header and footer templates
         package_header_template = inject_values(
             substitutions=self.global_substitutions,
-            target_string=package_header_template
+            target_string=package_header_template,
+            stab_spaces = self.indent_spaces
         )
         package_footer_template = inject_values(
             substitutions=self.global_substitutions,
-            target_string=package_footer_template
+            target_string=package_footer_template,
+            stab_spaces=self.indent_spaces
         )
 
         # Start building the package specification
@@ -1180,7 +1500,8 @@ class ApiGenerator:
                     package_body += f"-- Unknown API type: {api_type}\n"
             package_body = inject_values(
                                             substitutions=merged_dict,
-                                            target_string=package_body
+                                            target_string=package_body,
+                                            stab_spaces=self.indent_spaces
                                         )
 
         # Append the package footer
@@ -1228,11 +1549,13 @@ class ApiGenerator:
         # Replace placeholders in the header and footer templates
         package_header_template = inject_values(
             substitutions=self.global_substitutions,
-            target_string=package_header_template
+            target_string=package_header_template,
+            stab_spaces=self.indent_spaces
         )
         package_footer_template = inject_values(
             substitutions=self.global_substitutions,
-            target_string=package_footer_template
+            target_string=package_footer_template,
+            stab_spaces=self.indent_spaces
         )
 
         # Start building the package specification
@@ -1253,7 +1576,8 @@ class ApiGenerator:
                     package_spec += f"-- Unknown API type: {api_type}\n"
             package_spec = inject_values(
                                             substitutions=merged_dict,
-                                            target_string=package_spec
+                                            target_string=package_spec,
+                                            stab_spaces=self.indent_spaces
                                         )
 
         # Append the package footer

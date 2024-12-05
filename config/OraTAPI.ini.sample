@@ -32,9 +32,15 @@ merge_procname = mrg
 update_procname = upd
 upsert_procname = ups
 
-# trigger_maintained is a comma separated list of columns which are not to be included in the TAPI logic.
-# These are columns typically auto-maintained by triggers. However, these are included in get APIs.
-trigger_maintained = created_by, created_on, updated_by, updated_on
+# auto_maintained_cols is a comma separated list of columns which are not to be set by the TAPI parameters.
+# These are columns typically auto-maintained by triggers. As such they are not included in APIs responsible for data
+# modifications. However they are included in select API return parameters.
+auto_maintained_cols = created_by, created_on, updated_by, updated_on
+
+# col_auto_maintain_method: Set to trigger or computation. If set to trigger, it is assumed that your table triggers
+# are to manage the modification of the columns. However, if set to computation, you must define a column computation
+# for each of the named columns.
+col_auto_maintain_method = trigger
 
 # row_vers_column_name: For optimistic locking (optional). Name the optimistic column name.
 # Leave empty or comment out, if not implemented. Update TAPIs, return this as an "out" parameter.

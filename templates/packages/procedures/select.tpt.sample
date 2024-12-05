@@ -1,0 +1,13 @@
+%procedure_signature%
+%STAB%-- #select#
+%STAB%begin
+
+%STAB%%STAB%select
+%STAB%%STAB%%STAB%%column_list_string_lc%
+%STAB%%STAB%  into
+%STAB%%STAB%%STAB%%parameter_list_string_lc%
+%STAB%%STAB% from %table_name_lc%
+%STAB%%STAB%where
+%STAB%%STAB%%STAB%%key_predicates_string_lc%;
+
+%STAB%end %procedure_name%;
