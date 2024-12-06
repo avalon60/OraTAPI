@@ -1,39 +1,28 @@
 %procedure_signature%
 %STAB%-- #merge#
-%STAB%%STAB%begin
+%STAB%begin
 
-%STAB%%STAB%merge into evt_event_shape_current evt_esc
+%STAB%%STAB%merge into %table_name_lc% tgt
 %STAB%%STAB%using (
-%STAB%%STAB%%STAB%%STAB%select p_evt_event_id                  as  evt_event_id
-%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%,p_shape                         as  shape
-%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%,p_shape_severity_dom_code       as  shape_severity_dom_code
-%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%,p_shape_severity_dov_code       as  shape_severity_dov_code
-%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%,p_insight_guid                  as  insight_guid
-%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%,p_insight_version               as  insight_version
+%STAB%%STAB%%STAB%%STAB%select
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%mrg_param_alias_list_lc%
 %STAB%%STAB%%STAB%%STAB% from dual
 %STAB%%STAB%%STAB%%STAB%) src
-%STAB%%STAB%%STAB%on ( evt_esc.evt_event_id             =  p_evt_event_id
-%STAB%%STAB%%STAB% and evt_esc.shape_severity_dom_code  =  p_shape_severity_dom_code
-%STAB%%STAB%%STAB% and evt_esc.shape_severity_dov_code  =  p_shape_severity_dov_code )
+%STAB%%STAB%%STAB%on
+%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB% %key_predicates_string_lc%
+%STAB%%STAB%%STAB%)
 %STAB%%STAB%when matched then
-%STAB%%STAB%%STAB%update set 
-%STAB%%STAB%%STAB%%STAB%evt_esc.shape            =  src.shape
-%STAB%%STAB%%STAB%  ,evt_esc.insight_guid     =  src.insight_guid
-%STAB%%STAB%%STAB%  ,evt_esc.insight_version  =  src.insight_version
+%STAB%%STAB%%STAB%update set
+%STAB%%STAB%%STAB%%STAB%%update_assignments_string_lc%
 %STAB%%STAB%when not matched then
-%STAB%%STAB%%STAB%insert ( evt_esc.evt_event_id
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,evt_esc.shape
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,evt_esc.shape_severity_dom_code
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,evt_esc.shape_severity_dov_code
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,evt_esc.insight_guid
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,evt_esc.insight_version
-%STAB%%STAB%%STAB%%STAB%%STAB%)
-%STAB%%STAB%%STAB%values ( src.evt_event_id
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,src.shape
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,src.shape_severity_dom_code
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,src.shape_severity_dov_code
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,src.insight_guid
-%STAB%%STAB%%STAB%%STAB%%STAB%  ,src.insight_version
-%STAB%%STAB%%STAB%%STAB%%STAB%);
+%STAB%%STAB%%STAB%insert
+%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%column_list_string_lc%
+%STAB%%STAB%%STAB%%STAB%)
+%STAB%%STAB%%STAB%values
+%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%mrg_src_column_list_string_lc%
+%STAB%%STAB%%STAB%%STAB%);
 
 %STAB%end %procedure_name%;
