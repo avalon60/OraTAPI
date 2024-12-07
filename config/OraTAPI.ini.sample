@@ -37,8 +37,8 @@ upsert_procname = ups
 # modifications. However they are included in select API return parameters.
 auto_maintained_cols = created_by, created_on, updated_by, updated_on
 
-# col_auto_maintain_method: Set to trigger or computation. If set to trigger, it is assumed that your table triggers
-# are to manage the modification of the columns. However, if set to computation, you must define a column computation
+# col_auto_maintain_method: Set to trigger or expression, it is assumed that your table triggers
+# are to manage the modification of the columns. However, if set to expression, you must define a column expression
 # for each of the named columns.
 col_auto_maintain_method = trigger
 

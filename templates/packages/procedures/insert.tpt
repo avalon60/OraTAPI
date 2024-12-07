@@ -10,7 +10,6 @@
 %STAB%%STAB%%STAB%(
 %STAB%%STAB%%STAB%%STAB%%parameter_list_string_lc%
 %STAB%%STAB%%STAB%)
-%STAB%%STAB%returning %return_column_list_lc%;
-%STAB%%STAB%     into %return_parameter_list_lc%;
+%STAB%%STAB%%returning_clause_lc%;
 
 %STAB%end %procedure_name%;

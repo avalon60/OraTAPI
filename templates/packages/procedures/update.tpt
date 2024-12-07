@@ -7,7 +7,6 @@
 %STAB%%STAB%%STAB% %update_assignments_string_lc%
 %STAB%%STAB%where
 %STAB%%STAB%%STAB%%key_predicates_string_lc%
-%STAB%%STAB%returning %return_columns_list_lc%;
-%STAB%%STAB%into %return_parameter_list_lc%;
+%STAB%%STAB%%returning_clause_lc%;
 
 %STAB%end %procedure_name%;
