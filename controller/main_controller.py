@@ -4,6 +4,7 @@ __description__ = "Main controller to parse command-line arguments and coordinat
 
 import copy
 from model.api_generator import ApiGenerator
+from model.bdds_config import config_value
 from model.config_manager import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
@@ -43,6 +44,8 @@ class TAPIController:
         self.proj_home = project_home()
 
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+        self.col_auto_maintain_method = self.config_manager.config_value(config_section='api_controls',
+                                                                         config_key='col_auto_maintain_method')
 
         # Process table names as a list
         self.table_names_list = [name.strip() for name in self.table_names.split(',')]
@@ -126,6 +129,12 @@ class TAPIController:
             options_dict=self.options_dict,
             trace=self.trace
         )
+
+        if self.col_auto_maintain_method == 'expression':
+            expressions_messages = api_controller.load_column_expressions()
+            for message in expressions_messages:
+                self.view.print_console(msg_level=MsgLvl.info, text=message)
+
 
         package_spec = api_controller.gen_package_spec()
         print(package_spec)

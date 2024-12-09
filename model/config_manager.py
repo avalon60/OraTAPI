@@ -37,7 +37,6 @@ class ConfigManager:
         :return: Value associated with the key.
         """
 
-
         if not self.config.has_option(config_section, config_key) and default is not None:
             return default
 
@@ -46,6 +45,27 @@ class ConfigManager:
             raise KeyError(f"{message}")
 
         return self.config.get(config_section, config_key)
+
+    def bool_config_value(self, config_section: str, config_key: str,
+                     default: str = None) -> bool:
+        """
+        Retrieve a value from a user configparser file.
+
+        :param config_section: Section of the config file.
+        :param config_key: Key to retrieve the value for.
+        :param config_filename: Name of the config file (e.g. "config.ini" - not a pathname).
+        :param default: The default value to be returned if the key/value is not found.
+        :return: Value associated with the key.
+        """
+
+        if not self.config.has_option(config_section, config_key) and default is not None:
+            return default
+
+        if not self.config.has_section(config_section) or not self.config.has_option(config_section, config_key):
+            message = f"The key {config_section}.{config_key} does not exist in the config file ({self.config_file_path })."
+            raise KeyError(f"{message}")
+
+        return self.config.getboolean(section=config_section, option=config_key)
 
     def config_dictionary(self):
         return self.global_substitutions

@@ -1,6 +1,6 @@
 %procedure_signature%
 %STAB%-- #upsert#
-%STAB%%begin
+%STAB%begin
 
 %STAB%%STAB%update %table_name_lc%
 %STAB%%STAB%set
