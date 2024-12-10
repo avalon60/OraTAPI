@@ -43,6 +43,11 @@ class Table:
         self.in_out_column_list = []
         self.out_column_list = []
         self.pk_columns_list = []
+        self.ak_columns_list = []
+        self.in_out_column_list_lc = []
+        self.out_column_list_lc = []
+        self.pk_columns_list_lc = []
+        self.ak_columns_list_lc = []
 
         self.tab_col_metadata()
 
@@ -99,10 +104,16 @@ class Table:
                     }
                     if is_pk_column:
                         self.pk_columns_list.append(column_name)
+                        self.pk_columns_list_lc.append(column_name.lower())
+                    if is_ak_column:
+                        self.ak_columns_list.append(column_name)
+                        self.ak_columns_list_lc.append(column_name.lower())
                     if column_keyed:
                         self.in_out_column_list.append(column_name)
+                        self.in_out_column_list_lc.append(column_name.lower())
                     if is_row_version_column:
                         self.out_column_list.append(column_name)
+                        self.out_column_list_lc.append(column_name.lower())
 
 
                     column_list.append(column_name)

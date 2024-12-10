@@ -379,8 +379,8 @@ class ApiGenerator:
     def _returning_into_clause(self, signature_type: str, skip_list:list = None, soft_tabs: int = 4) -> str:
         if skip_list is None:
             skip_list = []
-        returning_into_clause = self._returning_columns(skip_list=skip_list, soft_tabs=soft_tabs)
-        pass
+        returning_into_clause = self._returning_columns(skip_list=skip_list,  soft_tabs=soft_tabs)
+
         returning_into_clause += self._into_parameters(signature_type=signature_type, skip_list=skip_list,
                                                        soft_tabs=soft_tabs)
         return returning_into_clause
@@ -736,14 +736,15 @@ class ApiGenerator:
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
-            if not column_name in self.table.pk_columns_list:
-                continue
             column_name_lc = column_name.lower()
+            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
+            if not column_name in self.table.pk_columns_list and column_name_lc != self.table.row_vers_column_name:
+                continue
+
             default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
             leader = f', ' if col_position > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out' if is_pk_column else f'{STAB}in    '
+            in_out = f'{STAB}in out'
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
             if self.include_defaults and default_value:
@@ -1757,9 +1758,17 @@ class ApiGenerator:
         procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
         key_predicates_string = self._predicates_string(signature_type='coltype', soft_tabs=3)
 
+        column_skip_list = self.table.ak_columns_list_lc
+        returning_clause_lc = ''
+        if self.return_key_columns:
+            returning_clause_lc = ''
+            returning_clause_lc = self._returning_into_clause(signature_type=signature_type,
+                                                              skip_list=column_skip_list, soft_tabs=4)
 
         substitutions_dict = {"key_predicates_string": key_predicates_string.upper(),
                               "key_predicates_string_lc": key_predicates_string,
+                              "returning_clause": returning_clause_lc.upper(),
+                              "returning_clause_lc": returning_clause_lc,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
@@ -1888,6 +1897,8 @@ class ApiGenerator:
             for sig_count, sig_type in enumerate(self.signature_types, start=1):
                 if sig_count > 1 and api_type == "delete":
                     continue
+                elif api_type == "delete":
+                    sig_type = 'coltype'
                 if sig_func:
                     package_body += body_func(signature_type=sig_type,
                                               procedure_name=procedure_name)

@@ -4,7 +4,6 @@ __description__ = "Main controller to parse command-line arguments and coordinat
 
 import copy
 from model.api_generator import ApiGenerator
-from model.bdds_config import config_value
 from model.config_manager import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
