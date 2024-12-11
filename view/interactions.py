@@ -3,9 +3,8 @@ __date__ = "2024-11-09"
 __description__ = "Module responsible for user interactions, including argument processing."
 
 import argparse
-from logging import warning
 
-from model.config_manager import ConfigManager
+from lib.config_manager import ConfigManager
 from pathlib import Path
 from enum import Enum
 

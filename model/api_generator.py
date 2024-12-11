@@ -5,10 +5,9 @@ __date__ = "2024-11-09"
 __description__ = "Generates the API code."
 
 import copy
-import glob
 import re
 
-from model.config_manager import ConfigManager
+from lib.config_manager import ConfigManager
 from model.db_objects import Table
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home

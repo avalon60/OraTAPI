@@ -5,7 +5,7 @@ __description__ = "Home of the table metadata APIs. Here we model Table classes.
 """
 
 # DBSession is a sub-class of oracledb.Connection which has a self.cursor() attribute.
-from model.config_manager import ConfigManager
+from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 
 

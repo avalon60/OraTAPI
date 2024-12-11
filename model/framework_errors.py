@@ -25,14 +25,6 @@ class CredentialsNotEstablished(Exception):
         super().__init__(message)
 
 
-class SystemCommandError(Exception):
-    """This exception is raised when we detect a failure when attempting to execute an operating system command, or
-    bash shell script, via a Python system() call."""
-
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
 class UnsupportedOption(Exception):
     """This exception is raised when an options parameter value is passed to a function or method, which is interpreted
     as an unsupported option (an unrecognised value)."""
