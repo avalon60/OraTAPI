@@ -1,0 +1,3 @@
+end %table_name_lc%_tapi;
+/
+--rollback drop package %package_owner_lc%.%table_name_lc%_tapi
