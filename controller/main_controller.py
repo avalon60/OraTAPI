@@ -9,7 +9,8 @@ from model.session_manager import DBSession
 from lib.file_system_utils import project_home
 from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
-
+from pathlib import Path
+from os import chdir
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
@@ -17,12 +18,22 @@ VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 class TAPIController:
     def __init__(self, trace: bool = False):
         proj_home = project_home()  # project_home returns a Path object
+        chdir(proj_home)
         config_file_path = proj_home / 'config' / 'OraTAPI.ini'
-        self.view = Interactions(config_file_path=config_file_path)
-        args = self.view.parse_arguments()
-        args_dict = vars(args)
+        self.view = Interactions(controller=self, config_file_path=config_file_path)
+        args_dict = self.view.args_dict
 
         options_dict = copy.deepcopy(args_dict)
+
+        self.view.print_console(msg_level=MsgLvl.info, text=f"=" * 80)
+        for key in sorted(options_dict.keys()):  # Sort the keys
+            value = options_dict[key]
+            if key == 'db_password':
+                value = '***************'
+            self.view.print_console(msg_level=MsgLvl.info, text=f"{key:<40} = {value}")
+        self.view.print_console(msg_level=MsgLvl.info, text=f"=" * 80)
+
+
         options_dict["config_file_path"] = config_file_path
         self.options_dict = options_dict
         self.force_overwrite = options_dict['force_overwrite']
@@ -38,13 +49,48 @@ class TAPIController:
         self.schema_name = str(options_dict['schema_name']).upper()
         self.table_names = str(options_dict['table_names']).upper()
         self.conn_name = options_dict['conn_name']
-        self.staging_area_dir = options_dict['staging_area_dir']
+        self.staging_area_dir = Path(options_dict['staging_area_dir'])
+
+
         self.trace = trace
         self.proj_home = project_home()
 
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
         self.col_auto_maintain_method = self.config_manager.config_value(config_section='api_controls',
                                                                          config_key='col_auto_maintain_method')
+
+        self.spec_dir = Path(self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='spec_dir'))
+
+        self.body_dir = Path(self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='body_dir'))
+
+        self.trigger_dir = Path(self.config_manager.config_value(config_section='file_controls',
+                                                                 config_key='trigger_dir'))
+
+        self.view_dir = Path(self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='view_dir'))
+
+        self.body_suffix = self.config_manager.config_value(config_section='file_controls',
+                                                            config_key='body_suffix')
+
+        self.spec_suffix = self.config_manager.config_value(config_section='file_controls',
+                                                            config_key='spec_suffix')
+
+
+        if not self.staging_area_dir.exists():
+            self.view.print_console(msg_level=MsgLvl.critical, text=f'Staging directory, "{self.staging_area_dir}", does not exist - bailing out!')
+            exit(0)
+
+        if not self.staging_area_dir.is_dir():
+            self.view.print_console(msg_level=MsgLvl.critical, text=f'Staging pathname provide, "{self.staging_area_dir}", is not a directory - bailing out!')
+            exit(0)
+
+        for directory in (self.spec_dir, self.body_dir, self.trigger_dir, self.view_dir):
+            dir_path = self.staging_area_dir / directory
+            if directory and not dir_path.exists():
+                self.view.print_console(msg_level=MsgLvl.info, text=f"Creating staging sub directory: {dir_path}")
+                dir_path.mkdir(parents=False, exist_ok=True)
 
         # Process table names as a list
         self.table_names_list = [name.strip() for name in self.table_names.split(',')]
@@ -120,6 +166,7 @@ class TAPIController:
 
         :param table_name: str, The table name to generate APIs for
         """
+        table_name_lc = table_name.lower()
         api_controller = ApiGenerator(
             database_session=self.db_session,
             schema_name=self.schema_name,
@@ -134,12 +181,19 @@ class TAPIController:
             for message in expressions_messages:
                 self.view.print_console(msg_level=MsgLvl.info, text=message)
 
+        tapi_name = f"{table_name_lc}_tapi"
 
-        package_spec = api_controller.gen_package_spec()
-        print(package_spec)
+        staging_realpath = self.staging_area_dir.resolve()
 
-        package_body = api_controller.gen_package_body()
-        print(package_body)
+        package_spec_code = api_controller.gen_package_spec()
+        spec_file_name = f"{tapi_name}{self.spec_suffix}"
+        self.view.write_file(staging_dir=staging_realpath, directory=self.spec_dir, file_name=spec_file_name,
+                             code=package_spec_code)
+
+        package_body_code = api_controller.gen_package_body()
+        body_file_name = f"{tapi_name}{self.body_suffix}"
+        self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
+                             code=package_body_code)
 
     def check_table_exists(self, schema_name, table_name) -> bool:
         """

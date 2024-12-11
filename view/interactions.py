@@ -3,6 +3,8 @@ __date__ = "2024-11-09"
 __description__ = "Module responsible for user interactions, including argument processing."
 
 import argparse
+from logging import warning
+
 from model.config_manager import ConfigManager
 from pathlib import Path
 from enum import Enum
@@ -16,9 +18,15 @@ class MsgLvl(Enum):
 
 
 class Interactions:
-    def __init__(self, config_file_path: Path):
+    def __init__(self, controller, config_file_path: Path):
+        self.controller = controller
         self.config_file_path = config_file_path
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+
+        args = self.parse_arguments()
+        self.args_dict = vars(args)
+        self.force_overwrite = self.args_dict["force_overwrite"]
+
 
     @staticmethod
     def print_console(text: str, msg_level: MsgLvl = MsgLvl.info):
@@ -58,6 +66,23 @@ class Interactions:
     def print_critical(text: str):
         print(f"[CRITICAL]: {text}")
 
+    def write_file(self, staging_dir:Path, directory:Path, file_name, code:str):
+        file_path = staging_dir / directory / file_name
+        relative_path = directory / file_name
+        if file_path.exists() and not self.force_overwrite:
+            self.print_console(msg_level=MsgLvl.info, text=f'File exists: {relative_path} - skipping!')
+            return
+        else:
+            self.print_console(msg_level=MsgLvl.warning, text=f'File exists: {relative_path} - overwriting...')
+
+        try:
+            with open(file_path, 'w') as f:
+                f.write(code)
+        except Exception as e:
+            print(f"An error occurred writing {file_path} : {e}")
+            exit (0)
+
+
     def parse_arguments(self) -> argparse.Namespace:
         """
         Parse command-line arguments.
@@ -67,7 +92,6 @@ class Interactions:
         """
         default_api_types = self.config_manager.config_value(config_section="api_controls",
                                                              config_key="default_api_types").strip()
-        print(f'default_api_types = {default_api_types}')
 
         # Argument parser setup
         parser = argparse.ArgumentParser(description="Oracle Table API Generator")
@@ -77,9 +101,8 @@ class Interactions:
         parser.add_argument('-a', '--tapi_author', type=str, help="TAPI author", default='OraTAPI generator')
         parser.add_argument('-c', '--conn_name', type=str, help="Connection name for saved configuration")
         parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name)")
-        parser.add_argument('-g', '--staging_area_dir', type=Path,
-                            help="Directory for staging area (default: ./staging)",
-                            default=Path("staging"))
+        parser.add_argument('-g', '--staging_area_dir', type=Path, default="staging",
+                            help="Directory for staging area (default: <APP_HOME>/staging)")
         parser.add_argument('-p', '--db_password', type=str, help="Database password")
         parser.add_argument('-P', '--package_owner', type=str,
                             help="Database schema in which to place the TAPI package.",
