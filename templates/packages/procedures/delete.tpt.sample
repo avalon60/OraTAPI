@@ -1,10 +1,16 @@
 %procedure_signature%
 %STAB%-- #delete#
-%STAB%%STAB%begin
+%STAB%begin
 
-%STAB%%STAB%%STAB%delete
+%STAB%%STAB%  delete
 %STAB%%STAB%%STAB% from %table_name_lc%
 %STAB%%STAB%%STAB%where
-%STAB%%STAB%%STAB%%STAB%%key_predicates_string_lc%;
+%STAB%%STAB%%STAB%%STAB%%key_predicates_string_lc%
+%STAB%%STAB%%returning_clause_lc%;
+
+-- %STAB%%STAB%%STAB%if sql%rowcount = 0
+-- %STAB%%STAB%%STAB%then
+-- %STAB%%STAB%%STAB%%STAB%raise NO_DATA_FOUND;
+-- %STAB%%STAB%%STAB%end if;
 
 %STAB%end %procedure_name%;

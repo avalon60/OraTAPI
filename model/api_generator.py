@@ -566,13 +566,13 @@ class ApiGenerator:
             for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
                 column_name_lc = column_name.lower()
                 # The first column has it's indent defined in the template
-                predicates_out += f"  {column_name_lc} = p_{column_name_lc}" if column_id == 1 else  f"\n{tabs}and {column_name_lc} = p_{column_name_lc}"
+                predicates_out += f"   {column_name_lc} = p_{column_name_lc}" if column_id == 1 else  f"\n{tabs}  and {column_name_lc} = p_{column_name_lc}"
         elif signature_type == "rowtype":
             predicates_out = ""
             for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
                 column_name_lc = column_name.lower()
                 # The first column has it's indent defined in the template
-                predicates_out += f"  {column_name_lc} = p_row.{column_name_lc}" if column_id == 1 else  f"\n{tabs}and {column_name_lc} = p_row.{column_name_lc}"
+                predicates_out += f"   {column_name_lc} = p_row.{column_name_lc}" if column_id == 1 else  f"\n{tabs}  and {column_name_lc} = p_row.{column_name_lc}"
         else:
             message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
             raise ValueError(message)

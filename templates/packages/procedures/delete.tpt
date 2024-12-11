@@ -1,8 +1,8 @@
 %procedure_signature%
 %STAB%-- #delete#
-%STAB%%STAB%begin
+%STAB%begin
 
-%STAB%%STAB%%STAB%delete
+%STAB%%STAB%  delete
 %STAB%%STAB%%STAB% from %table_name_lc%
 %STAB%%STAB%%STAB%where
 %STAB%%STAB%%STAB%%STAB%%key_predicates_string_lc%
