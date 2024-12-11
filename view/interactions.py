@@ -92,11 +92,15 @@ class Interactions:
         default_api_types = self.config_manager.config_value(config_section="api_controls",
                                                              config_key="default_api_types").strip()
 
+        default_app_name = self.config_manager.config_value(config_section="project",
+                                                             config_key="default_app_name",
+                                                             default='Undefined')
+
         # Argument parser setup
         parser = argparse.ArgumentParser(description="Oracle Table API Generator")
 
         parser.add_argument('-A', '--app_name', type=str, help="Application name - included to the package header.",
-                            default='Undefined')
+                            default=default_app_name)
         parser.add_argument('-a', '--tapi_author', type=str, help="TAPI author", default='OraTAPI generator')
         parser.add_argument('-c', '--conn_name', type=str, help="Connection name for saved configuration")
         parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name)")
