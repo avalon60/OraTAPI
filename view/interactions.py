@@ -71,8 +71,6 @@ class Interactions:
         if file_path.exists() and not self.force_overwrite:
             self.print_console(msg_level=MsgLvl.info, text=f'File exists: {relative_path} - skipping!')
             return
-        else:
-            self.print_console(msg_level=MsgLvl.warning, text=f'File exists: {relative_path} - overwriting...')
 
         try:
             with open(file_path, 'w') as f:

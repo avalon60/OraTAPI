@@ -120,6 +120,9 @@ class TAPIController:
         self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
         self.view.print_console(msg_level=MsgLvl.info, text="Database session established successfully.")
 
+        self.force_overwrite = self.options_dict["force_overwrite"]
+        if self.force_overwrite:
+            self.view.print_console(msg_level=MsgLvl.warning, text=f'Forced overwrites enabled.')
 
         # Now check to see if we have a --save_connection flag submitted.
         if self.save_connection:
@@ -204,10 +207,10 @@ class TAPIController:
         if self.col_auto_maintain_method == 'expression':
             expressions_messages = api_controller.load_column_expressions()
             for message in expressions_messages:
-                self.view.print_console(msg_level=MsgLvl.info, text=message)
+                self.view.print_console(msg_level=MsgLvl.warning, text=message)
 
         tapi_name = f"{table_name_lc}_tapi"
-
+        self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package: {tapi_name.upper()}")
         staging_realpath = self.staging_area_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
