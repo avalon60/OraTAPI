@@ -1,7 +1,3 @@
---liquibase formatted sql
-
---changeset %tapi_author%:%table_name_lc%_tapi_create_spec stripComments:false endDelimiter:/ runOnChange:true
-
 create or replace package %package_owner_lc%.%table_name_lc%_tapi
 authid definer
 as
