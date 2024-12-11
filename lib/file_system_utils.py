@@ -8,6 +8,7 @@ import re
 import platform
 import os
 from pathlib import Path
+import shutil
 
 # Get the real path of the current script
 real_path = Path(__file__).resolve()
@@ -75,6 +76,26 @@ def sanitise_dir_name(directory_name: str) -> str:
 
     return sanitised_name
 
+def zip_directory(zip_source_dir: Path, zip_file_name, destination_dir: Path = None):
+    """Zips a directory and its contents into a zip file. If a destination_dir is provided, the generated zip file is
+    relocated to destination_dir.
+
+      :param zip_source_dir: The path to the directory to zip.
+      :type zip_source_dir: Path
+      :param zip_file_name: The path to the output zip file.
+      :type zip_file_name: str
+      :param destination_dir: The place to locate the generated zip file.
+      :type destination_dir:
+    """
+
+    # The make_archive method automatically adds a .zip extension. So we remove it.
+    _zip_file = zip_file_name.replace('.zip', '')
+    shutil.make_archive(_zip_file, 'zip', zip_source_dir)
+
+    if destination_dir:
+        if not destination_dir.exists():
+            destination_dir.mkdir()
+        shutil.move(_zip_file + '.zip', destination_dir)
 
 if __name__ == "__main__":
 
