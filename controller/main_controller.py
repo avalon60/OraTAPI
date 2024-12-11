@@ -91,11 +91,15 @@ class TAPIController:
 
 
         if not self.staging_area_dir.exists():
-            self.view.print_console(msg_level=MsgLvl.critical, text=f'Staging directory, "{self.staging_area_dir}", does not exist - bailing out!')
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Staging directory, "{self.staging_area_dir}", does not exist - bailing out!')
             exit(0)
 
         if not self.staging_area_dir.is_dir():
-            self.view.print_console(msg_level=MsgLvl.critical, text=f'Staging pathname provide, "{self.staging_area_dir}", is not a directory - bailing out!')
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Staging pathname provide, "{self.staging_area_dir}", is not a directory - bailing out!')
+            exit(0)
+
+        if self.spec_dir == self.body_dir and self.spec_suffix == self.body_suffix:
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Conflicting OratAPI.ini properties. The spec_dir and body_dir must be distinct when spec_suffix and body_suffix are the same!')
             exit(0)
 
         for directory in (self.spec_dir, self.body_dir, self.trigger_dir, self.view_dir):
