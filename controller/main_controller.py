@@ -3,14 +3,20 @@ __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
 
 import copy
+import time
 from model.api_generator import ApiGenerator
-from model.config_manager import ConfigManager
+from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
+from lib.app_utils import current_timestamp, current_dttm, format_elapsed_time
 from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
+
+RUN_ID = int(time.time())
+prog_bin = Path(__file__).resolve().parent
+prog_name = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
@@ -25,6 +31,12 @@ class TAPIController:
 
         options_dict = copy.deepcopy(args_dict)
 
+        exec_start_timestamp = current_timestamp()
+        self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} started at: {exec_start_timestamp}',
+                                msg_level=MsgLvl.info)
+        epoc_start_ts = int(time.time())
+        self.view.print_console(text=f'{prog_name}: Command line parameters:-',
+                                msg_level=MsgLvl.info)
         self.view.print_console(msg_level=MsgLvl.info, text=f"=" * 80)
         for key in sorted(options_dict.keys()):  # Sort the keys
             value = options_dict[key]
@@ -116,6 +128,15 @@ class TAPIController:
 
         # Validate table names and process
         self.process_table_names()
+
+
+        exec_end_timestamp = current_timestamp()
+        epoc_end_ts = int(time.time())
+        self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
+                                msg_level=MsgLvl.info)
+        elapsed_time = format_elapsed_time(start_ts=epoc_start_ts, end_ts=epoc_end_ts)
+        self.view.print_console(text=f'Elapsed time: {elapsed_time}',
+                                msg_level=MsgLvl.info)
 
     @staticmethod
     def validate_api_types(api_types: list[str]) -> list[str]:

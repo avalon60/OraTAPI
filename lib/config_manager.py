@@ -4,7 +4,6 @@ __description__ = "Manages the configuration data via configparser."
 from pathlib import Path
 from configparser import ConfigParser, ExtendedInterpolation
 import configparser
-import os
 
 class ConfigManager:
     def __init__(self, config_file_path:Path):
@@ -23,7 +22,6 @@ class ConfigManager:
         if not self.config_file_path.exists():
             print(f'Unable to locate the config file: {self.config_file_path}')
             raise FileNotFoundError
-
 
     def config_value(self, config_section: str, config_key: str,
                      default: str = None) -> str:
