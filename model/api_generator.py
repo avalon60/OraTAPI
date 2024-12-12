@@ -51,6 +51,7 @@ def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces
             # Replace the placeholder with the value
             placeholder = f"%{key}%"
             target_string = target_string.replace(placeholder, str(value))
+    target_string.replace('%STAB%', ' ' * stab_spaces)
     return target_string
 
 class ApiGenerator:
@@ -72,6 +73,8 @@ class ApiGenerator:
         self.proj_home = project_home()  # project_home returns a Path object
         proj_config_file = self.proj_home / 'config' / 'OraTAPI.ini'
         self.column_expressions_dir = self.proj_home / 'templates' / 'column_expressions'
+        self.view_template_dir = self.proj_home / 'templates' / 'misc' / 'view'
+        self.trigger_template_dir = self.proj_home / 'templates' / 'misc' / 'trigger'
         self.options_dict = deepcopy(options_dict)
         self.config_manager = config_manager
         self.schema_name = schema_name
@@ -88,7 +91,8 @@ class ApiGenerator:
         self.auto_maintained_cols = auto_maintained_cols.lower().split(',')
 
         signature_types = self.config_manager.config_value(config_section="api_controls",
-                                                            config_key="signature_types")
+                                                           config_key="signature_types",
+                                                           default='rowtype, coltype')
 
         signature_types = signature_types.replace(' ', '')
         self.signature_types = signature_types.lower().split(',')
@@ -142,11 +146,17 @@ class ApiGenerator:
                                                                 config_key="upsert_procname",
                                                                 default="ups")
 
+        self.view_name_suffix = self.config_manager.config_value(config_section="misc",
+                                                                config_key="view_name_suffix",
+                                                                default="_v")
+
+        self.view_name_suffix_lc = self.view_name_suffix.lower()
         # Populate self.global_substitutions with the .ini file contents.
         # We will use these to inject values into the templates.
         self.global_substitutions = self.config_manager.config_dictionary()
-        self.include_rowid = self.global_substitutions["include_rowid"]
-        self.include_rowid = True if self.include_rowid == 'true' else False
+
+        # self.include_rowid = self.global_substitutions["include_rowid"]
+        self.include_rowid = False
         # Set soft tabs spaces for indent
         self.global_substitutions["STAB"] = ' ' * int(self.global_substitutions["indent_spaces"])
         self.global_substitutions["package_owner_lc"] = package_owner_lc
@@ -163,6 +173,19 @@ class ApiGenerator:
         self.global_substitutions["run_date_time"] = current_date
         self.global_substitutions["table_name_lc"] = table_name.lower()
         self.global_substitutions["schema_name_lc"] = self.schema_name.lower()
+        self.global_substitutions["table_owner_lc"] = self.schema_name.lower()
+        self.global_substitutions["table_owner"] = self.schema_name
+        self.global_substitutions["tapi_author"] = options_dict["tapi_author"]
+        self.global_substitutions["tapi_author_lc"] = options_dict["tapi_author"].lower()
+        self.global_substitutions["view_owner_lc"] = options_dict["view_owner"].lower()
+        self.global_substitutions["view_owner"] = options_dict["view_owner"]
+        self.global_substitutions["trigger_owner_lc"] = options_dict["trigger_owner"].lower()
+        self.global_substitutions["trigger_owner"] = options_dict["trigger_owner"]
+        self.global_substitutions["view_name_suffix_lc"] = self.view_name_suffix.lower()
+        self.global_substitutions["view_name_suffix"] = self.view_name_suffix
+
+
+
 
 
         self.table = Table(database_session=database_session,
@@ -681,7 +704,8 @@ class ApiGenerator:
         """
 
         # Define the template file path
-        template_name = template_name.replace(".tpt", "") + ".tpt"
+        template_name = str(template_name).replace(".tpt", "")
+        template_name += ".tpt"
         proj_templates = self.proj_home / 'templates' /  template_category / template_type
         template_path = proj_templates / template_name
 
@@ -1834,6 +1858,40 @@ class ApiGenerator:
 
         return procedure_body_template
 
+    def _create_trigger_code(self, trigger_template:str) -> str:
+        """Put together the "select" procedure and its body"""
+
+        _trigger_template = trigger_template
+        column_list_string_lc = self._column_list_string(soft_tabs=3)
+
+        substitutions_dict = {"column_list_string": column_list_string_lc.upper(),
+                              "column_list_string_lc": column_list_string_lc,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        _trigger_template = inject_values(substitutions=substitutions_dict,
+                                       target_string=_trigger_template,
+                                       stab_spaces=self.indent_spaces)
+
+        return _trigger_template
+
+    def _create_view_code(self, view_template:str) -> str:
+        """Put together the "select" procedure and its body"""
+
+        _view_template = view_template
+        column_list_string_lc = self._column_list_string(soft_tabs=3)
+
+        substitutions_dict = {"column_list_string": column_list_string_lc.upper(),
+                              "column_list_string_lc": column_list_string_lc,
+                              "table_name_lc": self.table.table_name_lc.lower(),
+                              "table_name": self.table.table_name.upper()}
+
+        _view_template = inject_values(substitutions=substitutions_dict,
+                                       target_string=_view_template,
+                                       stab_spaces=self.indent_spaces)
+
+        return _view_template
+
     def gen_package_body(self) -> str:
         """
         Generates the package body for the APIs listed in the options dictionary.
@@ -1990,6 +2048,62 @@ class ApiGenerator:
 
         return package_spec
 
+    def gen_views(self):
+        # Load the package header and footer templates
+        view_code_dict = {}
+        view_dir = self.view_template_dir
+
+        templates = view_dir.glob('*[a-z0-9_]*.tpt')
+
+        for template in templates:
+            source_file_name = template.name
+            source_file_name = str(source_file_name).replace('.tpt', '').replace('view', self.table.table_name_lc)
+            source_file_name += self.view_name_suffix_lc
+            source_file_name = source_file_name +'.sql'
+            view_template = self._package_api_template(
+                    template_category="misc",
+                    template_type='view',
+                    template_name=template
+                )
+
+
+            view_template = self._create_view_code(view_template=view_template)
+            view_template = inject_values(
+                substitutions=self.global_substitutions,
+                target_string=view_template,
+                stab_spaces=self.indent_spaces
+            )
+            view_code_dict[source_file_name] = view_template
+
+        return view_code_dict
+
+    def gen_triggers(self):
+        # Load the package header and footer templates
+        trigger_code_dict = {}
+        trigger_dir = self.trigger_template_dir
+
+        templates = trigger_dir.glob('*[a-z0-9_]*.tpt')
+
+        for template in templates:
+            source_file_name: str = template.name
+            source_file_name = str(source_file_name).replace('.tpt', '').replace('table_name', self.table.table_name_lc)
+            source_file_name = source_file_name +'.sql'
+            trigger_template = self._package_api_template(
+                    template_category="misc",
+                    template_type='trigger',
+                    template_name=template
+                )
+
+
+            trigger_template = self._create_trigger_code(trigger_template=trigger_template)
+            trigger_template = inject_values(
+                substitutions=self.global_substitutions,
+                target_string=trigger_template,
+                stab_spaces=self.indent_spaces
+            )
+            trigger_code_dict[source_file_name] = trigger_template
+
+        return trigger_code_dict
 
 if __name__ == "__main__":
     # Connection parameters

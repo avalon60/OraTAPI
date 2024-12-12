@@ -7,6 +7,10 @@ import argparse
 from lib.config_manager import ConfigManager
 from pathlib import Path
 from enum import Enum
+from rich import print
+from rich.console import Console
+
+text = "This is a test message."
 
 
 class MsgLvl(Enum):
@@ -14,6 +18,7 @@ class MsgLvl(Enum):
     warning = 2
     error = 3
     critical = 4
+    highlight = 5
 
 
 class Interactions:
@@ -21,14 +26,23 @@ class Interactions:
         self.controller = controller
         self.config_file_path = config_file_path
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
-
+        colour_console = self.config_manager.bool_config_value(config_section='console', config_key='colour_console')
         args = self.parse_arguments()
         self.args_dict = vars(args)
         self.force_overwrite = self.args_dict["force_overwrite"]
 
+        self.INFO_COLOUR = self.config_manager.config_value(config_section='console', config_key='INFO_COLOUR')
+        self.WARN_COLOUR = self.config_manager.config_value(config_section='console', config_key='WARN_COLOUR')
+        self.ERR_COLOUR = self.config_manager.config_value(config_section='console', config_key='ERR_COLOUR')
+        self.CRIT_COLOUR = self.config_manager.config_value(config_section='console', config_key='CRIT_COLOUR')
+        self.HIGH_COLOUR = self.config_manager.config_value(config_section='console', config_key='HIGH_COLOUR')
 
-    @staticmethod
-    def print_console(text: str, msg_level: MsgLvl = MsgLvl.info):
+        no_colour = True if not colour_console else False
+        # Create a console without color support
+        self.console = Console(no_color=no_colour)
+
+
+    def print_console(self, text: str, msg_level: MsgLvl = MsgLvl.info):
         """
         Print a message to the console based on its message level.
 
@@ -36,10 +50,11 @@ class Interactions:
         :param msg_level: MsgLevel, The level of the message
         """
         level_methods = {
-            MsgLvl.info: Interactions.print_info,
-            MsgLvl.warning: Interactions.print_warning,
-            MsgLvl.error: Interactions.print_error,
-            MsgLvl.critical: Interactions.print_critical
+            MsgLvl.info: self.print_info,
+            MsgLvl.warning: self.print_warning,
+            MsgLvl.error: self.print_error,
+            MsgLvl.critical: self.print_critical,
+            MsgLvl.highlight: self.print_highlight
         }
 
         # Fetch the appropriate method and call it
@@ -49,21 +64,21 @@ class Interactions:
         else:
             print(f"Unrecognized message level: {msg_level} - {text}")
 
-    @staticmethod
-    def print_info(text: str):
-        print(f"[INFO]: {text}")
 
-    @staticmethod
-    def print_warning(text: str):
-        print(f"[WARNING]: {text}")
+    def print_highlight(self, text: str):
+        self.console.print(f"[{self.HIGH_COLOUR}][INFO]: {text}[/{self.HIGH_COLOUR}]")
 
-    @staticmethod
-    def print_error(text: str):
-        print(f"[ERROR]: {text}")
+    def print_info(self, text: str):
+            self.console.print(f"[{self.INFO_COLOUR}][INFO]: {text}[/{self.INFO_COLOUR}]")
 
-    @staticmethod
-    def print_critical(text: str):
-        print(f"[CRITICAL]: {text}")
+    def print_warning(self, text: str):
+        self.console.print(f"[{self.WARN_COLOUR}][WARNING]: {text}[/{self.WARN_COLOUR}]")
+
+    def print_error(self, text: str):
+        self.console.print(f"[{self.ERR_COLOUR}][ERROR]: {text}[/{self.ERR_COLOUR}]")
+
+    def print_critical(self, text: str):
+        self.console.print(f"[{self.CRIT_COLOUR}][CRITICAL]: {text} [/{self.CRIT_COLOUR}]")
 
     def write_file(self, staging_dir:Path, directory:Path, file_name, code:str):
         file_path = staging_dir / directory / file_name
@@ -91,8 +106,16 @@ class Interactions:
                                                              config_key="default_api_types").strip()
 
         default_app_name = self.config_manager.config_value(config_section="project",
-                                                             config_key="default_app_name",
-                                                             default='Undefined')
+                                                            config_key="default_app_name",
+                                                            default='Undefined')
+
+        trigger_owner = self.config_manager.config_value(config_section="misc",
+                                                         config_key="default_trigger_owner",
+                                                         default=None)
+
+        view_owner = self.config_manager.config_value(config_section="misc",
+                                                      config_key="default_view_owner",
+                                                      default=None)
 
         # Argument parser setup
         parser = argparse.ArgumentParser(description="Oracle Table API Generator")
@@ -114,6 +137,12 @@ class Interactions:
 
         parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names (default: all)",
                             default='%')
+
+        parser.add_argument('-to', '--trigger_owner', type=str, help="The schema in which owns the generated triggers.",
+                            default=trigger_owner)
+
+        parser.add_argument('-vo', '--view_owner', type=str, help="The schema in which owns the generated views.",
+                            default=view_owner)
 
         parser.add_argument('-u', '--db_username', type=str, help="Database username")
         parser.add_argument('-F', '--force_overwrite', action='store_true', default=False,

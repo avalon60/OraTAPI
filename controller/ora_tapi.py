@@ -33,17 +33,17 @@ class TAPIController:
 
         exec_start_timestamp = current_timestamp()
         self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} started at: {exec_start_timestamp}',
-                                msg_level=MsgLvl.info)
+                                msg_level=MsgLvl.highlight)
         epoc_start_ts = int(time.time())
         self.view.print_console(text=f'{prog_name}: Command line parameters:-',
-                                msg_level=MsgLvl.info)
-        self.view.print_console(msg_level=MsgLvl.info, text=f"=" * 80)
+                                msg_level=MsgLvl.highlight)
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 80)
         for key in sorted(options_dict.keys()):  # Sort the keys
             value = options_dict[key]
             if key == 'db_password':
                 value = '***************'
             self.view.print_console(msg_level=MsgLvl.info, text=f"{key:<40} = {value}")
-        self.view.print_console(msg_level=MsgLvl.info, text=f"=" * 80)
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 80)
 
 
         options_dict["config_file_path"] = config_file_path
@@ -68,6 +68,10 @@ class TAPIController:
         self.proj_home = project_home()
 
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+
+        self.skip_on_missing_table = self.config_manager.bool_config_value(config_section='behaviour',
+                                                                           config_key='skip_on_missing_table')
+
         self.col_auto_maintain_method = self.config_manager.config_value(config_section='api_controls',
                                                                          config_key='col_auto_maintain_method')
 
@@ -140,10 +144,10 @@ class TAPIController:
         exec_end_timestamp = current_timestamp()
         epoc_end_ts = int(time.time())
         self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
-                                msg_level=MsgLvl.info)
+                                msg_level=MsgLvl.highlight)
         elapsed_time = format_elapsed_time(start_ts=epoc_start_ts, end_ts=epoc_end_ts)
         self.view.print_console(text=f'Elapsed time: {elapsed_time}',
-                                msg_level=MsgLvl.info)
+                                msg_level=MsgLvl.highlight)
 
     @staticmethod
     def validate_api_types(api_types: list[str]) -> list[str]:
@@ -182,11 +186,17 @@ class TAPIController:
 
         for table_name in self.table_names_list:
             exists_status = self.check_table_exists(schema_name=self.schema_name, table_name=table_name)
-            if not exists_status:
+            if not exists_status and self.skip_on_missing_table:
                 self.view.print_console(text=f'Table {self.schema_name}.{table_name} does not exist - skipping!',
                                         msg_level=MsgLvl.warning)
+            elif not self.skip_on_missing_table:
+                self.view.print_console(text=f'Table {self.schema_name}.{table_name} does not exist - bailing out!',
+                                        msg_level=MsgLvl.error)
+                exit(1)
             else:
                 self.generate_api_for_table(table_name)
+                self.generate_triggers_for_table(table_name)
+                self.generate_views_for_table(table_name)
 
     def generate_api_for_table(self, table_name: str):
         """
@@ -222,6 +232,42 @@ class TAPIController:
         body_file_name = f"{tapi_name}{self.body_suffix}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
                              code=package_body_code)
+
+
+    def generate_triggers_for_table(self, table_name: str):
+        staging_realpath = self.staging_area_dir.resolve()
+        api_controller = ApiGenerator(
+            database_session=self.db_session,
+            schema_name=self.schema_name,
+            table_name=table_name,
+            config_manager=self.config_manager,
+            options_dict=self.options_dict,
+            trace=self.trace
+        )
+        triggers_dict = api_controller.gen_triggers()
+        for trigger_file_name, code in triggers_dict.items():
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger for {trigger_file_name.upper().replace('.SQL', '')}")
+            self.view.write_file(staging_dir=staging_realpath, directory=self.trigger_dir, file_name=trigger_file_name,
+                                 code=code)
+
+
+    def generate_views_for_table(self, table_name: str):
+        staging_realpath = self.staging_area_dir.resolve()
+        api_controller = ApiGenerator(
+            database_session=self.db_session,
+            schema_name=self.schema_name,
+            table_name=table_name,
+            config_manager=self.config_manager,
+            options_dict=self.options_dict,
+            trace=self.trace
+        )
+
+        views_dict = api_controller.gen_views()
+
+        for view_file_name, code in views_dict.items():
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating views for {view_file_name.upper().replace('.SQL', '')}")
+            self.view.write_file(staging_dir=staging_realpath, directory=self.view_dir, file_name=view_file_name,
+                                 code=code)
 
     def check_table_exists(self, schema_name, table_name) -> bool:
         """

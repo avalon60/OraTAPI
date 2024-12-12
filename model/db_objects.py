@@ -37,8 +37,6 @@ class Table:
         self.row_vers_column_name = config_manager.config_value(config_section="api_controls",
                                                                 config_key="row_vers_column_name")
 
-        self.tapi_incr_row_version = config_manager.config_value(config_section="api_controls",
-                                                                config_key="tapi_incr_row_version")
 
         self.in_out_column_list = []
         self.out_column_list = []
