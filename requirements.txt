@@ -1,4 +1,9 @@
 cffi==1.17.1
 cryptography==43.0.3
+markdown-it-py==3.0.0
+mdurl==0.1.2
 oracledb==2.5.0
 pycparser==2.22
+Pygments==2.18.0
+rich==13.9.4
+typing_extensions==4.12.2
