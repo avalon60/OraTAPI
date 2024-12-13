@@ -5,15 +5,15 @@
 #   Name: ora_tapi.sh
 #  Descr: Wrapper shell for calling OraTAPI/controller/ora_tapi.py
 #
-#    For help, use:  
+#    For help, use:
 #
 #      <OraTAPI-Home>/bin/ora_tapi.sh -h
 #
 #    For Mac or Linux, before the first execution, ensure you set the
 #    execute permissions:
 #
-#    cd bdds/bin
-#    chmod 750 apex_test_train.sh
+#    cd <OraTAPI-Home>/bin
+#    chmod 750 conn_mgr.sh
 #
 #------------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@
 realpath() {
   [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
-ENTRY_POINT="ora_tapi.py"
+ENTRY_POINT="conn_mgr.py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
 BIN_DIR="${PROJECT_DIR}/bin"
