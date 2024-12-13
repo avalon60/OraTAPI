@@ -129,7 +129,10 @@ def save_config(config):
 def main():
     ensure_config_file()
 
-    parser = argparse.ArgumentParser(description="Manage database connections in a configuration file.")
+    parser = argparse.ArgumentParser(description="Database connection manager.",
+                                     epilog="Used to create/edit/delete or store named database connections."
+                                            "Database connections are stored, encrypted, in a local store.")
+
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-c', '--create', action='store_true', help="Create a new connection.")
