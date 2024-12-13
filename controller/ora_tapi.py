@@ -13,10 +13,12 @@ from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
-import csv
+from view.ora_tapi_csv import CSVManager
 
 RUN_ID = int(time.time())
 prog_bin = Path(__file__).resolve().parent
+app_home = prog_bin.parent
+
 prog_name = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
@@ -29,6 +31,8 @@ class TAPIController:
         config_file_path = proj_home / 'config' / 'OraTAPI.ini'
         self.view = Interactions(controller=self, config_file_path=config_file_path)
         args_dict = self.view.args_dict
+
+        self.csv_manager = CSVManager(csv_pathname=app_home / 'OraTAPI.csv', config_file_path=config_file_path)
 
         options_dict = copy.deepcopy(args_dict)
 
@@ -49,7 +53,6 @@ class TAPIController:
 
         options_dict["config_file_path"] = config_file_path
         self.options_dict = options_dict
-        self.force_overwrite = options_dict['force_overwrite']
         self.api_types = self.validate_api_types(options_dict.get('api_types'))
         self.config_file_path = options_dict["config_file_path"]
         self.tapi_author = options_dict['tapi_author']
@@ -125,10 +128,6 @@ class TAPIController:
         self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
         self.view.print_console(msg_level=MsgLvl.info, text="Database session established successfully.")
 
-        self.force_overwrite = self.options_dict["force_overwrite"]
-        if self.force_overwrite:
-            self.view.print_console(msg_level=MsgLvl.warning, text=f'Forced overwrites enabled.')
-
         # Now check to see if we have a --save_connection flag submitted.
         if self.save_connection:
             user_security.update_named_connection(connection_name=self.conn_name,
@@ -186,6 +185,13 @@ class TAPIController:
         self.view.print_console(text=f'{table_count} tables selected.', msg_level=MsgLvl.info)
 
         for table_name in self.table_names_list:
+            package_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
+                                                                 property_selector='package')
+            view_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
+                                                                 property_selector='view')
+            trigger_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
+                                                                 property_selector='trigger')
+
             exists_status = self.check_table_exists(schema_name=self.schema_name, table_name=table_name)
             if not exists_status and self.skip_on_missing_table:
                 self.view.print_console(text=f'Table {self.schema_name}.{table_name} does not exist - skipping!',
@@ -195,9 +201,13 @@ class TAPIController:
                                         msg_level=MsgLvl.error)
                 exit(1)
             else:
-                self.generate_api_for_table(table_name)
-                self.generate_triggers_for_table(table_name)
-                self.generate_views_for_table(table_name)
+                if package_enabled:
+                    self.generate_api_for_table(table_name)
+                if view_enabled:
+                    self.generate_views_for_table(table_name)
+                if trigger_enabled:
+                    self.generate_triggers_for_table(table_name)
+
 
     def generate_api_for_table(self, table_name: str):
         """
