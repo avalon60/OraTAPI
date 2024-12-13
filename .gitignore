@@ -14,3 +14,15 @@ view/__pycache__/
 staging/package_body/
 
 staging/package_spec/
+
+controller/example.csv
+
+staging/view/countries_v.sql
+
+staging/view/job_history_v.sql
+
+staging/view/jobs_v.sql
+
+staging/view/locations_v.sql
+
+staging/view/regions_v.sql
