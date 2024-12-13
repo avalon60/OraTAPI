@@ -80,6 +80,16 @@ def dotted_print(text: str, pad_length: int = MESSAGE_PAD_LENGTH) -> None:
     sys.stdout.write(_message)
     sys.stdout.flush()
 
+def text_to_boolean(value: str) -> bool:
+    """
+    Converts a string value into a boolean based on common boolean representations.
+
+    :param value: str, The string value to convert (e.g., 'yes', 'no', 'true', 'false', etc.)
+    :return: bool, The corresponding boolean value
+    """
+    # List of strings considered as "True" or "False"
+    return value.strip().lower() in ['yes', 'true', '1']
+
 def escaped_md_chars(log_message: str) -> str:
     """
     Escapes special characters like '<' and '>' in a log message for markdown output.
