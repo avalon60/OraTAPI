@@ -13,6 +13,7 @@ from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
+import csv
 
 RUN_ID = int(time.time())
 prog_bin = Path(__file__).resolve().parent
@@ -246,7 +247,7 @@ class TAPIController:
         )
         triggers_dict = api_controller.gen_triggers()
         for trigger_file_name, code in triggers_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger for {trigger_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger script for {trigger_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.trigger_dir, file_name=trigger_file_name,
                                  code=code)
 
@@ -265,7 +266,7 @@ class TAPIController:
         views_dict = api_controller.gen_views()
 
         for view_file_name, code in views_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating views for {view_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating view view script for {view_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.view_dir, file_name=view_file_name,
                                  code=code)
 
