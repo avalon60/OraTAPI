@@ -294,7 +294,7 @@ class ApiGenerator:
         :return: """
         block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
 
-        valid_operations_list = [ "create", "modify", "merge_create", "merge_modify"]
+        valid_operations_list = [ "create", "modify", "merge_create", "merge_modify", "select"]
         valid_operations = ', '.join(valid_operations_list)
         if operation_type not in valid_operations_list:
             message = f'Invalid operation type, "{operation_type}". Valid operation types: {valid_operations}'
@@ -330,6 +330,8 @@ class ApiGenerator:
                 assignment = self.column_update_expressions[column_name]
             if not assignment:
                 assignment = f'src.{column_name_lc}'
+        elif operation_type == 'select':
+            assignment = f'p_{column_name_lc}' if signature_type == "coltype" else f'p_row.{column_name_lc}'
 
         return assignment
 
@@ -542,7 +544,10 @@ class ApiGenerator:
 
         return columns_out
 
-    def _parameter_list_string(self, signature_type:str, operation_type:str = 'create', skip_list: list = None, soft_tabs:int = 4)-> str:
+    def _parameter_list_string(self, signature_type:str,
+                               operation_type:str = 'select',
+                               skip_list: list = None,
+                               soft_tabs:int = 4) -> str:
         """Returns a line separated (\n) list of select columns"""
 
         if skip_list is None:
@@ -1636,6 +1641,7 @@ class ApiGenerator:
         column_list_string_lc = self._column_list_string(soft_tabs=3)
 
         parameter_list_string_lc = self._parameter_list_string(signature_type=signature_type,
+                                                               operation_type='select',
                                                                soft_tabs=3)
         parameter_list_string = parameter_list_string_lc.upper()
 
