@@ -12,8 +12,8 @@
 #    For Mac or Linux, before the first execution, ensure you set the
 #    execute permissions:
 #
-#    cd bdds/bin
-#    chmod 750 apex_test_train.sh
+#    cd <OraTAPI-Home>/bin
+#    chmod 750 ora_tapi.sh
 #
 #------------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@
 realpath() {
   [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
-
+ENTRY_POINT="ora_tapi.py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
 BIN_DIR="${PROJECT_DIR}/bin"
@@ -75,5 +75,5 @@ export PYTHONPATH=${PROJECT_DIR}:${LIBS}:${CTL}:${VIEW}:${MDL}${PYTHONPATH}
 # echo "PYTHONPATH: $PYTHONPATH"
 # Execute the Python program
 
-# echo "$PYTHON_INTERPRETER" "${CONTROL_DIR}/ora_tapi.py" "$@"
-"$PYTHON_INTERPRETER" "${CONTROL_DIR}/ora_tapi.py" "$@"
+# echo "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"
+"$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"
