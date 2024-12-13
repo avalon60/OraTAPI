@@ -32,8 +32,6 @@ class TAPIController:
         self.view = Interactions(controller=self, config_file_path=config_file_path)
         args_dict = self.view.args_dict
 
-        self.csv_manager = CSVManager(csv_pathname=app_home / 'OraTAPI.csv', config_file_path=config_file_path)
-
         options_dict = copy.deepcopy(args_dict)
 
         exec_start_timestamp = current_timestamp()
@@ -72,6 +70,12 @@ class TAPIController:
         self.proj_home = project_home()
 
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+        csv_path = self.config_manager.config_value(config_section='file_controls',
+                                                    config_key='ora_tapi_csv_dir',
+                                                    default=str(app_home / 'OraTAPI.csv'))
+        csv_path = Path(csv_path)
+
+        self.csv_manager = CSVManager(csv_pathname=csv_path / 'OraTAPI.csv', config_file_path=config_file_path)
 
         self.skip_on_missing_table = self.config_manager.bool_config_value(config_section='behaviour',
                                                                            config_key='skip_on_missing_table')

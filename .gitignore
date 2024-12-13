@@ -40,3 +40,5 @@ staging/trigger/jobs_biu.sql
 staging/trigger/locations_biu.sql
 
 staging/trigger/regions_biu.sql
+
+*.sql
