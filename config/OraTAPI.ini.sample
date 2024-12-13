@@ -1,17 +1,18 @@
 [project]
 default_app_name = Human Resources
 
-[behaviour]
-# skip_on_missing_table: If set to true and a specified table is not found, then report the table as missing
-# but continue processing. If set to false, and error is reported and processing is terminated. Only pertinent
-# when using the -t/--table_names argument.
-skip_on_missing_table = false
 
 [copyright]
 # company_name: Modify company name to reflect your company
 company_name = Clive`s Software Emporium
 # copyright_year: set to a static year or the word current, to reflect the date the TAPI was generated.
 copyright_year = current
+
+[behaviour]
+# skip_on_missing_table: If set to true and a specified table is not found, then report the table as missing
+# but continue processing. If set to false, and error is reported and processing is terminated. Only pertinent
+# when using the -t/--table_names argument.
+skip_on_missing_table = true
 
 [formatting]
 indent_spaces = 3
@@ -31,13 +32,6 @@ body_dir = package_body
 trigger_dir = trigger
 # Set the view_dir property to have any triggers generated from the view templates.
 view_dir = view
-
-[misc]
-trigger_owner = aut
-view_owner = aut
-
-# The view_name_suffix is appended to the end of the derived view name
-view_name_suffix = _v
 
 [api_controls]
 # API naming properties follow. Set these to the preferred procedure names, of the APIs
@@ -75,7 +69,7 @@ include_defaults = true
 # If the default is detected, then the column value in the database is preserved. This provides a mechanism of
 # avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
 # signature_types property).
-noop_column_string = #NO~OP#
+# noop_column_string = #NO~OP#
 
 # default_api_types: Specifies the default of which APIs to include to the package.
 # Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
@@ -85,3 +79,20 @@ default_api_types = insert, select, update, delete, upsert, merge
 # return_pk_columns: If set to true, causes primary/unique keys to be in/out parameters. Returning the values.
 # This applies to APIs which modify data.
 return_key_columns = true
+
+[misc]
+# Set default owners. These can be overridden on the command line.
+default_trigger_owner = aut
+default_view_owner = aut
+
+# The view_name_suffix is appended to the end of the derived view name
+view_name_suffix = _v
+
+[console]
+INFO_COLOUR = white
+WARN_COLOUR = bold yellow
+ERR_COLOUR = bold red
+CRIT_COLOUR = bold red
+HIGH_COLOUR = bold white
+# Set colour_console to false, to disable colour output.
+colour_console = true
