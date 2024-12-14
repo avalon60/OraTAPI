@@ -14,7 +14,6 @@ class Interactions:
     def __init__(self, controller, config_file_path: Path):
         self.controller = controller
         self.console_manager = ConsoleMgr(config_file_path=config_file_path)
-        self.console_manager = ConsoleMgr(config_file_path=config_file_path)
         self.config_file_path = config_file_path
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
 
@@ -30,7 +29,6 @@ class Interactions:
         :param text: str, The message text to print
         :param msg_level: MsgLevel, The level of the message
         """
-        self.console_manager.print_console(text=text, msg_level=msg_level)
         self.console_manager.print_console(text=text, msg_level=msg_level)
 
     def write_file(self, staging_dir:Path, directory:Path, file_name, code:str):
