@@ -45,7 +45,7 @@ class ConfigManager:
         return self.config.get(config_section, config_key)
 
     def bool_config_value(self, config_section: str, config_key: str,
-                     default: str = None) -> bool:
+                          default: bool = None) -> bool:
         """
         Retrieve a value from a user configparser file.
 
