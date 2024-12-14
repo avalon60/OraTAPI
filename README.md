@@ -14,6 +14,8 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 
 
 - **Metadata-Driven**: Automatically generates PL/SQL APIs using Oracle database metadata.
+- **Table Triggers**: Generates customisable table level trigger code.
+- **Views**: Generates view DDL scripts.
 - **Customizable APIs**: Define API names, signatures, and behavior through a configuration file.
 - **Optimistic Locking Support**: Includes `row_version` support for concurrency control.
 - **Column-Specific Logic**: Exclude trigger-maintained columns and manage column defaults efficiently.
@@ -72,25 +74,26 @@ Run OraTAPI from the command line with the desired options.
 
 ### Basic Example:
 ```bash
-python oratapi.py -P APP_OWNER -S HR -t EMPLOYEES,DEPARTMENTS
+ora_tapi.sh -P APP_OWNER -S HR -t EMPLOYEES,DEPARTMENTS
 ```
 
 ### Full Command-Line Arguments:
 | Argument                     | Description                                                                                 | Default                  |
 |------------------------------|---------------------------------------------------------------------------------------------|--------------------------|
-| `-A`, `--app_name`           | Application name included in the package header.                                            | `Undefined`             |
-| `-a`, `--tapi_author`        | Author name for the package header.                                                        | `OraTAPI generator`     |
-| `-c`, `--conn_name`          | Connection name for saved configuration.                                                   |                          |
-| `-d`, `--dsn`                | Database Data Source Name (TNS entry).                                                     |                          |
-| `-g`, `--staging_area_dir`   | Directory for the staging area.                                                            | `./staging`             |
+| `-A`, `--app_name`           | Application name included in the package header.                                            | `Undefined`              |
+| `-a`, `--tapi_author`        | Author name for the package header.                                                         | `OraTAPI generator`      |
+| `-c`, `--conn_name`          | Connection name for saved configuration.                                                    |                          |
+| `-d`, `--dsn`                | Database Data Source Name (TNS entry).                                                      |                          |
+| `-g`, `--staging_area_dir`   | Directory for the staging area.                                                             | `./staging`              |
 | `-p`, `--db_password`        | Database password.                                                                          |                          |
 | `-P`, `--package_owner`      | Schema to own the generated TAPI packages (required).                                       |                          |
-| `-s`, `--save_connection`    | Save connection details for future use.                                                    | `False`                 |
-| `-S`, `--schema_name`        | Schema containing the target tables (required).                                            |                          |
-| `-t`, `--table_names`        | Comma-separated list of tables (use `%` for all tables).                                   | `%`                      |
+| `-s`, `--save_connection`    | Save connection details for future use.                                                     | `False`                  |
+| `-S`, `--schema_name`        | Schema containing the target tables (required).                                             |                          |
+| `-t`, `--table_names`        | Comma-separated list of tables (use `%` for all tables).                                    | `%`                      |
+| `-to`, `--trigger_owner`     | The schema in which the generated scripts should create the triggers.                       |                          |
+| `-vo`, `--view_owner`        | The schema in which the generated scripts should create the views.                          |                          |
 | `-u`, `--db_username`        | Database username.                                                                          |                          |
-| `-F`, `--force_overwrite`    | Overwrite existing files in the staging area.                                              | `False`                 |
-| `-T`, `--api_types`          | Comma-separated list of API types (e.g., `create, read`).                                  | Configured default types |
+| `-T`, `--api_types`          | Comma-separated list of API types (e.g., `create, read`).                                   | Configured default types |
 
 ---
 
@@ -99,6 +102,7 @@ python oratapi.py -P APP_OWNER -S HR -t EMPLOYEES,DEPARTMENTS
 Generated files are written to the staging area and organized into subdirectories:
 - **Package Specification (`spec_dir`)**: Contains `.sql` files defining the PL/SQL package interface.
 - **Package Body (`body_dir`)**: Contains `.sql` files implementing the PL/SQL package logic.
+- **View (`body_dir`)**: Contains `.sql` files implementing the PL/SQL package logic.
 
 Each API package is customized based on the `.ini` configuration and command-line options.
 
