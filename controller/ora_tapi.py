@@ -45,7 +45,7 @@ class TAPIController:
             value = options_dict[key]
             if key == 'db_password':
                 value = '***************'
-            self.view.print_console(msg_level=MsgLvl.info, text=f"{key:<40} = {value}")
+            self.view.print_console(msg_level=MsgLvl.highlight, text=f"{key:<40} = {value}")
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 80)
 
 
@@ -60,7 +60,7 @@ class TAPIController:
         self.package_owner = options_dict['package_owner']
         self.dsn = options_dict['dsn']
         self.save_connection = options_dict['save_connection']
-        self.schema_name = str(options_dict['schema_name']).upper()
+        self.table_owner = str(options_dict['table_owner']).upper()
         self.table_names = str(options_dict['table_names']).upper()
         self.conn_name = options_dict['conn_name']
         self.staging_area_dir = Path(options_dict['staging_area_dir'])
@@ -179,7 +179,7 @@ class TAPIController:
         table_list = []
         if self.table_names_list[0] == '%':
             table_list_sql = 'select table_name from all_tables where owner = upper(:schema_name)'
-            binds = {'schema_name': self.schema_name}
+            binds = {'schema_name': self.table_owner}
             result_list = self.db_session.fetch_as_lists(sql_query=table_list_sql, bind_mappings=binds)
             for row in result_list:
                 table_list.append(row[0])
@@ -196,12 +196,12 @@ class TAPIController:
             trigger_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
                                                                  property_selector='trigger')
 
-            exists_status = self.check_table_exists(schema_name=self.schema_name, table_name=table_name)
+            exists_status = self.check_table_exists(schema_name=self.table_owner, table_name=table_name)
             if not exists_status and self.skip_on_missing_table:
-                self.view.print_console(text=f'Table {self.schema_name}.{table_name} does not exist - skipping!',
+                self.view.print_console(text=f'Table {self.table_owner}.{table_name} does not exist - skipping!',
                                         msg_level=MsgLvl.warning)
             elif not self.skip_on_missing_table:
-                self.view.print_console(text=f'Table {self.schema_name}.{table_name} does not exist - bailing out!',
+                self.view.print_console(text=f'Table {self.table_owner}.{table_name} does not exist - bailing out!',
                                         msg_level=MsgLvl.error)
                 exit(1)
             else:
@@ -222,7 +222,7 @@ class TAPIController:
         table_name_lc = table_name.lower()
         api_controller = ApiGenerator(
             database_session=self.db_session,
-            schema_name=self.schema_name,
+            table_owner=self.table_owner,
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,
@@ -253,7 +253,7 @@ class TAPIController:
         staging_realpath = self.staging_area_dir.resolve()
         api_controller = ApiGenerator(
             database_session=self.db_session,
-            schema_name=self.schema_name,
+            table_owner=self.table_owner,
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,
@@ -270,7 +270,7 @@ class TAPIController:
         staging_realpath = self.staging_area_dir.resolve()
         api_controller = ApiGenerator(
             database_session=self.db_session,
-            schema_name=self.schema_name,
+            table_owner=self.table_owner,
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,

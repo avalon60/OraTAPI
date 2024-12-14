@@ -1,7 +1,6 @@
 [project]
 default_app_name = Human Resources
 
-
 [copyright]
 # company_name: Modify company name to reflect your company
 company_name = Clive`s Software Emporium
@@ -32,6 +31,10 @@ body_dir = package_body
 trigger_dir = trigger
 # Set the view_dir property to have any triggers generated from the view templates.
 view_dir = view
+
+# Set the directory pathname to locate the OraTAPI.csv file. If unset it is assumed to be located under the OraTAPI
+# directory. This file is used to fine control which files should be generated.
+ora_tapi_csv_dir =
 
 [api_controls]
 # API naming properties follow. Set these to the preferred procedure names, of the APIs
@@ -68,8 +71,9 @@ include_defaults = true
 # noop_column_string: If set, parameter defaults for non-key column parameters are defined as <no_column_op_string>.
 # If the default is detected, then the column value in the database is preserved. This provides a mechanism of
 # avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
-# signature_types property).
-# noop_column_string = #NO~OP#
+# signature_types property). Set to auto, to have a generated GUID.
+noop_column_string = auto
+#noop_column_string = #NO~OP#
 
 # default_api_types: Specifies the default of which APIs to include to the package.
 # Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
@@ -80,10 +84,19 @@ default_api_types = insert, select, update, delete, upsert, merge
 # This applies to APIs which modify data.
 return_key_columns = true
 
+# Include p_commit boolean parameter (in). Should be set to true or false. Typically this would be set to false.
+include_commit = false
+
 [misc]
 # Set default owners. These can be overridden on the command line.
-default_trigger_owner = aut
+# default_package_owner can be overridden using the -po / --package_owner argument.
+default_package_owner = aut
+
+# default_view_owner can be overridden using the -vo / --view_owner argument.
 default_view_owner = aut
+
+# default_trigger_owner can be overridden using the -to / --trigger_owner argument.
+default_trigger_owner = aut
 
 # The view_name_suffix is appended to the end of the derived view name
 view_name_suffix = _v

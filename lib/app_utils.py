@@ -11,6 +11,9 @@ from os import get_terminal_size, system
 from datetime import datetime
 from platform import platform
 import uuid
+import random
+import string
+
 
 MESSAGE_RIGHT_PAD=15
 MESSAGE_MIN_LEN=40
@@ -167,6 +170,43 @@ def strip_log_ansi(log_text):
     # ANSI escape codes pattern
     ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', log_text)
+
+
+import string
+import random
+
+
+def random_string(length: int) -> str:
+    """
+    Generate a random string of the specified length without single quotes.
+
+    :param length: The length of the string to generate.
+    :type length: int
+    :return: A randomly generated string.
+    :rtype: str
+    """
+    if length < 1:
+        raise ValueError("Length must be at least 1.")
+
+    # Combine lowercase, uppercase letters, and digits (explicitly excluding single quotes)
+    characters = (string.ascii_letters + string.digits).replace("'", "~")
+
+    # Combine lowercase, uppercase letters, and digits (explicitly excluding | characters)
+    characters = (string.ascii_letters + string.digits).replace("|", "@")
+
+    # Generate a random string
+    return ''.join(random.choices(characters, k=length))
+
+
+def enhanced_guid(extend_by:int = 4) -> str:
+
+    random_string1 = random_string(length=extend_by)
+    guid = sys_guid()
+    random_string2 = random_string(length=extend_by)
+    _enhanced_guid = random_string1 + guid + random_string2
+
+    return _enhanced_guid
+
 
 def sys_guid() -> str:
     """

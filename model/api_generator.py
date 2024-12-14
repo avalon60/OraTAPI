@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict
 from copy import deepcopy
 from itertools import chain
-from lib.app_utils import sys_guid
+from lib.app_utils import enhanced_guid, random_string
 
 
 # Define our substitution placeholder string for indent spaces.
@@ -58,14 +58,14 @@ def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces
 class ApiGenerator:
     def __init__(self,
                  database_session: DBSession,
-                 schema_name: str,
+                 table_owner: str,
                  table_name: str,
                  config_manager: ConfigManager,
                  options_dict: dict,
                  trace: bool = False):
         """
         :param database_session: A DBSession instance for connecting to the database.
-        :param schema_name: Schema Name of the table.
+        :param table_owner: Schema Name of the table.
         :param table_name: Table name of the table for which we need to generate a TAPI
         :param config_manager: A ConfigManager as established by the controller.
         :param options_dict: The dictionary of our command line options.
@@ -78,12 +78,12 @@ class ApiGenerator:
         self.trigger_template_dir = self.proj_home / 'templates' / 'misc' / 'trigger'
         self.options_dict = deepcopy(options_dict)
         self.config_manager = config_manager
-        self.schema_name = schema_name
+        self.table_owner = table_owner
         package_owner_lc = options_dict["package_owner"].lower()
 
 
         self.config_manager = ConfigManager(config_file_path=proj_config_file)
-        self.table = Table(database_session=database_session, schema_name=self.schema_name ,
+        self.table = Table(database_session=database_session, table_owner=self.table_owner,
                            table_name=table_name, config_manager=config_manager, trace=trace)
 
         auto_maintained_cols = self.config_manager.config_value(config_section="api_controls",
@@ -172,16 +172,21 @@ class ApiGenerator:
             self.global_substitutions["copyright_year"] = current_date
 
         if self.noop_column_string == 'auto':
-            self.noop_column_string = f"~{sys_guid()}~"
+            self.noop_column_string = f"~{enhanced_guid()}~"
+            self.global_substitutions["noop_column_string"] = self.noop_column_string
+
+        if self.noop_column_string == 'dynamic':
+            rand_text1 = random_string(length=8)
+            rand_text2 = random_string(length=8)
+            self.noop_column_string = f"~{rand_text1}' || sys_guid() || '~  ' || sys_guid() || '{rand_text2}~"
             self.global_substitutions["noop_column_string"] = self.noop_column_string
 
         self.global_substitutions["spec_suffix"] = self.sig_suffix
         self.global_substitutions["body_suffix"] = self.body_suffix
         self.global_substitutions["run_date_time"] = current_date
         self.global_substitutions["table_name_lc"] = table_name.lower()
-        self.global_substitutions["schema_name_lc"] = self.schema_name.lower()
-        self.global_substitutions["table_owner_lc"] = self.schema_name.lower()
-        self.global_substitutions["table_owner"] = self.schema_name
+        self.global_substitutions["table_owner_lc"] = self.table_owner.lower()
+        self.global_substitutions["table_owner"] = self.table_owner
         self.global_substitutions["tapi_author"] = options_dict["tapi_author"]
         self.global_substitutions["tapi_author_lc"] = options_dict["tapi_author"].lower()
         self.global_substitutions["view_owner_lc"] = options_dict["view_owner"].lower()
@@ -192,7 +197,7 @@ class ApiGenerator:
         self.global_substitutions["view_name_suffix"] = self.view_name_suffix
 
         self.table = Table(database_session=database_session,
-                           schema_name=schema_name,
+                           table_owner=table_owner,
                            table_name=table_name,
                            config_manager=config_manager,
                            trace=trace)
@@ -273,6 +278,9 @@ class ApiGenerator:
         for columns where the parameter is defaulted to the noop_column_string property setting in OraTAPI.ini."""
         if self.table.column_property_value(column_name=column_name, property_name='default_value'):
             return ""
+        if self.table.column_property_value(column_name=column_name, property_name='data_type') not in ('VARCHAR2', 'CLOB'):
+            return ''
+
         block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
         if column_name.upper() in block_list:
             return ""
@@ -730,7 +738,7 @@ class ApiGenerator:
 
         comment = "\n\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
-        comment += f"{STAB}-- {tapi_description} TAPI for: {self.schema_name.lower()}.{self.table.table_name.lower()}\n"
+        comment += f"{STAB}-- {tapi_description} TAPI for: {self.table_owner.lower()}.{self.table.table_name.lower()}\n"
         comment += f"{STAB}" + "-" * dash_line + "\n"
         return comment
 
@@ -1127,7 +1135,9 @@ class ApiGenerator:
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
             block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
-            if self.noop_column_string and column_name not in block_list:
+
+            data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
+            if self.noop_column_string and column_name not in block_list and data_type in ('VARCHAR2', 'CLOB'):
                 param = f"{param:<75}"
                 param += f"{STAB} := NOOP"
 
@@ -1985,7 +1995,7 @@ class ApiGenerator:
         )
 
         if self.noop_column_string:
-            noop_constant = "\n\n%STAB%NOOP%STAB%constant varchar2(32) := '%noop_column_string%';"
+            noop_constant = "\n\n%STAB%NOOP%STAB%constant varchar2(128) := '%noop_column_string%';"
             package_header_template += noop_constant
 
         package_footer_template = self._package_api_template(

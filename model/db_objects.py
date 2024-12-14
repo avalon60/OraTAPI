@@ -11,20 +11,20 @@ from model.session_manager import DBSession
 
 
 class Table:
-    def __init__(self, database_session: DBSession, schema_name: str, table_name: str, config_manager: ConfigManager, trace: bool = False):
+    def __init__(self, database_session: DBSession, table_owner: str, table_name: str, config_manager: ConfigManager, trace: bool = False):
         """
         Initialize the Table object.
 
         :param database_session: A database session object connected to Oracle.
         :type database_session: DBSession
-        :param schema_name: The schema name of the table.
-        :type schema_name: str
+        :param table_owner: The schema name of the table.
+        :type table_owner: str
         :param table_name: The name of the table.
         :type table_name: str
         :param trace: Enables tracing/debugging if True.
         :type trace: bool
         """
-        self.schema_name = schema_name.upper()
+        self.schema_name = table_owner.upper()
         self.table_name = table_name.upper()
         self.table_name_lc = table_name.lower()
         self.trace = trace
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     db_session = DBSession(dsn=dsn, db_username=username, db_password=password)
 
     # Instantiate the Table class
-    table = Table(database_session=db_session, schema_name="AUT", table_name="EMPLOYEES", trace=False)
+    table = Table(database_session=db_session, table_owner="AUT", table_name="EMPLOYEES", trace=False)
     metadata = table.tab_col_metadata()
     print(metadata)
     # Check if a column is keyed
