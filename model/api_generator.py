@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict
 from copy import deepcopy
 from itertools import chain
+from lib.app_utils import sys_guid
 
 
 # Define our substitution placeholder string for indent spaces.
@@ -114,9 +115,13 @@ class ApiGenerator:
         self.return_key_columns = self.config_manager.bool_config_value(config_section="api_controls",
                                                                    config_key="return_key_columns")
 
+        self.include_commit = self.config_manager.bool_config_value(config_section="api_controls",
+                                                                    config_key="include_commit")
+
         self.noop_column_string = self.config_manager.config_value(config_section="api_controls",
                                                                    config_key="noop_column_string",
                                                                    default='')
+
 
         self.row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
                                                                      config_key="row_vers_column_name",
@@ -155,8 +160,6 @@ class ApiGenerator:
         # We will use these to inject values into the templates.
         self.global_substitutions = self.config_manager.config_dictionary()
 
-        # self.include_rowid = self.global_substitutions["include_rowid"]
-        self.include_rowid = False
         # Set soft tabs spaces for indent
         self.global_substitutions["STAB"] = ' ' * int(self.global_substitutions["indent_spaces"])
         self.global_substitutions["package_owner_lc"] = package_owner_lc
@@ -167,6 +170,10 @@ class ApiGenerator:
         # If not set as "current_date", we assume it's a static date.
         if self.global_substitutions["copyright_year"] == "current":
             self.global_substitutions["copyright_year"] = current_date
+
+        if self.noop_column_string == 'auto':
+            self.noop_column_string = f"~{sys_guid()}~"
+            self.global_substitutions["noop_column_string"] = self.noop_column_string
 
         self.global_substitutions["spec_suffix"] = self.sig_suffix
         self.global_substitutions["body_suffix"] = self.body_suffix
@@ -183,10 +190,6 @@ class ApiGenerator:
         self.global_substitutions["trigger_owner"] = options_dict["trigger_owner"]
         self.global_substitutions["view_name_suffix_lc"] = self.view_name_suffix.lower()
         self.global_substitutions["view_name_suffix"] = self.view_name_suffix
-
-
-
-
 
         self.table = Table(database_session=database_session,
                            schema_name=schema_name,
@@ -222,7 +225,6 @@ class ApiGenerator:
             expression_file = Path(expression_path).name
             messages.append(f"Loading column expression template file: inserts/{expression_file}")
             self.column_insert_expressions[expression_file.replace('.tpt', '')] = expression
-
 
         # Filter out any files that might accidentally have uppercase characters
         update_expression_files = [
@@ -264,7 +266,6 @@ class ApiGenerator:
             message += 'Template files should be placed under templates/column_expressions/updates'
             raise FileNotFoundError(message)
 
-
         return messages
 
     def _noop_assignment(self, column_name, soft_tabs:int) -> str:
@@ -280,7 +281,7 @@ class ApiGenerator:
 
         tabs = "%STAB%" * soft_tabs
         noop_assignment = f"case\n"
-        noop_assignment += f"{tabs}%STAB%  when p_{column_name_lc} = '{self.noop_column_string}' then {column_name_lc}\n"
+        noop_assignment += f"{tabs}%STAB%  when p_{column_name_lc} = NOOP then {column_name_lc}\n"
         noop_assignment += f"{tabs}%STAB%  else p_{column_name_lc}\n"
         noop_assignment += f"{tabs}  end"
 
@@ -775,18 +776,16 @@ class ApiGenerator:
             in_out = f'{STAB}in out'
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value:
-                param += f'{STAB} := {default_value}'
             signature += param + '\n'
             param = ''
 
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
+        if self.include_commit:
+            leader = f', '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}rowid'
+            param += f'{STAB}boolean'
             signature += param + '\n'
 
         if package_spec:
@@ -843,19 +842,14 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             signature += param + '\n'
 
         if package_spec:
@@ -902,20 +896,22 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
         leader = f', '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
         signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
 
         if package_spec:
             signature += f'{STAB})'
@@ -998,20 +994,6 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
 
         if package_spec:
             signature += f'{STAB})'
@@ -1055,14 +1037,6 @@ class ApiGenerator:
 
             signature += param + '\n'
             param = ''
-
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
 
         leader = f', '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
@@ -1155,24 +1129,19 @@ class ApiGenerator:
             block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
             if self.noop_column_string and column_name not in block_list:
                 param = f"{param:<75}"
-                param += f"{STAB} := '{self.noop_column_string}'"
+                param += f"{STAB} := NOOP"
 
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             signature += param + '\n'
 
         if package_spec:
@@ -1217,20 +1186,22 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
         leader = f', '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
         signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
 
         if package_spec:
             signature += f'{STAB})'
@@ -1316,19 +1287,14 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             signature += param + '\n'
 
         if package_spec:
@@ -1372,20 +1338,22 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
         leader = f', '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
         signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
 
         if package_spec:
             signature += f'{STAB})'
@@ -1473,19 +1441,14 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             signature += param + '\n'
 
         if package_spec:
@@ -1530,20 +1493,22 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_rowid:
-            leader = f',{STAB}' if self.table.col_count > 1 else f' {STAB}'
-            param = f'{STAB}{STAB}{leader}p_{"rowid".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
-            param += in_out
-            param += f'{STAB}rowid'
-            signature += param + '\n'
-
         leader = f', '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
         signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
 
         if package_spec:
             signature += f'{STAB})'
@@ -1595,6 +1560,8 @@ class ApiGenerator:
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"insert")
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = []
         if self.col_auto_maintain_method == 'trigger':
@@ -1671,6 +1638,8 @@ class ApiGenerator:
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"update")
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = []
         if self.col_auto_maintain_method == 'trigger':
@@ -1725,6 +1694,9 @@ class ApiGenerator:
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"upsert")
+
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = []
         if self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
@@ -1783,6 +1755,9 @@ class ApiGenerator:
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"delete")
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
+
         procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
         procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
         key_predicates_string = self._predicates_string(signature_type='coltype', soft_tabs=3)
@@ -1817,7 +1792,8 @@ class ApiGenerator:
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"merge")
 
-
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = self.auto_maintained_cols[:]
         skip_column_list.append(self.table.row_vers_column_name)
@@ -1925,6 +1901,7 @@ class ApiGenerator:
             template_type='body',
             template_name="package_header"
         )
+
         package_footer_template = self._package_api_template(
             template_category="packages",
             template_type='body',
@@ -2006,6 +1983,11 @@ class ApiGenerator:
             template_type='spec',
             template_name="package_header"
         )
+
+        if self.noop_column_string:
+            noop_constant = "\n\n%STAB%NOOP%STAB%constant varchar2(32) := '%noop_column_string%';"
+            package_header_template += noop_constant
+
         package_footer_template = self._package_api_template(
             template_category="packages",
             template_type='spec',
@@ -2082,6 +2064,34 @@ class ApiGenerator:
             view_code_dict[source_file_name] = view_template
 
         return view_code_dict
+
+    def _inject_commit_logic(self, procedure_template: str) -> str:
+        """
+        Injects commit logic into the given procedure template before the line containing "%STAB%end".
+
+        :param procedure_template: str, the input multi-line template string
+        :return: str, the modified template with injected commit logic
+        """
+        # Commit logic to be injected
+        inject_string = "%STAB%%STAB%if p_commit\n"
+        inject_string += "%STAB%%STAB%then\n"
+        inject_string += "%STAB%%STAB%%STAB%commit;\n"
+        inject_string += "%STAB%%STAB%end if;\n"
+
+        # Split the template into lines
+        lines = procedure_template.splitlines()
+
+        # Find the index of the line containing "%STAB%end"
+        for i, line in enumerate(lines):
+            if line.strip().startswith("%STAB%end"):
+                # Insert the inject_string before this line
+                lines.insert(i, inject_string)
+                break
+
+        # Reassemble the template
+        injected_template = "\n".join(lines)
+
+        return injected_template
 
     def gen_triggers(self):
         # Load the package header and footer templates
