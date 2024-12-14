@@ -10,6 +10,7 @@ from pathlib import Path
 from os import get_terminal_size, system
 from datetime import datetime
 from platform import platform
+import uuid
 
 MESSAGE_RIGHT_PAD=15
 MESSAGE_MIN_LEN=40
@@ -166,6 +167,15 @@ def strip_log_ansi(log_text):
     # ANSI escape codes pattern
     ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', log_text)
+
+def sys_guid() -> str:
+    """
+    Generates a GUID equivalent to Oracle's SYS_GUID().
+
+    :return: str, a globally unique identifier in the same hexadecimal format as SYS_GUID.
+    """
+    # Generate a UUID and convert it to uppercase hexadecimal string without dashes
+    return uuid.uuid4().hex.upper()
 
 
 if __name__ == '__main__':
