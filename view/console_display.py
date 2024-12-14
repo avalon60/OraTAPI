@@ -67,3 +67,12 @@ class ConsoleMgr:
 
     def print_critical(self, text: str):
         self.console.print(f"[{self.CRIT_COLOUR}][CRITICAL]: {text} [/{self.CRIT_COLOUR}]")
+
+if __name__ == "__main__":
+    config_file = Path('../config/OraTAPI.ini.sample')
+    console_manager = ConsoleMgr(config_file_path=config_file)
+    console_manager.print_console(text='Test INFO output', msg_level=MsgLvl.info)
+    console_manager.print_console(text='Test WARNING output', msg_level=MsgLvl.warning)
+    console_manager.print_console(text='Test ERROR output', msg_level=MsgLvl.error)
+    console_manager.print_console(text='Test CRITICAL output', msg_level=MsgLvl.critical)
+    console_manager.print_console(text='Test HIGHLIGHT output', msg_level=MsgLvl.highlight)

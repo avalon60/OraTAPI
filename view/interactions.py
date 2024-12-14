@@ -6,9 +6,6 @@ import argparse
 
 from lib.config_manager import ConfigManager
 from pathlib import Path
-from enum import Enum
-from rich import print
-from rich.console import Console
 
 from view.console_display import MsgLvl, ConsoleMgr
 
@@ -17,8 +14,10 @@ class Interactions:
     def __init__(self, controller, config_file_path: Path):
         self.controller = controller
         self.console_manager = ConsoleMgr(config_file_path=config_file_path)
+        self.console_manager = ConsoleMgr(config_file_path=config_file_path)
         self.config_file_path = config_file_path
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+
 
         args = self.parse_arguments()
         self.args_dict = vars(args)
@@ -32,10 +31,10 @@ class Interactions:
         :param msg_level: MsgLevel, The level of the message
         """
         self.console_manager.print_console(text=text, msg_level=msg_level)
+        self.console_manager.print_console(text=text, msg_level=msg_level)
 
     def write_file(self, staging_dir:Path, directory:Path, file_name, code:str):
         file_path = staging_dir / directory / file_name
-        relative_path = directory / file_name
         try:
             with open(file_path, 'w') as f:
                 f.write(code)
@@ -58,11 +57,20 @@ class Interactions:
                                                             config_key="default_app_name",
                                                             default='Undefined')
 
-        trigger_owner = self.config_manager.config_value(config_section="misc",
+        table_owner = self.config_manager.config_value(config_section="schemas",
+                                                         config_key="default_table_owner",
+                                                         default=None)
+
+
+        package_owner = self.config_manager.config_value(config_section="schemas",
+                                                         config_key="default_package_owner",
+                                                         default=None)
+
+        trigger_owner = self.config_manager.config_value(config_section="schemas",
                                                          config_key="default_trigger_owner",
                                                          default=None)
 
-        view_owner = self.config_manager.config_value(config_section="misc",
+        view_owner = self.config_manager.config_value(config_section="schemas",
                                                       config_key="default_view_owner",
                                                       default=None)
 
@@ -77,15 +85,17 @@ class Interactions:
         parser.add_argument('-g', '--staging_area_dir', type=Path, default="staging",
                             help="Directory for staging area (default: <APP_HOME>/staging)")
         parser.add_argument('-p', '--db_password', type=str, help="Database password")
-        parser.add_argument('-P', '--package_owner', type=str,
-                            help="Database schema in which to place the TAPI package.",
-                            required=True)
+
         parser.add_argument('-s', '--save_connection', action='store_true', default=False,
                             help="Save/update the connection for future use. Connections are only saved after a successful connection.")
-        parser.add_argument('-S', '--schema_name', type=str, help="Database schema name of the tables.", required=True)
+        parser.add_argument('-To', '--table_owner', type=str, help="Database schema name of the tables from which to generate the code.",
+                            default=table_owner)
 
         parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names (default: all)",
                             default='%')
+
+        parser.add_argument('-po', '--package_owner', type=str, default=package_owner,
+                            help="Database schema in which to place the TAPI package.")
 
         parser.add_argument('-to', '--trigger_owner', type=str, help="The schema in which owns the generated triggers.",
                             default=trigger_owner)

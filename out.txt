@@ -1,0 +1,26 @@
+The parent directory is: /home/clive/PycharmProjects/OraTAPI
+[INFO]: ora_tapi.py: Run Id: 1734187406 started at: 2024-12-14 14:43:26 +0000
+[INFO]: ora_tapi.py: Command line parameters:-
+[INFO]: ================================================================================
+[INFO]: api_types                                = ['insert', 'select', 'update', 'delete', 'upsert', 'merge']
+[INFO]: app_name                                 = Human Resources
+[INFO]: conn_name                                = TAPI
+[INFO]: db_password                              = ***************
+[INFO]: db_username                              = None
+[INFO]: dsn                                      = None
+[INFO]: package_owner                            = aut
+[INFO]: save_connection                          = False
+[INFO]: staging_area_dir                         = staging
+[INFO]: table_names                              = %
+[INFO]: table_owner                              = aut
+[INFO]: tapi_author                              = cbostock
+[INFO]: trigger_owner                            = aut
+[INFO]: view_owner                               = aut
+[INFO]: ================================================================================
+[WARNING]: CSV control file not found.
+[WARNING]: Instantiating new CSV control file: /home/clive/PycharmProjects/OraTAPI/OraTAPI.csv
+[INFO]: Database session established successfully.
+[INFO]: 7 tables selected.
+[INFO]: Generating TAPI package: DEPARTMENTS_TAPI
+[INFO]: Generating view view script for DEPARTMENTS_V
+[INFO]: Exiting: Updating CSV control file: /home/clive/PycharmProjects/OraTAPI/OraTAPI.csv

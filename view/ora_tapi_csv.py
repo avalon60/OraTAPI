@@ -39,7 +39,11 @@ class CSVManager:
                 with self.csv_pathname.open(mode='w', newline='', encoding='utf-8') as csv_file:
                     writer = csv.writer(csv_file)
                     writer.writerow(CSV_HEADERS)
-                self.console_manager.print_console(text=f"CSV file initialized at: {self.csv_pathname}")
+                self.console_manager.print_console(text=f"CSV control file not found.",
+                                                   msg_level=MsgLvl.warning)
+                self.console_manager.print_console(text=f"Instantiating new CSV control file: {self.csv_pathname.absolute()}",
+                                                   msg_level=MsgLvl.warning)
+
             except Exception as e:
                 self.console_manager.print_console(text=f"An error occurred while creating the CSV file: {e}", msg_level=MsgLvl.critical)
                 print()
@@ -157,7 +161,8 @@ class CSVManager:
                                                msg_level=MsgLvl.warning)
             return
 
-        self.console_manager.print_console(text="Saving data to CSV before exiting...")
+        self.console_manager.print_console(text=f"Exiting: Updating CSV control file: {self.csv_pathname.absolute()}",
+                                           msg_level=MsgLvl.highlight)
         self.write_dict_to_csv()
 
 
@@ -165,4 +170,4 @@ class CSVManager:
 if __name__ == "__main__":
     csv_path = Path("/tmp/example.csv")
     csv_mgr = CSVManager(csv_pathname=csv_path, config_file_path=config_path)
-    csv_mgr.csv_dict_property("TestSchema", "TestTable", "package", False)
+    csv_mgr.csv_dict_property("TestSchema", "TestTable", "package")
