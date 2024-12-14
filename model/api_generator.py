@@ -561,10 +561,7 @@ class ApiGenerator:
 
         return columns_out
 
-    def _parameter_list_string(self, signature_type:str,
-                               operation_type:str = 'select',
-                               skip_list: list = None,
-                               soft_tabs:int = 4) -> str:
+
     def _parameter_list_string(self, signature_type:str,
                                operation_type:str = 'select',
                                skip_list: list = None,
@@ -1710,7 +1707,6 @@ class ApiGenerator:
         column_list_string_lc = self._column_list_string(soft_tabs=3)
 
         parameter_list_string_lc = self._parameter_list_string(signature_type=signature_type,
-                                                               operation_type='select',
                                                                operation_type='select',
                                                                soft_tabs=3)
         parameter_list_string = parameter_list_string_lc.upper()
