@@ -10,36 +10,18 @@ from enum import Enum
 from rich import print
 from rich.console import Console
 
-text = "This is a test message."
-
-
-class MsgLvl(Enum):
-    info = 1
-    warning = 2
-    error = 3
-    critical = 4
-    highlight = 5
+from view.console_display import MsgLvl, ConsoleMgr
 
 
 class Interactions:
     def __init__(self, controller, config_file_path: Path):
         self.controller = controller
+        self.console_manager = ConsoleMgr(config_file_path=config_file_path)
         self.config_file_path = config_file_path
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
-        colour_console = self.config_manager.bool_config_value(config_section='console', config_key='colour_console')
+
         args = self.parse_arguments()
         self.args_dict = vars(args)
-        self.force_overwrite = self.args_dict["force_overwrite"]
-
-        self.INFO_COLOUR = self.config_manager.config_value(config_section='console', config_key='INFO_COLOUR')
-        self.WARN_COLOUR = self.config_manager.config_value(config_section='console', config_key='WARN_COLOUR')
-        self.ERR_COLOUR = self.config_manager.config_value(config_section='console', config_key='ERR_COLOUR')
-        self.CRIT_COLOUR = self.config_manager.config_value(config_section='console', config_key='CRIT_COLOUR')
-        self.HIGH_COLOUR = self.config_manager.config_value(config_section='console', config_key='HIGH_COLOUR')
-
-        no_colour = True if not colour_console else False
-        # Create a console without color support
-        self.console = Console(no_color=no_colour)
 
 
     def print_console(self, text: str, msg_level: MsgLvl = MsgLvl.info):
@@ -49,44 +31,11 @@ class Interactions:
         :param text: str, The message text to print
         :param msg_level: MsgLevel, The level of the message
         """
-        level_methods = {
-            MsgLvl.info: self.print_info,
-            MsgLvl.warning: self.print_warning,
-            MsgLvl.error: self.print_error,
-            MsgLvl.critical: self.print_critical,
-            MsgLvl.highlight: self.print_highlight
-        }
-
-        # Fetch the appropriate method and call it
-        print_method = level_methods.get(msg_level)
-        if print_method:
-            print_method(text)
-        else:
-            print(f"Unrecognized message level: {msg_level} - {text}")
-
-
-    def print_highlight(self, text: str):
-        self.console.print(f"[{self.HIGH_COLOUR}][INFO]: {text}[/{self.HIGH_COLOUR}]")
-
-    def print_info(self, text: str):
-            self.console.print(f"[{self.INFO_COLOUR}][INFO]: {text}[/{self.INFO_COLOUR}]")
-
-    def print_warning(self, text: str):
-        self.console.print(f"[{self.WARN_COLOUR}][WARNING]: {text}[/{self.WARN_COLOUR}]")
-
-    def print_error(self, text: str):
-        self.console.print(f"[{self.ERR_COLOUR}][ERROR]: {text}[/{self.ERR_COLOUR}]")
-
-    def print_critical(self, text: str):
-        self.console.print(f"[{self.CRIT_COLOUR}][CRITICAL]: {text} [/{self.CRIT_COLOUR}]")
+        self.console_manager.print_console(text=text, msg_level=msg_level)
 
     def write_file(self, staging_dir:Path, directory:Path, file_name, code:str):
         file_path = staging_dir / directory / file_name
         relative_path = directory / file_name
-        if file_path.exists() and not self.force_overwrite:
-            self.print_console(msg_level=MsgLvl.info, text=f'File exists: {relative_path} - skipping!')
-            return
-
         try:
             with open(file_path, 'w') as f:
                 f.write(code)
@@ -145,8 +94,6 @@ class Interactions:
                             default=view_owner)
 
         parser.add_argument('-u', '--db_username', type=str, help="Database username")
-        parser.add_argument('-F', '--force_overwrite', action='store_true', default=False,
-                            help="Force overwrite of existing files (default: False)")
         parser.add_argument('-T', '--api_types', type=str, default=default_api_types,
                             help="Comma-separated list of API types (e.g., create,read). Must be one or more of: create, read, update, upsert,delete, merge.")
 
