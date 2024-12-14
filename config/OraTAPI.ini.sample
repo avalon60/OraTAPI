@@ -13,6 +13,12 @@ copyright_year = current
 # when using the -t/--table_names argument.
 skip_on_missing_table = true
 
+[behaviour]
+# skip_on_missing_table: If set to true and a specified table is not found, then report the table as missing
+# but continue processing. If set to false, and error is reported and processing is terminated. Only pertinent
+# when using the -t/--table_names argument.
+skip_on_missing_table = true
+
 [formatting]
 indent_spaces = 3
 

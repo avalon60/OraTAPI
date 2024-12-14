@@ -118,9 +118,13 @@ class ApiGenerator:
         self.include_commit = self.config_manager.bool_config_value(config_section="api_controls",
                                                                     config_key="include_commit")
 
+        self.include_commit = self.config_manager.bool_config_value(config_section="api_controls",
+                                                                    config_key="include_commit")
+
         self.noop_column_string = self.config_manager.config_value(config_section="api_controls",
                                                                    config_key="noop_column_string",
                                                                    default='')
+
 
 
         self.row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
@@ -290,6 +294,7 @@ class ApiGenerator:
         tabs = "%STAB%" * soft_tabs
         noop_assignment = f"case\n"
         noop_assignment += f"{tabs}%STAB%  when p_{column_name_lc} = NOOP then {column_name_lc}\n"
+        noop_assignment += f"{tabs}%STAB%  when p_{column_name_lc} = NOOP then {column_name_lc}\n"
         noop_assignment += f"{tabs}%STAB%  else p_{column_name_lc}\n"
         noop_assignment += f"{tabs}  end"
 
@@ -303,6 +308,7 @@ class ApiGenerator:
         :return: """
         block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
 
+        valid_operations_list = [ "create", "modify", "merge_create", "merge_modify", "select"]
         valid_operations_list = [ "create", "modify", "merge_create", "merge_modify", "select"]
         valid_operations = ', '.join(valid_operations_list)
         if operation_type not in valid_operations_list:
@@ -339,6 +345,8 @@ class ApiGenerator:
                 assignment = self.column_update_expressions[column_name]
             if not assignment:
                 assignment = f'src.{column_name_lc}'
+        elif operation_type == 'select':
+            assignment = f'p_{column_name_lc}' if signature_type == "coltype" else f'p_row.{column_name_lc}'
         elif operation_type == 'select':
             assignment = f'p_{column_name_lc}' if signature_type == "coltype" else f'p_row.{column_name_lc}'
 
@@ -553,6 +561,10 @@ class ApiGenerator:
 
         return columns_out
 
+    def _parameter_list_string(self, signature_type:str,
+                               operation_type:str = 'select',
+                               skip_list: list = None,
+                               soft_tabs:int = 4) -> str:
     def _parameter_list_string(self, signature_type:str,
                                operation_type:str = 'select',
                                skip_list: list = None,
@@ -792,7 +804,12 @@ class ApiGenerator:
             leader = f', '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
+        if self.include_commit:
+            leader = f', '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
+            param += f'{STAB}boolean'
             param += f'{STAB}boolean'
             signature += param + '\n'
 
@@ -854,7 +871,14 @@ class ApiGenerator:
             leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -909,6 +933,17 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1140,6 +1175,7 @@ class ApiGenerator:
             if self.noop_column_string and column_name not in block_list and data_type in ('VARCHAR2', 'CLOB'):
                 param = f"{param:<75}"
                 param += f"{STAB} := NOOP"
+                param += f"{STAB} := NOOP"
 
             signature += param + '\n'
             param = ''
@@ -1148,7 +1184,14 @@ class ApiGenerator:
             leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -1201,6 +1244,17 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1301,7 +1355,14 @@ class ApiGenerator:
             leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -1353,6 +1414,17 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1455,7 +1527,14 @@ class ApiGenerator:
             leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
             param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -1508,6 +1587,17 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
+        signature += param + '\n'
+
+        if self.include_commit:
+            leader = f', ' if self.table.col_count > 1 else f'  '
+            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
+            in_out = f'{STAB}in    '
+            param += in_out
+            param += f'{STAB}boolean'
+            param = f"{param:<75}"
+            param += f'{STAB} := false'
+            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1572,6 +1662,8 @@ class ApiGenerator:
                                                              template_name=f"insert")
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = []
         if self.col_auto_maintain_method == 'trigger':
@@ -1619,6 +1711,7 @@ class ApiGenerator:
 
         parameter_list_string_lc = self._parameter_list_string(signature_type=signature_type,
                                                                operation_type='select',
+                                                               operation_type='select',
                                                                soft_tabs=3)
         parameter_list_string = parameter_list_string_lc.upper()
 
@@ -1648,6 +1741,8 @@ class ApiGenerator:
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"update")
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
@@ -1704,6 +1799,9 @@ class ApiGenerator:
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"upsert")
+
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
@@ -1768,6 +1866,9 @@ class ApiGenerator:
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
+
         procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
         procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
         key_predicates_string = self._predicates_string(signature_type='coltype', soft_tabs=3)
@@ -1802,6 +1903,8 @@ class ApiGenerator:
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"merge")
 
+        if self.include_commit:
+            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
@@ -1911,6 +2014,7 @@ class ApiGenerator:
             template_type='body',
             template_name="package_header"
         )
+
 
         package_footer_template = self._package_api_template(
             template_category="packages",
@@ -2074,6 +2178,34 @@ class ApiGenerator:
             view_code_dict[source_file_name] = view_template
 
         return view_code_dict
+
+    def _inject_commit_logic(self, procedure_template: str) -> str:
+        """
+        Injects commit logic into the given procedure template before the line containing "%STAB%end".
+
+        :param procedure_template: str, the input multi-line template string
+        :return: str, the modified template with injected commit logic
+        """
+        # Commit logic to be injected
+        inject_string = "%STAB%%STAB%if p_commit\n"
+        inject_string += "%STAB%%STAB%then\n"
+        inject_string += "%STAB%%STAB%%STAB%commit;\n"
+        inject_string += "%STAB%%STAB%end if;\n"
+
+        # Split the template into lines
+        lines = procedure_template.splitlines()
+
+        # Find the index of the line containing "%STAB%end"
+        for i, line in enumerate(lines):
+            if line.strip().startswith("%STAB%end"):
+                # Insert the inject_string before this line
+                lines.insert(i, inject_string)
+                break
+
+        # Reassemble the template
+        injected_template = "\n".join(lines)
+
+        return injected_template
 
     def _inject_commit_logic(self, procedure_template: str) -> str:
         """

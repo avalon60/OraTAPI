@@ -14,9 +14,12 @@ from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
 from view.ora_tapi_csv import CSVManager
+from view.ora_tapi_csv import CSVManager
 
 RUN_ID = int(time.time())
 prog_bin = Path(__file__).resolve().parent
+app_home = prog_bin.parent
+
 app_home = prog_bin.parent
 
 prog_name = Path(__file__).name
@@ -70,6 +73,12 @@ class TAPIController:
         self.proj_home = project_home()
 
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+        csv_path = self.config_manager.config_value(config_section='file_controls',
+                                                    config_key='ora_tapi_csv_dir',
+                                                    default=str(app_home / 'OraTAPI.csv'))
+        csv_path = Path(csv_path)
+
+        self.csv_manager = CSVManager(csv_pathname=csv_path / 'OraTAPI.csv', config_file_path=config_file_path)
         csv_path = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
                                                     default=str(app_home / 'OraTAPI.csv'))
@@ -212,6 +221,13 @@ class TAPIController:
                 if trigger_enabled:
                     self.generate_triggers_for_table(table_name)
 
+                if package_enabled:
+                    self.generate_api_for_table(table_name)
+                if view_enabled:
+                    self.generate_views_for_table(table_name)
+                if trigger_enabled:
+                    self.generate_triggers_for_table(table_name)
+
 
     def generate_api_for_table(self, table_name: str):
         """
@@ -262,6 +278,7 @@ class TAPIController:
         triggers_dict = api_controller.gen_triggers()
         for trigger_file_name, code in triggers_dict.items():
             self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger script for {trigger_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger script for {trigger_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.trigger_dir, file_name=trigger_file_name,
                                  code=code)
 
@@ -280,6 +297,7 @@ class TAPIController:
         views_dict = api_controller.gen_views()
 
         for view_file_name, code in views_dict.items():
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating view view script for {view_file_name.upper().replace('.SQL', '')}")
             self.view.print_console(msg_level=MsgLvl.info, text=f"Generating view view script for {view_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.view_dir, file_name=view_file_name,
                                  code=code)
