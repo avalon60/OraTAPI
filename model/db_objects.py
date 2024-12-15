@@ -37,6 +37,13 @@ class Table:
         self.row_vers_column_name = config_manager.config_value(config_section="api_controls",
                                                                 config_key="row_vers_column_name")
 
+        self.return_pk_key_columns = config_manager.bool_config_value(config_section="api_controls",
+                                                                     config_key="return_pk_key_columns",
+                                                                     default=True)
+
+        self.return_ak_key_columns = config_manager.bool_config_value(config_section="api_controls",
+                                                                     config_key="return_ak_key_columns",
+                                                                     default=False)
 
         self.in_out_column_list = []
         self.out_column_list = []
@@ -101,16 +108,19 @@ class Table:
                         "is_row_version_column": is_row_version_column
                     }
                     if is_pk_column:
-                        self.pk_columns_list.append(column_name)
+                        self.pk_columns_list.append(column_name.upper())
                         self.pk_columns_list_lc.append(column_name.lower())
                     if is_ak_column:
-                        self.ak_columns_list.append(column_name)
+                        self.ak_columns_list.append(column_name.upper())
                         self.ak_columns_list_lc.append(column_name.lower())
-                    if column_keyed:
-                        self.in_out_column_list.append(column_name)
+                    if is_pk_column and self.return_pk_key_columns and not is_row_version_column:
+                        self.in_out_column_list.append(column_name.upper())
                         self.in_out_column_list_lc.append(column_name.lower())
-                    if is_row_version_column:
-                        self.out_column_list.append(column_name)
+                    elif is_ak_column and self.return_ak_key_columns and not is_row_version_column:
+                        self.in_out_column_list.append(column_name.upper())
+                        self.in_out_column_list_lc.append(column_name.lower())
+                    elif is_row_version_column:
+                        self.out_column_list.append(column_name.upper())
                         self.out_column_list_lc.append(column_name.lower())
 
 
@@ -157,6 +167,44 @@ class Table:
                 AND acc.TABLE_NAME = :table_name
                 AND acc.COLUMN_NAME = :column_name
                 AND ac.CONSTRAINT_TYPE IN ('P', 'U')
+        """
+        try:
+            with self.db_session.cursor() as cursor:
+                if self.trace:
+                    print(f"Executing query: {query}")
+                    print(f"Parameters: schema_name={self.schema_name}, table_name={self.table_name}, column_name={column_name.upper()}")
+                cursor.execute(
+                    query,
+                    schema_name=self.schema_name,
+                    table_name=self.table_name,
+                    column_name=column_name.upper()
+                )
+                result = cursor.fetchone()
+                return result is not None
+        except Exception as e:
+            if self.trace:
+                print(f"Error checking if column is keyed: {e}")
+            raise
+
+    def _is_ak_col(self, column_name: str) -> bool:
+        """
+        Checks if a column is referenced in an alternate key / unique constraint.
+
+        :param column_name: The name of the column to check.
+        :type column_name: str
+        :return: True if the column is part of a primary key or unique index, otherwise False.
+        :rtype: bool
+        """
+        query = """
+            SELECT 1
+            FROM ALL_CONS_COLUMNS acc
+            JOIN ALL_CONSTRAINTS ac
+                ON acc.OWNER = ac.OWNER
+                AND acc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
+            WHERE acc.OWNER = :schema_name
+                AND acc.TABLE_NAME = :table_name
+                AND acc.COLUMN_NAME = :column_name
+                AND ac.CONSTRAINT_TYPE IN ('U')
         """
         try:
             with self.db_session.cursor() as cursor:
