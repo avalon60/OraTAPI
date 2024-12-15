@@ -29,6 +29,15 @@ date_now = datetime.now()
 # Format the date as DD-Mon-YYYY
 current_date = date_now.strftime("%d-%b-%Y")
 
+# Define the list of noop_column_string supported data-types.
+NO_OP_DATA_TYPES = (
+    "VARCHAR2",  # Variable-length character data
+    "CHAR",      # Fixed-length character data
+    "NCHAR",     # Fixed-length national character set data
+    "NVARCHAR2", # Variable-length national character set data
+    "CLOB",      # Character Large Object
+    "NCLOB"      # National Character Large Object
+)
 
 def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces:int = 3) -> str:
     """
@@ -112,11 +121,13 @@ class ApiGenerator:
         self.include_defaults = self.config_manager.bool_config_value(config_section="api_controls",
                                                                  config_key="include_defaults")
 
-        self.return_key_columns = self.config_manager.bool_config_value(config_section="api_controls",
-                                                                   config_key="return_key_columns")
+        self.return_pk_columns = self.config_manager.bool_config_value(config_section="api_controls",
+                                                                       config_key="return_pk_columns",
+                                                                       default=False)
 
-        self.include_commit = self.config_manager.bool_config_value(config_section="api_controls",
-                                                                    config_key="include_commit")
+        self.return_ak_columns = self.config_manager.bool_config_value(config_section="api_controls",
+                                                                       config_key="return_ak_columns",
+                                                                       default=False)
 
         self.include_commit = self.config_manager.bool_config_value(config_section="api_controls",
                                                                     config_key="include_commit")
@@ -282,7 +293,7 @@ class ApiGenerator:
         for columns where the parameter is defaulted to the noop_column_string property setting in OraTAPI.ini."""
         if self.table.column_property_value(column_name=column_name, property_name='default_value'):
             return ""
-        if self.table.column_property_value(column_name=column_name, property_name='data_type') not in ('VARCHAR2', 'CLOB'):
+        if self.table.column_property_value(column_name=column_name, property_name='data_type') not in NO_OP_DATA_TYPES:
             return ''
 
         block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
@@ -293,7 +304,6 @@ class ApiGenerator:
 
         tabs = "%STAB%" * soft_tabs
         noop_assignment = f"case\n"
-        noop_assignment += f"{tabs}%STAB%  when p_{column_name_lc} = NOOP then {column_name_lc}\n"
         noop_assignment += f"{tabs}%STAB%  when p_{column_name_lc} = NOOP then {column_name_lc}\n"
         noop_assignment += f"{tabs}%STAB%  else p_{column_name_lc}\n"
         noop_assignment += f"{tabs}  end"
@@ -783,30 +793,28 @@ class ApiGenerator:
         table_name_lc = self.table.table_name.lower()
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
             column_name_lc = column_name.lower()
-            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
-            if not column_name in self.table.pk_columns_list and column_name_lc != self.table.row_vers_column_name:
+            # if not column_name in self.table.pk_columns_list and column_name_lc != self.table.row_vers_column_name:
+            if column_name not in self.table.in_out_column_list and column_name not in self.table.out_column_list:
                 continue
 
-            default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
             leader = f', ' if col_position > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in out'
+            if column_name_lc in self.table.in_out_column_list_lc:
+                in_out = f'{STAB}in out'
+            elif column_name_lc in self.table.out_column_list_lc:
+                in_out = f'{STAB}   out'
+            else:
+                in_out = f'{STAB}in    '
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
             signature += param + '\n'
             param = ''
 
-
-        if self.include_commit:
-            leader = f', '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
         if self.include_commit:
             leader = f', '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}boolean'
             param += f'{STAB}boolean'
             signature += param + '\n'
 
@@ -848,9 +856,9 @@ class ApiGenerator:
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if is_key_col:
+            if column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
-            elif is_row_version_column:
+            elif column_name_lc in self.table.out_column_list_lc:
                 in_out = f'{STAB}   out'
             else:
                 in_out = f'{STAB}in    '
@@ -868,14 +876,7 @@ class ApiGenerator:
             leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
-        if self.include_commit:
-            leader = f', ' if self.table.col_count > 1 else f'  '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -930,17 +931,6 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
-        signature += param + '\n'
-
-        if self.include_commit:
-            leader = f', ' if self.table.col_count > 1 else f'  '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
-            param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
-            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1015,16 +1005,15 @@ class ApiGenerator:
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
 
             processed_columns += 1
-            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
-            is_row_version_column = self.table.column_property_value(column_name=column_name,
-                                                                     property_name="is_row_version_column")
             column_name_lc = column_name.lower()
 
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if is_key_col:
+            if column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
+            elif column_name_lc in self.table.out_column_list_lc:
+                in_out = f'{STAB}   out'
             else:
                 in_out = f'{STAB}   out'
 
@@ -1033,7 +1022,6 @@ class ApiGenerator:
 
             signature += param + '\n'
             param = ''
-
 
         if package_spec:
             signature += f'{STAB})'
@@ -1146,20 +1134,18 @@ class ApiGenerator:
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
-            if column_name.lower() in self.auto_maintained_cols:
+            column_name_lc = column_name.lower()
+            if column_name_lc in self.auto_maintained_cols:
                 continue
 
             processed_columns += 1
-            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
-            is_row_version_column = self.table.column_property_value(column_name=column_name,
-                                                                     property_name="is_row_version_column")
-            column_name_lc = column_name.lower()
+
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if is_key_col:
+            if column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
-            elif is_row_version_column:
+            elif column_name_lc in self.table.out_column_list_lc:
                 in_out = f'{STAB}   out'
             else:
                 in_out = f'{STAB}in    '
@@ -1169,9 +1155,8 @@ class ApiGenerator:
             block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
 
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
-            if self.noop_column_string and column_name not in block_list and data_type in ('VARCHAR2', 'CLOB'):
+            if self.noop_column_string and column_name not in block_list and data_type in NO_OP_DATA_TYPES:
                 param = f"{param:<75}"
-                param += f"{STAB} := NOOP"
                 param += f"{STAB} := NOOP"
 
             signature += param + '\n'
@@ -1186,9 +1171,6 @@ class ApiGenerator:
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -1241,17 +1223,6 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
-        signature += param + '\n'
-
-        if self.include_commit:
-            leader = f', ' if self.table.col_count > 1 else f'  '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
-            param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
-            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1335,9 +1306,9 @@ class ApiGenerator:
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if is_key_col:
+            if column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
-            elif is_row_version_column:
+            elif column_name_lc in self.table.out_column_list_lc:
                 in_out = f'{STAB}   out'
             else:
                 in_out = f'{STAB}in    '
@@ -1357,9 +1328,6 @@ class ApiGenerator:
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -1411,17 +1379,6 @@ class ApiGenerator:
         in_out = f'{STAB}in out'
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
-        signature += param + '\n'
-
-        if self.include_commit:
-            leader = f', ' if self.table.col_count > 1 else f'  '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
-            param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
-            signature += param + '\n'
         signature += param + '\n'
 
         if self.include_commit:
@@ -1507,12 +1464,8 @@ class ApiGenerator:
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if is_key_col:
-                in_out = f'{STAB}in out'
-            elif is_row_version_column:
-                in_out = f'{STAB}   out'
-            else:
-                in_out = f'{STAB}in    '
+
+            in_out = f'{STAB}in    '
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
@@ -1529,9 +1482,6 @@ class ApiGenerator:
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
             param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
             param += f'{STAB}boolean'
             param = f"{param:<75}"
             param += f'{STAB} := false'
@@ -1581,21 +1531,11 @@ class ApiGenerator:
 
         leader = f', '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-        in_out = f'{STAB}in out'
+        in_out = f'{STAB}in    '
         param += in_out
         param += f'{STAB}{table_name_lc}%rowtype'
         signature += param + '\n'
 
-        if self.include_commit:
-            leader = f', ' if self.table.col_count > 1 else f'  '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
-            param += in_out
-            param += f'{STAB}boolean'
-            param = f"{param:<75}"
-            param += f'{STAB} := false'
-            signature += param + '\n'
-        signature += param + '\n'
 
         if self.include_commit:
             leader = f', ' if self.table.col_count > 1 else f'  '
@@ -1659,8 +1599,6 @@ class ApiGenerator:
                                                              template_name=f"insert")
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
-        if self.include_commit:
-            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = []
         if self.col_auto_maintain_method == 'trigger':
@@ -1676,7 +1614,7 @@ class ApiGenerator:
         parameter_list_string = parameter_list_string_lc.upper()
 
         returning_clause_lc = ''
-        if self.return_key_columns:
+        if self.return_pk_columns or self.return_ak_columns:
             returning_clause_lc = self._returning_into_clause(signature_type=signature_type, soft_tabs=4)
 
         substitutions_dict = {
@@ -1739,8 +1677,6 @@ class ApiGenerator:
                                                              template_name=f"update")
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
-        if self.include_commit:
-            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
         skip_column_list = []
         if self.col_auto_maintain_method == 'trigger':
@@ -1752,10 +1688,6 @@ class ApiGenerator:
         update_assignments_string = self._update_assignments_string(signature_type=signature_type,
                                                                     skip_list=skip_column_list,
                                                                     operation_type='update', soft_tabs=3)
-        return_columns_list = self._return_columns_list(soft_tabs=3)
-
-        return_parameter_list = self._return_parameter_list(signature_type=signature_type,
-                                                            soft_tabs=3)
 
         skip_column_list = []
         if self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
@@ -1763,7 +1695,7 @@ class ApiGenerator:
             skip_column_list.append(self.table.row_vers_column_name)
 
         returning_clause_lc = ''
-        if self.return_key_columns:
+        if self.return_pk_columns or self.return_ak_columns:
             returning_clause_lc = self._returning_into_clause(signature_type=signature_type, soft_tabs=4)
 
         substitutions_dict = {"key_predicates_string": key_predicates_string.upper(),
@@ -1772,10 +1704,6 @@ class ApiGenerator:
                               "update_assignments_string_lc": update_assignments_string,
                               "returning_clause": returning_clause_lc.upper(),
                               "returning_clause_lc": returning_clause_lc,
-                              "return_columns_list": return_columns_list.upper(),
-                              "return_columns_list_lc": return_columns_list,
-                              "return_parameter_list": return_parameter_list.upper(),
-                              "return_parameter_list_lc": return_parameter_list,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
@@ -1799,9 +1727,6 @@ class ApiGenerator:
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
-        if self.include_commit:
-            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
-
         skip_column_list = []
         if self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
             skip_column_list = self.auto_maintained_cols[:]
@@ -1821,11 +1746,11 @@ class ApiGenerator:
                                                                     skip_list=skip_column_list, soft_tabs=3)
 
         upd_returning_clause_lc = ''
-        if self.return_key_columns:
+        if self.return_pk_columns or self.return_ak_columns:
             upd_returning_clause_lc = self._returning_into_clause(signature_type=signature_type, soft_tabs=3)
 
         ins_returning_clause_lc = ''
-        if self.return_key_columns:
+        if self.return_pk_columns or self.return_ak_columns:
             ins_returning_clause_lc = self._returning_into_clause(signature_type=signature_type, soft_tabs=3)
 
 
@@ -1862,16 +1787,13 @@ class ApiGenerator:
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
-        if self.include_commit:
-            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
-
         procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
         procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
         key_predicates_string = self._predicates_string(signature_type='coltype', soft_tabs=3)
 
         column_skip_list = self.table.ak_columns_list_lc
         returning_clause_lc = ''
-        if self.return_key_columns:
+        if self.return_pk_columns or self.return_ak_columns:
             returning_clause_lc = ''
             returning_clause_lc = self._returning_into_clause(signature_type=signature_type,
                                                               skip_list=column_skip_list, soft_tabs=4)
@@ -1899,8 +1821,6 @@ class ApiGenerator:
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"merge")
 
-        if self.include_commit:
-            procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
         if self.include_commit:
             procedure_body_template = self._inject_commit_logic(procedure_template=procedure_body_template)
 
