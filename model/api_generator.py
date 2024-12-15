@@ -29,6 +29,15 @@ date_now = datetime.now()
 # Format the date as DD-Mon-YYYY
 current_date = date_now.strftime("%d-%b-%Y")
 
+# Define the list of noop_column_string supported data-types.
+NO_OP_DATA_TYPES = (
+    "VARCHAR2",  # Variable-length character data
+    "CHAR",      # Fixed-length character data
+    "NCHAR",     # Fixed-length national character set data
+    "NVARCHAR2", # Variable-length national character set data
+    "CLOB",      # Character Large Object
+    "NCLOB"      # National Character Large Object
+)
 
 def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces:int = 3) -> str:
     """
@@ -284,7 +293,7 @@ class ApiGenerator:
         for columns where the parameter is defaulted to the noop_column_string property setting in OraTAPI.ini."""
         if self.table.column_property_value(column_name=column_name, property_name='default_value'):
             return ""
-        if self.table.column_property_value(column_name=column_name, property_name='data_type') not in ('VARCHAR2', 'CLOB'):
+        if self.table.column_property_value(column_name=column_name, property_name='data_type') not in NO_OP_DATA_TYPES:
             return ''
 
         block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
@@ -1146,7 +1155,7 @@ class ApiGenerator:
             block_list = self.table.in_out_column_list + [self.table.row_vers_column_name.upper()]
 
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
-            if self.noop_column_string and column_name not in block_list and data_type in ('VARCHAR2', 'CLOB'):
+            if self.noop_column_string and column_name not in block_list and data_type in NO_OP_DATA_TYPES:
                 param = f"{param:<75}"
                 param += f"{STAB} := NOOP"
 
