@@ -42,3 +42,5 @@ staging/trigger/locations_biu.sql
 staging/trigger/regions_biu.sql
 
 *.sql
+
+OraTAPI.egg-info/
