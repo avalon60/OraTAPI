@@ -1,0 +1,10 @@
+include bin/*.sh
+include config/*.ini
+include config/*.ini.sample
+include LICENSE
+include README.md
+include setup.sh
+include staging
+# Include all .tpt and .tpt.sample files from the templates directory and its subdirectories
+recursive-include templates *.tpt
+recursive-include templates *.tpt.sample
