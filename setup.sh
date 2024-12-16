@@ -7,8 +7,23 @@
 #         virtual environment, installing dependencies, and configuring scripts.
 #------------------------------------------------------------------------------
 
+realpath() {
+  if command -v readlink >/dev/null 2>&1; then
+    # Linux or systems where readlink is available
+    readlink -f "$1"
+  else
+    # macOS or systems where readlink -f is not available
+    cd "$(dirname "$1")" && pwd
+  fi
+}
+
+PROG_PATH=$(realpath $0)
+APP_HOME=$(dirname ${PROG_PATH})
+
 # Exit on any error
 set -e
+
+pushd ${APP_HOME}
 
 # Define variables
 VENV_DIR="venv"  # Change this if you want a different name for the virtual env
