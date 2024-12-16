@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="OraTAPI",
-    version="1.0.4",
+    version="1.0.5",
     
     # Automatically find all packages by searching the current directory
     packages=find_packages(),  # Automatically finds all packages
