@@ -1,3 +1,6 @@
+[OraTAPI]
+version = 1.0.2
+
 [project]
 default_app_name = Human Resources
 
@@ -67,10 +70,9 @@ signature_types = rowtype, coltype
 
 # include_defaults: Set to true, to have parameter defaults included to insert APIs,
 # reflect those in the data dictionary.
-include_defaults = false
+include_defaults = true
 
-# noop_column_string: If set, parameter defaults for non-key, character based column parameters are defined as
-# <no_column_op_string>.
+# noop_column_string: If set, parameter defaults for non-key column parameters are defined as <no_column_op_string>.
 # If the default is detected, then the column value in the database is preserved. This provides a mechanism of
 # avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
 # signature_types property). Set to auto, to have a generated, enhanced GUID (42 characters in total).
@@ -80,7 +82,7 @@ include_defaults = false
 # default_api_types: Specifies the default of which APIs to include to the package.
 # Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
 # default_api_types = insert, select, update, delete, upsert, merge
-default_api_types = insert, select, update, delete, upsert, merge
+default_api_types = insert
 
 # return_pk_columns: If set to true, causes primary/unique keys to be in/out parameters. Returning the values.
 # This applies to APIs which modify data.
@@ -116,3 +118,4 @@ CRIT_COLOUR = bold red
 HIGH_COLOUR = bold blue
 # Set colour_console to false, to disable colour output.
 colour_console = true
+
