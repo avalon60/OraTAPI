@@ -20,5 +20,6 @@ PROG_PATH=$(realpath $0)
 PROG_DIR=$(dirname ${PROG_PATH})
 APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
+source venv/bin/activate
 echo "App home: ${APP_HOME}"
 bump2version patch
