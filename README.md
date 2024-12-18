@@ -65,7 +65,7 @@ Limitations: As of this release, database connections are basic - cloud wallets 
 
 ---
 
-## The Main Components
+## The Primary Components
 
 The OraTAPI too consists of 3 major components:
 
@@ -189,7 +189,7 @@ The `default_api_types` property determines which APIs are to be included, be de
 
 These are just a few of the controls. Read on for 
 
-### Configuration File Documentation for OraTAPI
+### Configuration Settings for OraTAPI.ini
 
 This document explains the different sections and parameters of the configuration file used by **OraTAPI**.
 
