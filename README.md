@@ -781,7 +781,7 @@ updates\created_by.tpt:
 ```
 created_by
 ```
-Because we must have an `updates\created_by.tpt` entry, we just have it set the column, to its current value.
+Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column, to its current value.
 
 ### The auto_maintained_cols Property
 This is a comma separated list of columns which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
