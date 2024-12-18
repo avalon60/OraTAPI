@@ -28,14 +28,36 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 
 ## Installation
 
-1. Clone the repository:
+1. Download the OraTAPI.tar.gz Artefact to a staging directory.
+
+1. Open a Terminal Window and Extrract the Contents:
+   For MacOS / Linux
    ```bash
-   git clone https://github.com/<username>/oratapi.git
+   tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
    ```
-2. Install dependencies:
+
+  For windows:
+  Open a command Window and enter the command:
    ```bash
-   pip install -r requirements.txt
+   7z x <sdist_file>.tar.gz -o<path-to-installation-folder>
    ```
+
+   NOTE: The <path-to-installation-folder> should include an Ora_TAPI directory at the end. This does, not need to be pre-created, but including OraTAPI is to allow it to be easily recognised.
+
+2. Complete the Installation:
+   MacOS / Linux
+   ```bash
+   cd <path-to-installation-folder>
+   chmod 750 setup.sh
+   ./setup.sh
+   ```
+   Windows:
+   ```bash
+   cd <path-to-installation-folder>
+   chmod 750 setup.sh
+   ./setup.bat
+   ```
+
 
 3. Ensure access to an Oracle database and configure your `TNS` entries or connection settings.
 
