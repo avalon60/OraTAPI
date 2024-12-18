@@ -1,4 +1,14 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "OraTAPI"
+version = "1.0.6"
+description = "Oracle TAPI Application"
 
+[tool.poetry]
+# (Optional) Poetry-specific configurations like dependencies
+
+[tool.setuptools]
+# (Optional) Overrides for setuptools options
+
+[tool.scripts]
+conn_mgr = "controller.conn_mgr:main"
+ora_tapi = "controller.ora_tapi:main"

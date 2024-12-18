@@ -3,21 +3,21 @@ from setuptools import setup, find_packages
 setup(
     name="OraTAPI",
     version="1.0.6",
-    
-    # Automatically find all packages by searching the current directory
-    packages=find_packages(),  # Automatically finds all packages
-    
-    # Include shell scripts and other non-Python files
-    package_data={
-        '': ['bin/ora_tapi.sh', 'bin/conn_mgr.sh'],  # Package data
+    description="Oracle TAPI Application",
+    author="Your Name",
+    author_email="your_email@example.com",
+    packages=find_packages(),  
+    include_package_data=True,  # Include files from the MANIFEST.in
+    package_data={  # Include non-Python files in specific packages
+        "templates": ["**/*.tpt", "**/*.tpt.sample"],
     },
-    
+    data_files=[  # Include root-level files and other extras
+        (".", ["setup.py", "LICENSE", "setup.sh", "requirements.txt", "README.md"]),
+    ],
     entry_points={
         "console_scripts": [
-            "ora_tapi=controller.ora_tapi:main",  # Adjust the entry point to the actual function
-            "conn_mgr=controller.conn_mgr:main",  # Likewise for conn_mgr
-        ],
+            "conn_mgr=controller.conn_mgr:main",
+            "ora_tapi=controller.ora_tapi:main",
+        ]
     },
-    include_package_data=True,  # Ensure package data is included
 )
-

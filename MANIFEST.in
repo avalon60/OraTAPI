@@ -1,10 +1,16 @@
-include bin/*.sh
+# Include all shell scripts in the root and subdirectories
+include *.sh
+recursive-include bin *.sh
+
+# Include all `.tpt` and `.tpt.sample` files in the templates directory and subdirectories
+recursive-include templates *.tpt *.tpt.sample
+
+# Include configuration files
 include config/*.ini
 include config/*.ini.sample
+
+# Include README and license files
 include LICENSE
 include README.md
-include setup.sh
-include staging
-# Include all .tpt and .tpt.sample files from the templates directory and its subdirectories
-recursive-include templates *.tpt
-recursive-include templates *.tpt.sample
+
+
