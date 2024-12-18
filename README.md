@@ -745,6 +745,7 @@ The Add and Update options cause the `conn_mgr` to enter an interactive dialog m
 Synopsis:
 
 ```
+cd <OraTAPI-home>
 ./bin/conn_mgr.sh -h
 
 usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-n NAME]
