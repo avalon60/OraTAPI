@@ -1,9 +1,10 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
-
+__version__ = "1.0.6"
 import copy
 import time
+
 from model.api_generator import ApiGenerator
 from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
@@ -14,12 +15,9 @@ from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
 from view.ora_tapi_csv import CSVManager
-from view.ora_tapi_csv import CSVManager
 
 RUN_ID = int(time.time())
 prog_bin = Path(__file__).resolve().parent
-app_home = prog_bin.parent
-
 app_home = prog_bin.parent
 
 prog_name = Path(__file__).name
@@ -38,6 +36,8 @@ class TAPIController:
         options_dict = copy.deepcopy(args_dict)
 
         exec_start_timestamp = current_timestamp()
+        self.view.print_console(text=f'{prog_name}: Version: {__version__}',
+                                msg_level=MsgLvl.highlight)
         self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} started at: {exec_start_timestamp}',
                                 msg_level=MsgLvl.highlight)
         epoc_start_ts = int(time.time())
@@ -79,6 +79,9 @@ class TAPIController:
         csv_path = Path(csv_path)
 
         self.csv_manager = CSVManager(csv_pathname=csv_path / 'OraTAPI.csv', config_file_path=config_file_path)
+
+        self.ora_tapi_version = self.config_manager.config_value(config_section='OraTAPI',
+                                                                 config_key='version')
 
         self.skip_on_missing_table = self.config_manager.bool_config_value(config_section='behaviour',
                                                                            config_key='skip_on_missing_table')
