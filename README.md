@@ -2,9 +2,43 @@
 
 # OraTAPI - Oracle Table API Generator 
 
-## Version: 1.0.6
+Version: 1.0.6
+<!-- TOC -->
+- [Features](#features)
+- [Installation](#installation)
+- [The Primary Components](#the-primary-components)
+  - [Command Line Tools](#command-line-tools)
+    - [Windows:](#windows)
+    - [MacOS / Linux:](#macos--linux)
+- [Usage](#usage)
+  - [Basic Example:](#basic-example)
+  - [Full Command-Line Arguments:](#full-command-line-arguments)
+- [Output Structure](#output-structure)
+  - [Configuration Settings for OraTAPI.ini](#configuration-settings-for-oratapiini)
+    - [\[OraTAPI\]](#oratapi)
+    - [\[project\]](#project)
+    - [\[copyright\]](#copyright)
+    - [\[behaviour\]](#behaviour)
+    - [\[formatting\]](#formatting)
+    - [\[file\_controls\]](#file_controls)
+    - [\[api\_controls\]](#api_controls)
+    - [\[schemas\]](#schemas)
+    - [\[misc\]](#misc)
+    - [\[console\]](#console)
+    - [Example configuration file:](#example-configuration-file)
+  - [Sample Generated API:](#sample-generated-api)
+- [Auto Column Management](#auto-column-management)
+  - [The col\_auto\_maintain\_method Property](#the-col_auto_maintain_method-property)
+    - [Trigger Maintained](#trigger-maintained)
+    - [Column Expression Maintained](#column-expression-maintained)
+  - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
+  - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
+- [Connection Manager](#connection-manager)
+- [License](#license)
+<!-- TOC -->
 
 <b>WORK IN PROGRESS!!!</b>
+
 
 OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customisable and standardised APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
 
@@ -781,7 +815,7 @@ updates\created_by.tpt:
 ```
 created_by
 ```
-Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column, to its current value.
+Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column to its current value.
 
 ### The auto_maintained_cols Property
 This is a comma separated list of columns which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
