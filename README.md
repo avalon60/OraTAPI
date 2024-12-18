@@ -721,6 +721,68 @@ end employees_tapi;
 ```
 ---
 
+## Auto Column Management
+Under the `api_controls` section of `OraTAPI.ini`, there are two entries, pertaining to auto managed columns. These allow you to configure how you manage your auto-managed columns. These are typically columns which you wish to be managed either by triggers or via the table APIs, and as such there are no input parameters to populate them. For example, you may have columns which are used to track, who created or last updated a row. The entries that control the bahaviour are:
+
+- col_auto_maintain_method
+- auto_maintained_cols
+- row_vers_column_name
+
+### The col_auto_maintain_method Property
+If you are using columns which you want to be automatically updated during DML operations, you should set this property value to one of: 
+
+- trigger
+- expression
+
+#### Trigger Maintained
+If you set the `col_auto_maintain_method` proprty to <i>trigger</i>, you should ensure that your trigger template(s) is designed to make appropriate updates, for on the columns that you list. Example:
+
+```
+create or replace trigger %trigger_owner_lc%.%table_name_lc%_biu
+before insert or update on %table_owner_lc%.%table_name_lc%
+for each row
+begin
+
+   if inserting then
+      :new.row_version := 1;
+   elsif updating then
+      :new.updated_on := current_timestamp;
+      :new.updated_by := coalesce(sys_context('APEX$SESSION','APP_USER'), sys_context('USERENV', 'PROXY_USER'), sys_context('USERENV','SESSION_USER'), user);
+      :new.row_version := :old.row_version + 1;
+   end if;
+
+end;
+/
+```
+#### Column Expression Maintained
+Column expressions are maintained, via special templates. These are located in the `templates/column_expressions` directory.
+This has twoo sub-directories:
+
+- inserts
+- updates
+
+If the `col_auto_maintain_method` property, is set to `expression`, then for each column listed in the `auto_maintained_cols` and `row_vers_column_name` proprties, a template entry is needed for each column in th `inserts` and `updates` directories. These expressions are injected into assignment statements for the generated API procedures. For example, assume we have a column called `row_version`, we would expect to find a `row_version.tpt` file in each of the `inserts` and `updates` directories. The contents of these might look like this:
+
+inserts\row_version.tpt:
+```
+1
+```
+updates\row_version.tpt:
+```
+row_version + 1
+```
+
+
+### The auto_maintained_cols Property
+This is a comma separated list of columns which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
+
+This list should not include the column included to the `row_version_column_name` property (if one is set).
+
+### The row_version_column_name Property
+The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
+
+
+
 ## Connection Manager
 
 The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DNS (TNS) strings can be stored and retrieved locally, by use of a conventient name. Credentials are transparrently encrypted/decrypted from a locally maintained store. The `ora_tapi` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
