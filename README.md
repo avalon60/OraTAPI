@@ -3,7 +3,7 @@
 # OraTAPI - Oracle Table API Generator 
 
 Version: 1.0.6
-<!-- TOC -->
+
 - [Features](#features)
 - [Installation](#installation)
 - [The Primary Components](#the-primary-components)
@@ -35,7 +35,7 @@ Version: 1.0.6
   - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
 - [Connection Manager](#connection-manager)
 - [License](#license)
-<!-- TOC -->
+
 
 <b>WORK IN PROGRESS!!!</b>
 
