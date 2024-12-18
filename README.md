@@ -139,35 +139,6 @@ options:
 
 ```
 
-## Configuration
-
-OraTAPI is controlled by an `.ini` configuration file. Below is a summary of the main sections and their settings.
-
-### **[behaviour]**
-- `skip_on_missing_table`: `true` to skip missing tables, or `false` to terminate processing.
-
-### **[copyright]**
-- `company_name`: Your company name for package headers.
-- `copyright_year`: Use `current` for the current year or a static value.
-
-### **[formatting]**
-- `indent_spaces`: Number of spaces for code indentation.
-
-### **[file_controls]**
-- `default_staging_dir`: Root directory for generated files.
-- `spec_dir` and `body_dir`: Subdirectories for package specifications and bodies.
-
-### **[api_controls]**
-- Define API procedure names and behaviors for operations like `insert`, `update`, and `delete`.
-- `trigger_maintained`: Specify columns maintained by triggers to exclude them from certain APIs.
-- `signature_types`: Use `rowtype` or `coltype` signatures for parameter handling.
-- `default_api_types`: Comma-separated list of default API types to include (e.g., `insert, select`).
-- `noop_column_string`: Default string to signal no operation for non-key columns.
-
-For detailed descriptions, refer to the comments in the `oratapi.ini` file.
-
----
-
 ## Usage
 
 Run OraTAPI from the command line with the desired options.
