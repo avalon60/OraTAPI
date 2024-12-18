@@ -16,9 +16,6 @@ real_path = Path(__file__).resolve()
 # Get the parent directory
 parent_dir = real_path.parent.parent
 
-
-print(f"The parent directory is: {parent_dir}")
-
 def project_home() -> Path:
     return parent_dir
 

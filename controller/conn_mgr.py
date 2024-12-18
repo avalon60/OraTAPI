@@ -33,9 +33,14 @@ def list_connections(config):
     sections = config.sections()
     if sections:
         print("Database connections:")
-        for section in sections:
+        name = 'Name'
+        print(f"Pos {name:<20}  DSN")
+        under20 = "=" * 20
+        under60 = "=" * 60
+        print(f"=== {under20:<20}  {under60:<20}")
+        for id, section in enumerate(sections, start=1):
             dsn = config[section].get('dsn', 'No DSN provided')
-            print(f"- {section}: {dsn}")
+            print(f"  {id} {section:<20}  {dsn}")
     else:
         print("No database connections found.")
 
