@@ -6,7 +6,7 @@
 
 <b>WORK IN PROGRESS!!!</b>
 
-OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customizable and standardized APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
+OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customisable and standardised APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
 
 OraTAPI connects to an Oracle database, retrieves table and column metadata, and generates the API package files in a staging area. These files can then be deployed to an Oracle database.
 
@@ -18,10 +18,10 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Metadata-Driven**: Automatically generates PL/SQL APIs using Oracle database metadata.
 - **Table Triggers**: Generates customisable table level trigger code.
 - **Views**: Generates view DDL scripts.
-- **Customizable APIs**: Define API names, signatures, and behavior through a configuration file.
+- **Customisable APIs**: Define API names, signatures, and behavior through a configuration file.
 - **Optimistic Locking Support**: Includes `row_version` support for concurrency control.
 - **Column-Specific Logic**: Exclude trigger-maintained columns and manage column defaults efficiently.
-- **Directory Configuration**: Output files are neatly organized into staging directories for easy deployment.
+- **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
 - **Error Handling**: Configurable behavior for missing tables (skip or stop processing).
 
 ---
@@ -170,22 +170,17 @@ ora_tapi.sh -P APP_OWNER -S HR -t EMPLOYEES,DEPARTMENTS
 
 ## Output Structure
 
-Generated files are written to the staging area and organized into subdirectories:
+Generated files are written to the staging area and organised into subdirectories:
 - **Package Specification (`spec_dir`)**: Contains `.sql` files defining the PL/SQL package interface.
 - **Package Body (`body_dir`)**: Contains `.sql` files implementing the PL/SQL package logic.
 - **View (`view`)**: Contains `.sql` files implementing any generated view scripts.
 - **Trigger (`view`)**: Contains `.sql` files implementing any generated trigger scripts.
 
-Each API package is customized based on a combination of the `.ini` configuration, command-line options and template files.
+Each API package is customised based on a combination of the `.ini` configuration, command-line options and template files.
 
 The majority of command line options have defaults which can be set via the OraTAPI.ini configuration file. 
 
 ---
-
-
-As we can see, the generated API procedure names, can be set to suit your requirements. For example, where we see the API respnsible for inserting data, is to be names `del`.
-
-The `default_api_types` property determines which APIs are to be included, be default, in the generated packages (there is one package generated per table). This can be overridden at runtime, using the -T/--api_types option.
 
 These are just a few of the controls. Read on for 
 
@@ -308,19 +303,19 @@ This document explains the different sections and parameters of the configuratio
 
 - **signature_types**: Defines the API signature types (rowtype or coltype).
   - Example: `signature_types = rowtype, coltype`
-  - **Purpose**: Determines whether to generate APIs which implement parameters as rowtypes (p_row) or column types (one parameter for each column).
+  - **Purpose**: Determines whether to generate APIs which implement parameters as rowtypes (p_row) or column types (one parameter for each column). This must be set to `coltype` and / or `rowtype`.
 
 - **include_defaults**: Includes default values for insert APIs.
   - Example: `include_defaults = true`
   - **Purpose**: Ensures that default values for table columns are included in insert APIs.
 
-- **noop_column_string**: Defines the string used for non-key column defaults.
+- **noop_column_string**: Defines a string to be used for non-key, character string type column parameter defaults.
   - Example: `noop_column_string = auto`
-  - **Purpose**: Helps avoid passing unnecessary parameters by preserving default values.
+  - **Purpose**: Helps avoid passing unnecessary parameters by preserving existing values. Comment out of remove value assigned to disable. The value can be set to a character string, the value `auto`, or `dynamic`. Setting to `dynamic` involves a slight resource overhead at runtime.
 
-- **default_api_types**: Specifies which types of APIs (insert, select, update, delete, upsert, merge) should be included by default.
-  - Example: `default_api_types = insert`
-  - **Purpose**: Controls which API types are generated by default.
+- **default_api_types**: Specifies which types of APIs should be included by default.
+  - Example: `default_api_types = insert, select, update, delete`
+  - **Purpose**: Controls which API types are generated by default. Options are insert, select, update, delete, upsert, and merge. These can be overridden at runtime via the `-T/--api_types` command line argument.
 P
 - **return_pk_columns**: Determines whether primary or unique key columns are included as in/out parameters in the generated APIs.
   - Example: `return_pk_columns = true`
@@ -449,7 +444,8 @@ include_defaults = true
 # noop_column_string: If set, parameter defaults for non-key column parameters are defined as <no_column_op_string>.
 # If the default is detected, then the column value in the database is preserved. This provides a mechanism of
 # avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
-# signature_types property). Set to auto, to have a generated, enhanced GUID (42 characters in total).
+# signature_types property). Set to auto, to have a (static) generated, enhanced GUID (42 characters in total) Set to
+dynamic to have the NOOP character string (partly, by sys_guid()) dynamically generated on a per-session basis.
 # noop_column_string = auto
 # noop_column_string = #NO~OP#
 
@@ -492,6 +488,7 @@ CRIT_COLOUR = bold red
 HIGH_COLOUR = bold blue
 # Set colour_console to false, to disable colour output.
 colour_console = true
+
 ```
 
 
