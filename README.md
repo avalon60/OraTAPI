@@ -36,15 +36,15 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
    tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
    ```
 
-  For windows:
-  Open a command Window and enter the command:
-   ```bash
-   7z x <sdist_file>.tar.gz -o<path-to-installation-folder>
+   For windows:
+   Open a command Window and enter the command:
+      ```bash
+      7z x <sdist_file>.tar.gz -o<path-to-installation-folder>
    ```
 
    NOTE: The <path-to-installation-folder> should include an Ora_TAPI directory at the end. This does, not need to be pre-created, but including OraTAPI is to allow it to be easily recognised.
 
-3. Complete the Installation:
+3. Complete the Installation:  
    MacOS / Linux
    ```bash
    cd <path-to-installation-folder>
