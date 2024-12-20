@@ -5,16 +5,16 @@ __version__ = "1.0.6"
 import copy
 import time
 
-from model.api_generator import ApiGenerator
-from lib.config_manager import ConfigManager
-from model.session_manager import DBSession
-from lib.file_system_utils import project_home
-from lib.app_utils import current_timestamp, current_dttm, format_elapsed_time
-from model.user_security import UserSecurity
-from view.interactions import Interactions, MsgLvl
+from src.model.api_generator import ApiGenerator
+from src.lib.config_manager import ConfigManager
+from src.model.session_manager import DBSession
+from src.lib.file_system_utils import project_home
+from src.lib import current_timestamp, format_elapsed_time
+from src.model.user_security import UserSecurity
+from src.view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
-from view.ora_tapi_csv import CSVManager
+from src.view.ora_tapi_csv import CSVManager
 
 RUN_ID = int(time.time())
 prog_bin = Path(__file__).resolve().parent

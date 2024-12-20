@@ -7,9 +7,9 @@ __description__ = "Generates the API code."
 import copy
 import re
 
-from lib.config_manager import ConfigManager
-from model.db_objects import Table
-from model.session_manager import DBSession
+from src.lib.config_manager import ConfigManager
+from src.model.db_objects import Table
+from src.model.session_manager import DBSession
 from lib.file_system_utils import project_home
 from datetime import datetime
 from pathlib import Path

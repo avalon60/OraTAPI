@@ -6,7 +6,7 @@ import argparse
 import configparser
 from pathlib import Path
 import getpass
-from model.user_security import UserSecurity
+from src.model.user_security import UserSecurity
 
 CONFIG_PATH = Path.home() / ".OraTAPI/dsn_credentials.ini"
 

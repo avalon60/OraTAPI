@@ -13,11 +13,11 @@ import shutil
 # Get the real path of the current script
 real_path = Path(__file__).resolve()
 
-# Get the parent directory
-parent_dir = real_path.parent.parent
+# Assuming we are using the <project-root>/src/package convention
+project_home_dir = real_path.parent.parent.parent
 
 def project_home() -> Path:
-    return parent_dir
+    return project_home_dir
 
 def is_valid_dir_name(directory_name: str) -> bool:
     """

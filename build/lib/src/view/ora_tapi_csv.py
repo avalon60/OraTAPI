@@ -4,7 +4,7 @@ __description__ = "Module responsible for managing the Ora TAPI table control cs
 
 import atexit
 from pathlib import Path
-from src.lib import text_to_boolean
+from src.lib.app_utils import text_to_boolean
 import csv
 from src.view.console_display import MsgLvl, ConsoleMgr
 app_home = Path(__file__).resolve().parent.parent

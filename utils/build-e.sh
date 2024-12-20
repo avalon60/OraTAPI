@@ -2,8 +2,8 @@
 ##############################################################################
 # Author: Clive Bostock
 #   Date: 16 Dec 2024 (A Merry Christmas to one and all! :o)
-#   Name: package.sh
-#  Descr: Creates an installable package of the project.
+#   Name: build.sh
+#  Descr: Performs a build and install of the project as packages.
 ##############################################################################
 # Use a workaround for realpath if it's not available (possibly not on Mac)
 realpath() {
@@ -22,4 +22,4 @@ APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
 echo "App home: ${APP_HOME}"
 source venv/bin/activate
-python -m build
+python3 -m pip install -e . 

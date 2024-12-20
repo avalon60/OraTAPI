@@ -4,11 +4,16 @@ __description__ = "Module responsible for user interactions, including argument 
 
 import argparse
 
+from build.lib.model.framework_errors import InvalidParameter
 from lib.config_manager import ConfigManager
 from pathlib import Path
 
-from view.console_display import MsgLvl, ConsoleMgr
+from src.view.console_display import MsgLvl, ConsoleMgr
 
+class MissingParameterError(Exception):
+    """Exception raised for missing parameters."""
+    def __init__(self, parameter_name: str):
+        super().__init__(f"Missing required parameter: {parameter_name}")
 
 class Interactions:
     def __init__(self, controller, config_file_path: Path):
@@ -117,6 +122,9 @@ class Interactions:
         db_username = args.db_username
         db_password = args.db_password
         save_connection = args.save_connection
+
+        if not conn_name and not (db_username and db_password and dsn):
+            raise MissingParameterError('You must specify a named connection or provide a dsn with credentials!')
 
         # Validation logic
         if save_connection:

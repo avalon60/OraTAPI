@@ -7,21 +7,25 @@ __description__ = "Generates the API code."
 import copy
 import re
 
+from build.lib.lib.file_system_utils import project_home
 from src.lib.config_manager import ConfigManager
 from src.model.db_objects import Table
 from src.model.session_manager import DBSession
-from src.lib.file_system_utils import project_home
+from lib.file_system_utils import project_home
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 from copy import deepcopy
 from itertools import chain
-from src.lib import enhanced_guid, random_string
+from lib.app_utils import enhanced_guid, random_string
 
 
 # Define our substitution placeholder string for indent spaces.
 # The number of spaces for an indent tab, is defined in OraTAPI.ini
 IDNT = '%indent_spaces%'
+
+TEMPLATES_LOCATION = project_home()/ 'resources' / 'templates'
+CONFIG_LOCATION = project_home()/ 'resources' / 'config'
 
 # Get the current date
 date_now = datetime.now()
@@ -81,10 +85,10 @@ class ApiGenerator:
         :param trace: Enables trace/debug output when set to True.
         """
         self.proj_home = project_home()  # project_home returns a Path object
-        proj_config_file = self.proj_home / 'config' / 'OraTAPI.ini'
-        self.column_expressions_dir = self.proj_home / 'templates' / 'column_expressions'
-        self.view_template_dir = self.proj_home / 'templates' / 'misc' / 'view'
-        self.trigger_template_dir = self.proj_home / 'templates' / 'misc' / 'trigger'
+        proj_config_file = CONFIG_LOCATION/ 'OraTAPI.ini'
+        self.column_expressions_dir = TEMPLATES_LOCATION / 'column_expressions'
+        self.view_template_dir =  TEMPLATES_LOCATION / 'misc' / 'view'
+        self.trigger_template_dir =  TEMPLATES_LOCATION / 'misc' / 'trigger'
         self.options_dict = deepcopy(options_dict)
         self.config_manager = config_manager
         self.table_owner = table_owner
@@ -739,7 +743,7 @@ class ApiGenerator:
         # Define the template file path
         template_name = str(template_name).replace(".tpt", "")
         template_name += ".tpt"
-        proj_templates = self.proj_home / 'templates' /  template_category / template_type
+        proj_templates = self.proj_home / TEMPLATES_LOCATION /  template_category / template_type
         template_path = proj_templates / template_name
 
         try:

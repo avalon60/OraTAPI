@@ -9,27 +9,32 @@ from model.api_generator import ApiGenerator
 from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
-from lib.app_utils import current_timestamp, current_dttm, format_elapsed_time
+from lib.app_utils import current_timestamp, format_elapsed_time
 from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
 from view.ora_tapi_csv import CSVManager
 
+CONFIG_LOCATION = project_home()/ 'resources' / 'config'
+
 RUN_ID = int(time.time())
+DEFAULT_STAGING = "staging"
+
 prog_bin = Path(__file__).resolve().parent
-app_home = prog_bin.parent
+app_home = project_home()
 
 prog_name = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
-
 class TAPIController:
     def __init__(self, trace: bool = False):
         proj_home = project_home()  # project_home returns a Path object
         chdir(proj_home)
-        config_file_path = proj_home / 'config' / 'OraTAPI.ini'
+        config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
+        if not config_file_path.exists():
+            raise FileNotFoundError(f'Unable to locate config file: {config_file_path}')
         self.view = Interactions(controller=self, config_file_path=config_file_path)
         args_dict = self.view.args_dict
 
@@ -106,7 +111,8 @@ class TAPIController:
 
         self.spec_suffix = self.config_manager.config_value(config_section='file_controls',
                                                             config_key='spec_suffix')
-
+        if self.staging_area_dir == DEFAULT_STAGING:
+            self.staging_area_dir = app_home / self.staging_area_dir
 
         if not self.staging_area_dir.exists():
             self.view.print_console(msg_level=MsgLvl.error, text=f'Staging directory, "{self.staging_area_dir}", does not exist - bailing out!')
