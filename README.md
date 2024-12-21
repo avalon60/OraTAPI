@@ -46,9 +46,9 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 
 ---
 
-## Features
+## Features & Limitations
 
-
+### Features
 - **Metadata-Driven**: Automatically generates PL/SQL APIs using Oracle database metadata.
 - **Table Triggers**: Generates customisable table level trigger code.
 - **Views**: Generates view DDL scripts.
@@ -58,7 +58,24 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
 - **Error Handling**: Configurable behavior for missing tables (skip or stop processing).
 
+### Limitations
+- As of this release, database connections are basic - cloud wallets are not yet supported.  
+- Complex database columns (defined objects) are not supported.
 ---
+
+## Preinstallation
+
+Ensure that you have Python 3.10 or later installed.
+
+If you don't have the `pip` command, you wil need to install it:  
+
+Download pip.
+`curl -O https://bootstrap.pypa.io/get-pip.py`
+
+Install pip.
+`python get-pip.py`
+
+
 
 ## Installation
 
@@ -76,7 +93,8 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
       7z x <sdist_file>.tar.gz -o<path-to-installation-folder>
    ```
 
-   NOTE: The <path-to-installation-folder> should include an Ora_TAPI directory at the end. This does, not need to be pre-created, but including OraTAPI is to allow it to be easily recognised.
+   NOTE: The source distribution file, includes an `oratapi-<x.y.z>` root folder, you may wish to account for this, when constructing <path-to-installation-folder>.  
+         Renaming the `oratapi-<x.y.z>`directory is entirely a matter of choice.
 
 3. Complete the Installation:  
    MacOS / Linux
@@ -94,8 +112,6 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. 
-
-Limitations: As of this release, database connections are basic - cloud wallets are not yet supported.
 
 ---
 
