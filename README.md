@@ -66,6 +66,14 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 ## Preinstallation
 
 Ensure that you have Python 3.10 or later installed.
+On MacOS you can install Python using:  
+
+`brew install python3` # Install the latest version
+
+`brew install python@3.11` # Install Python 3.11 - safer choice.
+
+On Windows, ensure that you obtain Python from: https://www.python.org/downloads/windows/
+you should preferably download Python 3.11. 
 
 If you don't have the `pip` command, you wil need to install it:  
 
@@ -110,13 +118,11 @@ Install pip.
    ./setup.bat
    ```
 
-
-4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. 
+4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
 ---
 
 ## The Primary Components
-
 The OraTAPI too consists of 3 major components:
 
 - The ora_tapi command line tool.
@@ -806,7 +812,7 @@ end;
 ```
 #### Column Expression Maintained
 Column expressions are maintained, via special templates. These are located in the `templates/column_expressions` directory.
-This has twoo sub-directories:
+This has two subdirectories:
 
 - inserts
 - updates
