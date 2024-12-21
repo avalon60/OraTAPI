@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "OraTAPI"
-version = "1.0.10"
+version = "1.0.11"
 description = "Oracle Table API Generator Application"
 authors = [
     { name = "Clive Bostock"}
