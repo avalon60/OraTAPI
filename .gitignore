@@ -50,3 +50,5 @@ src/model/__pycache__/
 src/view/__pycache__/
 
 src/lib/__pycache__/
+
+src/__pycache__/
