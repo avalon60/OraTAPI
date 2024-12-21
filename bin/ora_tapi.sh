@@ -65,13 +65,8 @@ if [[ -z "$PYTHON_INTERPRETER" ]]; then
   echo "Error: No compatible Python interpreter found (python3, python, or py)!"
   exit 1
 fi
-LIBS=$(cd "${PROJECT_DIR}/lib" || exit; pwd)
-CTL=$(cd "${PROJECT_DIR}/controller" || exit; pwd)
-VIEW=$(cd "${PROJECT_DIR}/view" || exit; pwd)
-MDL=$(cd "${PROJECT_DIR}/model" || exit; pwd)
-export PYTHONPATH=${PROJECT_DIR}:${LIBS}:${CTL}:${VIEW}:${MDL}${PYTHONPATH}
-# echo "PYTHONPATH: $PYTHONPATH"
+
+export PYTHONPATH=${PROJECT_DIR}:${PYTHONPATH}
 # Execute the Python program
 
-# echo "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"
 "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"
