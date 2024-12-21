@@ -1,3 +1,0 @@
-[console_scripts]
-conn_mgr = controller.conn_mgr:main
-ora_tapi = controller.ora_tapi:main

@@ -5,7 +5,7 @@ src/lib/__pycache__/
 
 apex_test_train.py
 
-src/resources/config/case_notes.txt
+resources/config/case_notes.txt
 
 src/model/__pycache__/
 

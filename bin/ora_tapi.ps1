@@ -1,75 +1,77 @@
 <#
-#------------------------------------------------------------------------------
-# Author: Clive Bostock
-#   Date: 5 August 2024
-#   Name: ora_tapi.sh
-#  Descr: Wrapper shell for calling OraTAPI/controller/ora_tapi.py
-#
-#    For help, use:  
-#
-#      <OraTAPI-Home>/bin/ora_tapi.sh -h
-#
-#    For Mac or Linux, before the first execution, ensure you set the
-#    execute permissions:
-#
-#    cd <OraTAPI-Home>/bin
-#    chmod 750 ora_tapi.sh
-#
-#------------------------------------------------------------------------------
+.SYNOPSIS
+Wrapper script for calling OraTAPI/controller/ora_tapi.py.
+
+.DESCRIPTION
+This script sets up the environment and executes the OraTAPI Python program.
+
+For help, use:
+    <OraTAPI-Home>\bin\ora_tapi.ps1 -h
+
+Before the first execution, ensure you set the execution policy:
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+
+.AUTHOR
+Clive Bostock
+.DATE
+5 August 2024
 #>
 
-# Constants
-$EntryPoint = "ora_tapi.py"
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$ProjectDir = Split-Path -Parent $ScriptDir
-$BinDir = Join-Path $ProjectDir "bin"
-$ControlDir = Join-Path $ProjectDir "controller"
-$VenvDir = Join-Path $ProjectDir "venv"
 
-# Detect OS and activate virtual environment
-if ($env:OS -match "Windows") {
-    $ActivateScript = Join-Path $VenvDir "Scripts\activate.ps1"
+# Define the entry point and directories
+$ENTRY_POINT = "ora_tapi.py"
+$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PROJECT_DIR = Split-Path -Parent $SCRIPT_DIR
+$BIN_DIR = Join-Path $PROJECT_DIR "bin"
+$CONTROL_DIR = Join-Path $PROJECT_DIR "src\controller"
+
+# Virtual environment directory
+$VENV_DIR = Join-Path $PROJECT_DIR "venv"  # Assuming venv directory is in the parent folder
+
+# Determine activation script based on OS
+if ($IsWindows) {
+    $ACTIVATE_SCRIPT = Join-Path $VENV_DIR "Scripts\activate.ps1"  # Windows path
 } else {
-    $ActivateScript = Join-Path $VenvDir "bin/activate"
+    $ACTIVATE_SCRIPT = Join-Path $VENV_DIR "bin\activate"  # Linux/Mac path
 }
 
-# Attempt to activate virtual environment
-if (-Not (Test-Path $ActivateScript)) {
+# Check if the virtual environment activation script exists
+if (!(Test-Path $ACTIVATE_SCRIPT)) {
     Write-Host "WARNING: Unable to locate a venv directory or activate script; no virtual environment activated."
-} else {
-    # For Windows PowerShell
-    if ($ActivateScript -match "activate.ps1") {
-        & $ActivateScript
+}
+
+# Activate the virtual environment if the script exists
+if (Test-Path $ACTIVATE_SCRIPT) {
+    if ($IsWindows) {
+        & $ACTIVATE_SCRIPT
     } else {
-        # For Linux/Mac (requires `source` equivalent)
-        . $ActivateScript
+        source $ACTIVATE_SCRIPT
     }
 }
 
-# Detect Python interpreter
-$PythonInterpreter = ""
+# Determine the Python interpreter
+$PYTHON_INTERPRETER = ""
 if (Get-Command python -ErrorAction SilentlyContinue) {
-    $PythonInterpreter = "python"
+    $PYTHON_INTERPRETER = "python"
 } elseif (Get-Command py -ErrorAction SilentlyContinue) {
-    $PythonInterpreter = "py"
+    $PYTHON_INTERPRETER = "py"
 } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
-    $PythonInterpreter = "python3"
+    $PYTHON_INTERPRETER = "python3"
 }
 
 # Error handling if no interpreter found
-if (-Not $PythonInterpreter) {
-    Write-Host "Error: No compatible Python interpreter found (python3, python, or py)!"
+if (-not $PYTHON_INTERPRETER) {
+    Write-Error "Error: No compatible Python interpreter found (python3, python, or py)!"
     exit 1
 }
 
-# Configure PYTHONPATH
-$Libs = Join-Path $ProjectDir "lib"
-$Ctl = Join-Path $ProjectDir "controller"
-$View = Join-Path $ProjectDir "view"
-$Model = Join-Path $ProjectDir "model"
-$env:PYTHONPATH = "$ProjectDir;$Libs;$Ctl;$View;$Model;$env:PYTHONPATH"
+# Set up PYTHONPATH
+$LIBS = Join-Path $PROJECT_DIR "lib"
+$CTL = Join-Path $PROJECT_DIR "controller"
+$VIEW = Join-Path $PROJECT_DIR "view"
+$MDL = Join-Path $PROJECT_DIR "model"
+$env:PYTHONPATH = "$PROJECT_DIR;$LIBS;$CTL;$VIEW;$MDL;$env:PYTHONPATH"
 
-# Execute the Python script
-$Arguments = $args -join " "  # Combine passed arguments
-& $PythonInterpreter (Join-Path $ControlDir $EntryPoint) $Arguments
-
+# Execute the Python program
+Write-Host "Executing Python script..."
+& $PYTHON_INTERPRETER (Join-Path $CONTROL_DIR $ENTRY_POINT) @args

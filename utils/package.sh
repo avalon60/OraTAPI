@@ -22,4 +22,4 @@ APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
 echo "App home: ${APP_HOME}"
 source venv/bin/activate
-python -m build
+python -m build --sdist

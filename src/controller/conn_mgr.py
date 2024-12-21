@@ -135,7 +135,7 @@ def main():
     ensure_config_file()
 
     parser = argparse.ArgumentParser(description="Database connection manager.",
-                                     epilog="Used to create/edit/delete or store named database connections."
+                                     epilog="Used to create/edit/delete or store named database connections. "
                                             "Database connections are stored, encrypted, in a local store.")
 
 

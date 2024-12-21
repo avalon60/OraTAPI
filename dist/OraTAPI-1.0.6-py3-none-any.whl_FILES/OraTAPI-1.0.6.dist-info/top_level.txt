@@ -1,5 +1,0 @@
-controller
-lib
-model
-resources
-view

@@ -4,7 +4,6 @@ __description__ = "Module responsible for user interactions, including argument 
 
 import argparse
 
-from build.lib.model.framework_errors import InvalidParameter
 from lib.config_manager import ConfigManager
 from pathlib import Path
 

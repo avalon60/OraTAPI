@@ -97,7 +97,7 @@ class ConfigManager:
 
 
 if __name__ == '__main__':
-    config_file = Path('../resources/config/OraTAPI.ini.sample')
+    config_file = Path('../../resources/config/OraTAPI.ini.sample')
     config_manager = ConfigManager(config_file_path=config_file)
     config_manager.print_config()
 

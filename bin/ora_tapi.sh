@@ -25,9 +25,7 @@ ENTRY_POINT="ora_tapi.py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
 BIN_DIR="${PROJECT_DIR}/bin"
-CONTROL_DIR="${PROJECT_DIR}/controller"
-E="-e"
-
+CONTROL_DIR="${PROJECT_DIR}/src/controller"
 E="-e"
 
 # Virtual environment activation (adjust based on your setup)
