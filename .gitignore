@@ -44,3 +44,9 @@ staging/trigger/regions_biu.sql
 *.sql
 
 OraTAPI.egg-info/
+
+src/model/__pycache__/
+
+src/view/__pycache__/
+
+src/lib/__pycache__/
