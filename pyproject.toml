@@ -7,9 +7,10 @@ name = "OraTAPI"
 version = "1.0.6"
 description = "Oracle Table API Generator Application"
 authors = [
-    { name = "Clive Bostock"} ]
+    { name = "Clive Bostock"}
+]
 
-# Useful if publishing through PyPi
+# Useful if publishing through PyPI
 keywords = [
     "python",
     "oracle",
@@ -21,7 +22,7 @@ keywords = [
     "database triggers",
     "code generator",
     "automation"
-   ]
+]
 
 # Metadata
 classifiers = [
@@ -32,20 +33,24 @@ classifiers = [
     "Topic :: Software Development :: Code Generators",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
-    ]
+]
 
 # Specify the package directory
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [project.urls]
-"Repository" = "https://https://github.com/avalon60/OraTAPI"
+"Repository" = "https://github.com/avalon60/OraTAPI"
 
 # Include additional resources
 [tool.setuptools.package-data]
 "*" = ["*.ini", "*.ini.sample", "*.tpt", "*.tpt.sample"]
 
-[tool.scripts]
+
+# Declare scripts as dynamic
+dynamic = ["scripts"]
+
+# Scripts defined under `[project.scripts]`
+[project.scripts]
 conn_mgr = "controller.conn_mgr:main"
 ora_tapi = "controller.ora_tapi:main"
-
