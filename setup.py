@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="OraTAPI",
-    version="1.0.6",
+    version="1.0.7",
     description="Oracle TAPI Application",
     author="Your Name",
     author_email="your_email@example.com",
