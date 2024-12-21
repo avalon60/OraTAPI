@@ -20,4 +20,9 @@ PROG_PATH=$(realpath $0)
 PROG_DIR=$(dirname ${PROG_PATH})
 APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
-tree -I "dist|logs|venv|staging|*egg-info*|.idea|.git|build|*.pyc|*pycache*|*utils*"
+if [ "$1" = "terse" ]
+then
+  tree -I "dist|logs|venv|staging|*egg-info*|.idea|.git|build|*.pyc|*pycache*|*utils*|*template*"
+else
+  tree -I "dist|logs|venv|staging|*egg-info*|.idea|.git|build|*.pyc|*pycache*|*utils*"
+fi

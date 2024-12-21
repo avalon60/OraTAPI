@@ -3,11 +3,11 @@
 # Author: Clive Bostock
 #   Date: 5 August 2024
 #   Name: ora_tapi.sh
-#  Descr: Wrapper shell for calling OraTAPI/controller/ora_tapi.py
+#  Descr: Wrapper shell for calling OraTAPI/src/controller/conn_mgr.py
 #
 #    For help, use:
 #
-#      <OraTAPI-Home>/bin/ora_tapi.sh -h
+#      <OraTAPI-Home>/bin/conn_mgr.sh -h
 #
 #    For Mac or Linux, before the first execution, ensure you set the
 #    execute permissions:
@@ -25,7 +25,10 @@ ENTRY_POINT="conn_mgr.py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
 BIN_DIR="${PROJECT_DIR}/bin"
-CONTROL_DIR="${PROJECT_DIR}/controller"
+CONTROL_DIR="${PROJECT_DIR}/src/controller"
+VIEW_DIR="${PROJECT_DIR}/src/view"
+LIB_DIR="${PROJECT_DIR}/src/lib"
+MODEL_DIR="${PROJECT_DIR}/src/model"
 E="-e"
 
 E="-e"
@@ -67,13 +70,10 @@ if [[ -z "$PYTHON_INTERPRETER" ]]; then
   echo "Error: No compatible Python interpreter found (python3, python, or py)!"
   exit 1
 fi
-LIBS=$(cd "${PROJECT_DIR}/lib" || exit; pwd)
-CTL=$(cd "${PROJECT_DIR}/controller" || exit; pwd)
-VIEW=$(cd "${PROJECT_DIR}/view" || exit; pwd)
-MDL=$(cd "${PROJECT_DIR}/model" || exit; pwd)
+LIBS=$(cd "${LIB_DIR}" || exit; pwd)
+CTL=$(cd "${CONTROLLER_DIR}" || exit; pwd)
+VIEW=$(cd "${VIEW_DIR}" || exit; pwd)
+MDL=$(cd "${MODEL_DIR}" || exit; pwd)
 export PYTHONPATH=${PROJECT_DIR}:${LIBS}:${CTL}:${VIEW}:${MDL}${PYTHONPATH}
-# echo "PYTHONPATH: $PYTHONPATH"
 # Execute the Python program
-
-# echo "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"
 "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"

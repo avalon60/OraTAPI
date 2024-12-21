@@ -9,10 +9,10 @@ setup(
     packages=find_packages(),  
     include_package_data=True,  # Include files from the MANIFEST.in
     package_data={  # Include non-Python files in specific packages
-        "templates": ["**/*.tpt", "**/*.tpt.sample"],
+        "src/templates": ["**/*.tpt", "**/*.tpt.sample"],
     },
     data_files=[  # Include root-level files and other extras
-        (".", ["setup.py", "LICENSE", "setup.sh", "requirements.txt", "README.md"]),
+        ("src", ["setup.py", "LICENSE", "requirements.txt", "README.md"]),
     ],
     entry_points={
         "console_scripts": [

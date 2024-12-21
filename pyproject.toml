@@ -1,14 +1,56 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "OraTAPI"
 version = "1.0.6"
-description = "Oracle TAPI Application"
+description = "Oracle Table API Generator Application"
+authors = [
+    { name = "Clive Bostock"}
+]
 
-[tool.poetry]
-# (Optional) Poetry-specific configurations like dependencies
+# Useful if publishing through PyPI
+keywords = [
+    "python",
+    "oracle",
+    "database",
+    "plsql",
+    "table api",
+    "stored procedures",
+    "views",
+    "database triggers",
+    "code generator",
+    "automation"
+]
 
-[tool.setuptools]
-# (Optional) Overrides for setuptools options
+# Metadata
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Database",
+    "Topic :: Software Development :: Code Generators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
 
-[tool.scripts]
+# Specify the package directory
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+"Repository" = "https://github.com/avalon60/OraTAPI"
+
+# Include additional resources
+[tool.setuptools.package-data]
+"*" = ["*.ini", "*.ini.sample", "*.tpt", "*.tpt.sample"]
+
+
+# Declare scripts as dynamic
+dynamic = ["scripts"]
+
+# Scripts defined under `[project.scripts]`
+[project.scripts]
 conn_mgr = "controller.conn_mgr:main"
 ora_tapi = "controller.ora_tapi:main"

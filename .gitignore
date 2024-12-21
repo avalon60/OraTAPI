@@ -1,21 +1,21 @@
 
 .idea/
 
-lib/__pycache__/
+src/lib/__pycache__/
 
 apex_test_train.py
 
-config/case_notes.txt
+resources/config/case_notes.txt
 
-model/__pycache__/
+src/model/__pycache__/
 
-view/__pycache__/
+src/view/__pycache__/
 
 staging/package_body/
 
 staging/package_spec/
 
-controller/example.csv
+src/controller/example.csv
 
 staging/view/countries_v.sql
 
