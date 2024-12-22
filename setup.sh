@@ -17,7 +17,7 @@ realpath() {
     cd "$(dirname "$1")" && pwd
   fi
 }
-
+step=0
 PROG_PATH=$(realpath "$0")
 APP_HOME=$(dirname "${PROG_PATH}")
 
@@ -31,6 +31,9 @@ VENV_DIR="venv"  # Change this if you want a different name for the virtual env
 BIN_DIR="bin"    # Directory containing shell scripts
 
 # Step 1: Check if pip is installed
+let step=${step}+1
+step_desc="Check if pip is installed"
+echo "Step ${step}: ${step_desc}..."
 if ! command -v pip >/dev/null 2>&1
 then
     echo "pip not found. Installing pip..."
@@ -42,6 +45,9 @@ else
 fi
 
 # Step 2: Create virtual environment if it doesn't exist
+let step=${step}+1
+step_desc="Create virtual environment if it doesn't exist"
+echo "Step ${step}: ${step_desc}..."
 if [ ! -d "$VENV_DIR" ]
 then
     echo "Creating virtual environment in: $VENV_DIR"
@@ -51,6 +57,9 @@ else
 fi
 
 # Step 3: Activate the virtual environment
+let step=${step}+1
+step_desc="Activate the virtual environment"
+echo "Step ${step}: ${step_desc}..."
 echo "Activating virtual environment..."
 source "$VENV_DIR/bin/activate"
 
@@ -58,20 +67,16 @@ source "$VENV_DIR/bin/activate"
 echo "Upgrading pip..."
 pip install --upgrade pip
 
-# Step 5: Install dependencies from requirements.txt or manually install required packages
-if [ -f requirements.txt ]
- then
-    echo "Installing dependencies from requirements.txt..."
-    pip install -r requirements.txt
-else
-    echo "requirements.txt not found. Installing package from the current directory..."
-    pip install .
-fi
-
-# step 6: perform the packages install:
+# Step 5: Perform the packages install
+step_desc="Perform the packages install"
+let step=${step}+1
+echo "Step ${step}: ${step_desc}..."
 python3 -m pip install .
 
-# Step 7: Set executable permissions for shell scripts
+# Step 6: Perform the packages install
+step_desc="Set executable permissions for shell script"
+let step=${step}+1
+echo "Step ${step}: ${step_desc}..."
 echo "Setting executable permissions for shell scripts..."
 chmod +x "$BIN_DIR/conn_mgr.sh"
 chmod +x "$BIN_DIR/ora_tapi.sh"

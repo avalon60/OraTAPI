@@ -10,3 +10,8 @@ APP_HOME=$(dirname ${APP_HOME})
 cd ${APP_HOME}
 source venv/bin/activate
 pip freeze | grep -v "apt-clone" > requirements.txt
+
+if [ -f pyproject.toml ]
+then
+  utils/sync_requirements.sh
+fi
