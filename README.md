@@ -4,39 +4,6 @@
 
 Version: 1.0.11
 
-- [Features](#features)
-- [Installation](#installation)
-- [The Primary Components](#the-primary-components)
-  - [Command Line Tools](#command-line-tools)
-    - [Windows:](#windows)
-    - [MacOS / Linux:](#macos--linux)
-- [Usage](#usage)
-  - [Basic Example:](#basic-example)
-  - [Full Command-Line Arguments:](#full-command-line-arguments)
-- [Output Structure](#output-structure)
-  - [Configuration Settings for OraTAPI.ini](#configuration-settings-for-oratapiini)
-    - [\[OraTAPI\]](#oratapi)
-    - [\[project\]](#project)
-    - [\[copyright\]](#copyright)
-    - [\[behaviour\]](#behaviour)
-    - [\[formatting\]](#formatting)
-    - [\[file\_controls\]](#file_controls)
-    - [\[api\_controls\]](#api_controls)
-    - [\[schemas\]](#schemas)
-    - [\[misc\]](#misc)
-    - [\[console\]](#console)
-    - [Example configuration file:](#example-configuration-file)
-  - [Sample Generated API:](#sample-generated-api)
-- [Auto Column Management](#auto-column-management)
-  - [The col\_auto\_maintain\_method Property](#the-col_auto_maintain_method-property)
-    - [Trigger Maintained](#trigger-maintained)
-    - [Column Expression Maintained](#column-expression-maintained)
-  - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
-  - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
-- [Connection Manager](#connection-manager)
-- [License](#license)
-
-
 <b>WORK IN PROGRESS!!!</b>
 
 
