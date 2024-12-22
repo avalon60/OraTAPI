@@ -4,9 +4,6 @@
 
 Version 1.0.12
 
-<b>WORK IN PROGRESS!!!</b>
-
-
 OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customisable and standardised APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
 
 OraTAPI connects to an Oracle database, retrieves table and column metadata, and generates the API package files in a staging area. These files can then be deployed to an Oracle database.
@@ -78,18 +75,18 @@ Install pip.
    ./setup.sh
    ```
    Windows:
-   ```bash
+   ```ps1
    cd <path-to-installation-folder>
-   chmod 750 setup.sh
-   ./setup.bat
+   ./setup.ps1
    ```
+    The Windows command must be run from a Windows PowerShell terminal.  
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
 ---
 
 ## The Primary Components
-The OraTAPI too consists of 3 major components:
+The OraTAPI tools consists of 3 major components:
 
 - The ora_tapi command line tool.
 - Code templates.
@@ -167,7 +164,7 @@ Run OraTAPI from the command line with the desired options.
 
 ### Basic Example:
 ```bash
-ora_tapi.sh -P APP_OWNER -S HR -t EMPLOYEES,DEPARTMENTS
+ora_tapi.sh --schema_name HR -t employees,departments -conn_name dev_db --tapi_author cbostock
 ```
 
 ### Full Command-Line Arguments:
@@ -259,7 +256,7 @@ This document explains the different sections and parameters of the configuratio
 #### [file_controls]
 - **default_staging_dir**: Specifies the root directory where the generated files will be written.
   - Example: `default_staging_dir = /u02/projects/demo/staging`
-  - **Purpose**: Defines the folder where all generated files will be placed by default. The default location is `staging` and is located directliy below the OraTAPI installation root folder. You can specvify a pathname relative to the OraTAPI installation root folder, or a full pathname. This can be overridden at runtime, using the `-g/--staging_area_dir` argument.
+  - **Purpose**: Defines the folder where all generated files will be placed. The default location is `staging` and is located directly below the OraTAPI installation root folder. You can specify a pathname relative to the OraTAPI installation root folder, or a full pathname. This can be overridden at runtime, using the `-g/--staging_area_dir` argument.
   
   Sub-directories are created at run-time, as required, to host the generated code. The names of the sub-directories are configurable (read on).
   
@@ -267,23 +264,26 @@ This document explains the different sections and parameters of the configuratio
   - Examples:   
   `spec_suffix = .pks`   
   `body_suffix = .pkb`  
-  - **Purpose**: Specifies the file extension for generated SQL files. The default for these is `.sql`.
+  - **Purpose**: Specifies the file extension for generated SQL files. The default for these is `.sql`.  
+  
+
+    NOTE: If the spec_dir and the body_dir are defined as the same directory, spec_suffix and body_suffix must be different.
 
 - **spec_dir** & **body_dir**: Define the directories for package specification and package body files.
   - Example: `spec_dir = package_spec`
-  - **Purpose**: Organises generated files in a specific staging sub-directory for clarity and structure.
+  - **Purpose**: Organises generated files in a specific staging subdirectory for clarity and structure.
 
 - **trigger_dir**: Define the directory for trigger files.
   - Example: `trigger_dir = trigger`
-  - **Purpose**: Organises generated trigger source files in a specific staging sub-directory for clarity and structure.
+  - **Purpose**: Organises generated trigger source files in a specific staging subdirectory for clarity and structure.
 
 - **view_dir**:  Define the directory for view source files.
   - Example: `view_dir = view`
-  - **Purpose**:  Organises generated view source files in a specific staging sub-directory for clarity and structure.
+  - **Purpose**:  Organises generated view source files in a specific staging subdirectory for clarity and structure.
 
 - **ora_tapi_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `ora_tapi_csv_dir = `
-  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written. New file entries are automatically added when tables are processed and no corresponding entry is found.
+  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found.
 
 ---
 
@@ -322,7 +322,7 @@ This document explains the different sections and parameters of the configuratio
 
 - **row_vers_column_name**: Defines the column name used for optimistic locking.
   - Example: `row_vers_column_name = row_version`
-  - **Purpose**: Enables optimistic locking by tracking changes to rows using a version number. Setting this for a common table column name, results in the inclusion of an `out` parameter, wherever the named column is found in a table..
+  - **Purpose**: Supports optimistic locking column used for tracking changes to rows using a version number. Setting this for a common table column name, results in the inclusion of an `out` parameter, wherever the named column is found in a table. In addition column expressions (see later) can be used to maintain the column. Alternatively triggers can be used.
 
 - **signature_types**: Defines the API signature types (rowtype or coltype).
   - Example: `signature_types = rowtype, coltype`
@@ -334,38 +334,42 @@ This document explains the different sections and parameters of the configuratio
 
 - **noop_column_string**: Defines a string to be used for non-key, character string type column parameter defaults.
   - Example: `noop_column_string = auto`
-  - **Purpose**: Helps avoid passing unnecessary parameters by preserving existing values. Comment out of remove value assigned to disable. The value can be set to a character string, the value `auto`, or `dynamic`. Setting to `dynamic` involves a slight resource overhead at runtime.
+  - **Purpose**: Helps avoid passing unnecessary parameters by preserving existing values. Comment out of remove value assigned to disable the feature. The value can be set to a character string, the value `auto`, or `dynamic`. Setting to `dynamic` involves a slight resource overhead at runtime. Only works for character string columns (VARCHAR2, CLOB etc.)
 
 - **default_api_types**: Specifies which types of APIs should be included by default.
   - Example: `default_api_types = insert, select, update, delete`
   - **Purpose**: Controls which API types are generated by default. Options are insert, select, update, delete, upsert, and merge. These can be overridden at runtime via the `-T/--api_types` command line argument.
 P
-- **return_pk_columns**: Determines whether primary or unique key columns are included as in/out parameters in the generated APIs.
+- **return_pk_columns**: Determines whether primary key columns are included as in/out parameters in the generated APIs.
   - Example: `return_pk_columns = true`
+  - **Purpose**: Ensures primary/unique key columns are returned in APIs that modify data.
+
+- **return_ak_columns**: Determines whether unique key constraint columns are included as in/out parameters in the generated APIs.
+  - Example: `return_ak_columns = true`
   - **Purpose**: Ensures primary/unique key columns are returned in APIs that modify data.
 
 - **include_commit**: Defines whether a commit parameter should be included.
   - Example: `include_commit = true`
-  - **Purpose**: Includes a commit parameter to control transaction behavior.
-
+  - **Purpose**: Includes a commit parameter to implement a transactional behavior.
+  - 
 ---
 
 #### [schemas]
 - **default_table_owner**: Specifies the default schema for tables.
   - Example: `default_table_owner = aut`
-  - **Purpose**: Sets the default schema for tables, which can be overridden by command-line arguments.
+  - **Purpose**: Defines the default schema for tables on which APIs are based. This can be overridden by command-line argument (e.f.`-To <schema_name>`).
 
 - **default_package_owner**: Specifies the default schema for packages.
   - Example: `default_package_owner = aut`
-  - **Purpose**: Sets the default schema for packages, which can be overridden by command-line arguments.
+  - **Purpose**: Defines the default target schema for package creation. This can be overridden by command-line argument (e.g. `-po <schema_name>`).
 
 - **default_view_owner**: Specifies the default schema for views.
   - Example: `default_view_owner = aut`
-  - **Purpose**: Sets the default schema for views, which can be overridden by command-line arguments.
+  - **Purpose**: Defines the default target schema for view creation. This can be overridden by command-line arguments (e.g. `-vo <schema_name>`).
 
 - **default_trigger_owner**: Specifies the default schema for triggers.
   - Example: `default_trigger_owner = aut`
-  - **Purpose**: Sets the default schema for triggers, which can be overridden by command-line arguments.
+  - **Purpose**: Defines the default schema for trigger creation. This can be overridden by command-line argument (e.g. `-to <schema_name>`).
 
 ---
 
@@ -379,7 +383,7 @@ P
 #### [console]
 - **INFO_COLOUR**, **WARN_COLOUR**, **ERR_COLOUR**, **CRIT_COLOUR**, **HIGH_COLOUR**: Defines color schemes for different output categories.
   - Example: `INFO_COLOUR = white`
-  - **Purpose**: Customises the colors used in the console output for different log levels (info, warning, error, etc.).
+  - **Purpose**: Customises the colors used in the console output for different message priority levels (info, warning, error, etc.).
 
 - **colour_console**: Enables or disables color output in the console.
   - Example: `colour_console = true`
@@ -757,7 +761,7 @@ If you are using columns which you want to be automatically updated during DML o
 - trigger
 - expression
 
-#### Trigger Maintained
+#### Maintained by Trigger 
 If you set the `col_auto_maintain_method` proprty to <i>trigger</i>, you should ensure that your trigger template(s) is designed to make appropriate updates, for on the columns that you list. Example:
 
 ```
@@ -777,8 +781,8 @@ begin
 end;
 /
 ```
-#### Column Expression Maintained
-Column expressions are maintained, via special templates. These are located in the `templates/column_expressions` directory.
+#### Maintained by Column Expression
+Column expressions are configured, via special templates. These are located in the `templates/column_expressions` directory.
 This has two subdirectories:
 
 - inserts
@@ -855,9 +859,10 @@ options:
 Used to create/edit/delete or store named database connections.Database connections are stored, encrypted, in a local store.
 
 ```
-The `-n/--name` option is mandatory in conjunction with all other options, with the exception of the `-l/--list` option. Also the `-c/--create`, `-e/--edit`, `-d/--delete` options are mutually exclusive.
+Here’s a revised version of your sentence with improved grammar and clarity:
 
-Connection credentials are stored with 256 bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
+The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive.
+Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
 
 <b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
 
