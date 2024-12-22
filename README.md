@@ -15,11 +15,11 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Metadata-Driven**: Automatically generates PL/SQL APIs using Oracle database metadata.
 - **Table Triggers**: Generates customisable table level trigger code.
 - **Views**: Generates view DDL scripts.
-- **Customisable APIs**: Define API names, signatures, and behavior through a configuration file.
+- **Customisable APIs**: Define API names, signatures, and behaviour through a configuration file.
 - **Optimistic Locking Support**: Includes support for concurrency control "row version" columns, used for optimistic locking implementation.
 - **Column-Specific Logic**: Exclude trigger-maintained columns and manage column defaults efficiently.
 - **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
-- **Error Handling**: Configurable behavior for missing tables (skip or stop processing).
+- **Error Handling**: Configurable behaviour for missing tables (skip or stop processing).
 
 ### Limitations
 - As of this release, database connections are basic - cloud wallets are not supported.
@@ -349,7 +349,7 @@ P
 
 - **include_commit**: Defines whether a commit parameter should be included.
   - Example: `include_commit = true`
-  - **Purpose**: Includes a commit parameter to implement a transactional behavior.
+  - **Purpose**: Includes a commit parameter to implement a transactional behaviour.
   - 
 ---
 
@@ -380,13 +380,13 @@ P
 ---
 
 #### [console]
-- **INFO_COLOUR**, **WARN_COLOUR**, **ERR_COLOUR**, **CRIT_COLOUR**, **HIGH_COLOUR**: Defines color schemes for different output categories.
+- **INFO_COLOUR**, **WARN_COLOUR**, **ERR_COLOUR**, **CRIT_COLOUR**, **HIGH_COLOUR**: Defines colour schemes for different output categories.
   - Example: `INFO_COLOUR = white`
-  - **Purpose**: Customises the colors used in the console output for different message priority levels (info, warning, error, etc.).
+  - **Purpose**: Customises the colours used in the console output for different message priority levels (info, warning, error, etc.).
 
-- **colour_console**: Enables or disables color output in the console.
+- **colour_console**: Enables or disables colour output in the console.
   - Example: `colour_console = true`
-  - **Purpose**: Controls whether colored output is shown in the console.
+  - **Purpose**: Controls whether coloured output is shown in the console.
 
 ---
 
