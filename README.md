@@ -16,7 +16,7 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Table Triggers**: Generates customisable table level trigger code.
 - **Views**: Generates view DDL scripts.
 - **Customisable APIs**: Define API names, signatures, and behavior through a configuration file.
-- **Optimistic Locking Support**: Includes `row_version` support for concurrency control.
+- **Optimistic Locking Support**: Includes support for concurrency control "row version" columns, used for optimistic locking implementation.
 - **Column-Specific Logic**: Exclude trigger-maintained columns and manage column defaults efficiently.
 - **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
 - **Error Handling**: Configurable behavior for missing tables (skip or stop processing).
