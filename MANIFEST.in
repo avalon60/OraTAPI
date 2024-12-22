@@ -1,0 +1,2 @@
+include setup.sh
+include setup.ps1

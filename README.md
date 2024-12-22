@@ -47,7 +47,6 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 ---
 
 ## Features & Limitations
-
 ### Features
 - **Metadata-Driven**: Automatically generates PL/SQL APIs using Oracle database metadata.
 - **Table Triggers**: Generates customisable table level trigger code.
