@@ -22,8 +22,7 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Error Handling**: Configurable behavior for missing tables (skip or stop processing).
 
 ### Limitations
-- As of this release, database connections are basic - cloud wallets are not yet supported.  
-- Complex database columns (defined objects) are not supported.
+- As of this release, database connections are basic - cloud wallets are not yet supported.
 ---
 
 ## Preinstallation
