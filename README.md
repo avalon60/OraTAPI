@@ -213,6 +213,7 @@ This document explains the different sections and parameters of the configuratio
 ---
 
 #### [OraTAPI]
+
 - **version**: Specifies the version of the OraTAPI being used.
   - Example: `version = 1.0.6`
   - **Purpose**: Tracks the version of the tool for compatibility and updates. 
@@ -388,7 +389,7 @@ P
 
 #### Example configuration file:
 
-```
+```ini
 [OraTAPI]
 version = 1.0.6
 
