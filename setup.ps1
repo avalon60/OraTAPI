@@ -22,7 +22,7 @@ $BIN_DIR = "bin"    # Directory containing shell scripts
 # Step 1: Check if pip is installed
 $step++
 $step_desc = "Check if pip is installed"
-Write-Host "Step $step: $step_desc..."
+Write-Host "Step ${step}: ${step_desc}..."
 if (-not (Get-Command pip -ErrorAction SilentlyContinue)) {
     Write-Host "pip not found. Installing pip..."
     Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
@@ -35,7 +35,7 @@ if (-not (Get-Command pip -ErrorAction SilentlyContinue)) {
 # Step 2: Create virtual environment if it doesn't exist
 $step++
 $step_desc = "Create virtual environment if it doesn't exist"
-Write-Host "Step $step: $step_desc..."
+Write-Host "Step ${step}: ${step_desc}..."
 if (-not (Test-Path $VENV_DIR)) {
     Write-Host "Creating virtual environment in: $VENV_DIR"
     python3 -m venv $VENV_DIR
@@ -46,7 +46,7 @@ if (-not (Test-Path $VENV_DIR)) {
 # Step 3: Activate the virtual environment
 $step++
 $step_desc = "Activate the virtual environment"
-Write-Host "Step $step: $step_desc..."
+Write-Host "Step ${step}: ${step_desc}..."
 Write-Host "Activating virtual environment..."
 # Use the virtual environment's Python directly
 $venvPython = Join-Path -Path $VENV_DIR -ChildPath "Scripts\python.exe"
@@ -58,13 +58,13 @@ Write-Host "Upgrading pip..."
 # Step 5: Perform the packages install
 $step++
 $step_desc = "Perform the packages install"
-Write-Host "Step $step: $step_desc..."
+Write-Host "Step ${step}: ${step_desc}..."
 & $venvPython -m pip install .
 
 # Step 6: Set executable permissions for shell scripts (on non-Windows systems)
 $step++
 $step_desc = "Set executable permissions for shell scripts"
-Write-Host "Step $step: $step_desc..."
+Write-Host "Step ${step}: ${step_desc}..."
 if ($IsWindows -eq $false) {
     Write-Host "Setting executable permissions for shell scripts..."
     chmod +x (Join-Path -Path $BIN_DIR -ChildPath "conn_mgr.sh")
