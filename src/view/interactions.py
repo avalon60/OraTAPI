@@ -7,7 +7,7 @@ import argparse
 from lib.config_manager import ConfigManager
 from pathlib import Path
 
-from src.view.console_display import MsgLvl, ConsoleMgr
+from view.console_display import MsgLvl, ConsoleMgr
 
 class MissingParameterError(Exception):
     """Exception raised for missing parameters."""
