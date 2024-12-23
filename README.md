@@ -51,20 +51,23 @@ Install pip.
 
 1. Download the OraTAPI.tar.gz Artefact to a staging directory.
 
-2. Open a Terminal Window and Extrract the Contents:
-   For MacOS / Linux
-   ```bash
-   tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
-   ```
-
-   For windows:
-   Open a command Window and enter the command:
+   2. Open a Terminal Window and Extrract the Contents:
+      For MacOS / Linux
       ```bash
-      7z x <sdist_file>.tar.gz -o<path-to-installation-folder>
-   ```
+      mkdir <path-to-installation-folder>
+      tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
+      ```
 
-   NOTE: The source distribution file, includes an `oratapi-<x.y.z>` root folder, you may wish to account for this, when constructing <path-to-installation-folder>.  
-         Renaming the `oratapi-<x.y.z>`directory is entirely a matter of choice.
+      For windows:
+      Open a **Windows PowerShell Terminal** and enter the command:
+      ```powershell
+      mkdir <path-to-installation-folder>
+      tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
+      ```
+      The tar command should be supplied with Windows PowerShell.    
+
+          NOTE: The source distribution file, includes an `oratapi-<x.y.z>` root folder, you may wish to account for this, when constructing <path-to-installation-folder>.  
+                Renaming the `oratapi-<x.y.z>`directory is entirely a matter of choice.
 
 3. Complete the Installation:  
    MacOS / Linux
