@@ -13,8 +13,16 @@ import shutil
 # Get the real path of the current script
 real_path = Path(__file__).resolve()
 
-# Assuming we are using the <project-root>/src/package convention
-project_home_dir = real_path.parent.parent.parent
+# We assume that our project is based on the <project-root>/src/package paradigm.
+# Traverse back based on the known project structure.
+project_home_dir = real_path
+while project_home_dir.name != "src" and project_home_dir != project_home_dir.parent:
+    project_home_dir = project_home_dir.parent
+    # Make sure we get the parent of the `src` directory
+    if project_home_dir.name == "src" or project_home_dir.name in ('venv', '.venv'):
+        project_home_dir = project_home_dir.parent
+        break
+
 
 def project_home() -> Path:
     return project_home_dir
