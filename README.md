@@ -877,16 +877,18 @@ Connection credentials are stored with 256-bit AES encryption, to a local store,
 Any properties from the OraTAPI.ini file may be interpolated into the templates. Values must be delimited by a pair of % characters.  
 In addition the following may be used.
 
-|  Substitition String          |Description                                                                     |
+|  Substitition String          | Description                                                                    |
 |-------------------------------|--------------------------------------------------------------------------------|
-|  STAB                         |Indent Tabspace                                                                 |
-|  package_owner_lc             |The (lowercase) target schema in which the generated package(s) will be placed  |
-|  table_name_lc                |Table name (in lowercase)                                                       |
-|  table_owner_lc               |Table schema (in lowercase)                                                     |
-|  tapi_author_lc               |TAPI author (in lowercase)                                                      |
-|  trigger_owner_lc             |Target trigger schema (in lowercase)                                            |
-|  view_name_suffix_lc          |View name postfix (in lowercase)                                                |
-|  view_owner_lc                |Target Table schema (in lowercase)                                              |
+|  STAB                         | Indent Tabspace                                                                |
+|  package_owner_lc             | The (lowercase) target schema in which the generated package(s) will be placed |
+|  table_name_lc                | Table name (in lowercase)                                                      |
+|  table_owner_lc               | Table schema (in lowercase)                                                    |
+|  tapi_author_lc               | TAPI author (in lowercase)                                                     |
+|  tapi_pkg_name_prefix         | Package name prefix (in lowercase)                                             |
+|  tapi_pkg_name_postfix        | Package name postfix (in lowercase)                                            |
+|  trigger_owner_lc             | Target trigger schema (in lowercase)                                           |
+|  view_name_suffix_lc          | View name postfix (in lowercase)                                               |
+|  view_owner_lc                | Target Table schema (in lowercase)                                             |
 
 ## License
 
