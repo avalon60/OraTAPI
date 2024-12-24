@@ -119,8 +119,8 @@ class ApiGenerator:
             raise ValueError(message)
 
         # These next 2 are used in template substitutions.
-        self.sig_suffix = self.config_manager.config_value(config_section="file_controls", config_key="spec_suffix")
-        self.body_suffix = self.config_manager.config_value(config_section="file_controls", config_key="body_suffix")
+        self.sig_file_ext = self.config_manager.config_value(config_section="file_controls", config_key="spec_file_ext")
+        self.body_file_ext = self.config_manager.config_value(config_section="file_controls", config_key="body_file_ext")
 
         self.include_defaults = self.config_manager.bool_config_value(config_section="api_controls",
                                                                  config_key="include_defaults")
@@ -200,8 +200,8 @@ class ApiGenerator:
             self.noop_column_string = f"~{rand_text1}' || sys_guid() || '~  ' || sys_guid() || '{rand_text2}~"
             self.global_substitutions["noop_column_string"] = self.noop_column_string
 
-        self.global_substitutions["spec_suffix"] = self.sig_suffix
-        self.global_substitutions["body_suffix"] = self.body_suffix
+        self.global_substitutions["sig_file_ext"] = self.sig_file_ext
+        self.global_substitutions["body_file_ext"] = self.body_file_ext
         self.global_substitutions["run_date_time"] = current_date
         self.global_substitutions["table_name_lc"] = table_name.lower()
         self.global_substitutions["table_owner_lc"] = self.table_owner.lower()

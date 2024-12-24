@@ -267,14 +267,14 @@ This document explains the different sections and parameters of the configuratio
   
   Sub-directories are created at run-time, as required, to host the generated code. The names of the sub-directories are configurable (read on).
   
-- **body_suffix** & **spec_suffix**: Set the file suffix for the package body and specification files.
+-  **spec_file_ext** & **body_file_ext**: Set the file suffix for the package body and specification files.
   - Examples:   
-  `spec_suffix = .pks`   
-  `body_suffix = .pkb`  
+  `spec_file_ext = .pks`   
+  `body_file_ext = .pkb`  
   - **Purpose**: Specifies the file extension for generated SQL files. The default for these is `.sql`.  
   
 
-    NOTE: If the spec_dir and the body_dir are defined as the same directory, spec_suffix and body_suffix must be different.
+    NOTE: If the spec_dir and the body_dir are defined as the same directory, **spec_file_ext**  and **body_file_ext**  must be different.
 
 - **spec_dir** & **body_dir**: Define the directories for package specification and package body files.
   - Example: `spec_dir = package_spec`
@@ -427,8 +427,8 @@ indent_spaces = 3
 # below the OraTAPI root folder. Full path-names are permissible.
 default_staging_dir = staging
 # The suffix properties are appended to the respective files.
-body_suffix = .sql
-spec_suffix = .sql
+spec_file_ext  = .sql
+body_file_ext = .sql
 
 # spec_dir/body_dir: these define the locations where the package specification and package body files are to be
 # written. Simple names (no slashes) are assumed to below the install home directory of OraTAPI.

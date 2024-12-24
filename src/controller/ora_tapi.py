@@ -105,11 +105,11 @@ class TAPIController:
         self.view_dir = Path(self.config_manager.config_value(config_section='file_controls',
                                                               config_key='view_dir'))
 
-        self.body_suffix = self.config_manager.config_value(config_section='file_controls',
-                                                            config_key='body_suffix')
+        self.body_file_ext = self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='body_file_ext')
 
-        self.spec_suffix = self.config_manager.config_value(config_section='file_controls',
-                                                            config_key='spec_suffix')
+        self.spec_file_ext = self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='spec_file_ext')
         if self.staging_area_dir == DEFAULT_STAGING:
             self.staging_area_dir = app_home / self.staging_area_dir
 
@@ -121,8 +121,8 @@ class TAPIController:
             self.view.print_console(msg_level=MsgLvl.error, text=f'Staging pathname provide, "{self.staging_area_dir}", is not a directory - bailing out!')
             exit(0)
 
-        if self.spec_dir == self.body_dir and self.spec_suffix == self.body_suffix:
-            self.view.print_console(msg_level=MsgLvl.error, text=f'Conflicting OratAPI.ini properties. The spec_dir and body_dir must be distinct when spec_suffix and body_suffix are the same!')
+        if self.spec_dir == self.body_dir and self.spec_file_ext == self.body_file_ext:
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Conflicting OratAPI.ini properties. The spec_dir and body_dir must be distinct when spec_file_ext and body_file_ext are the same!')
             exit(0)
 
         for directory in (self.spec_dir, self.body_dir, self.trigger_dir, self.view_dir):
@@ -241,12 +241,12 @@ class TAPIController:
         staging_realpath = self.staging_area_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
-        spec_file_name = f"{tapi_name}{self.spec_suffix}"
+        spec_file_name = f"{tapi_name}{self.spec_file_ext}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.spec_dir, file_name=spec_file_name,
                              code=package_spec_code)
 
         package_body_code = api_controller.gen_package_body()
-        body_file_name = f"{tapi_name}{self.body_suffix}"
+        body_file_name = f"{tapi_name}{self.body_file_ext}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
                              code=package_body_code)
 
