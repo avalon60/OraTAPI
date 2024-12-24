@@ -140,8 +140,6 @@ class ApiGenerator:
                                                                    config_key="noop_column_string",
                                                                    default='')
 
-
-
         self.row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
                                                                      config_key="row_vers_column_name",
                                                                      default=None)

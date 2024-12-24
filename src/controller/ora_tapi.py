@@ -115,8 +115,8 @@ class TAPIController:
                                                               config_key='tapi_file_name_prefix',
                                                               default='')
 
-        self.tapi_file_name_suffix = self.config_manager.config_value(config_section='file_controls',
-                                                              config_key='tapi_file_name_suffix',
+        self.tapi_file_name_postfix = self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='tapi_file_name_postfix',
                                                               default='_tapi')
 
         if self.staging_area_dir == DEFAULT_STAGING:
@@ -249,12 +249,12 @@ class TAPIController:
         staging_realpath = self.staging_area_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
-        spec_file_name = f"{self.tapi_file_name_prefix}{table_name_lc}{self.tapi_file_name_suffix }{self.spec_file_ext}"
+        spec_file_name = f"{self.tapi_file_name_prefix}{table_name_lc}{self.tapi_file_name_postfix }{self.spec_file_ext}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.spec_dir, file_name=spec_file_name,
                              code=package_spec_code)
 
         package_body_code = api_controller.gen_package_body()
-        body_file_name = f"{self.tapi_file_name_prefix}{table_name_lc}{self.tapi_file_name_suffix}{self.body_file_ext}"
+        body_file_name = f"{self.tapi_file_name_prefix}{table_name_lc}{self.tapi_file_name_postfix}{self.body_file_ext}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
                              code=package_body_code)
 
