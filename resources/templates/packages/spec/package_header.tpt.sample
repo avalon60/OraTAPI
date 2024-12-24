@@ -9,8 +9,8 @@ as
 --------------------------------------------------------------------------------
 -- Application      :   %app_name%
 -- Sub-module       :   %sub_module%
--- Package          :   %tapi_file_name_prefix%%table_name_lc%%tapi_file_name_postfix%
--- Source file name :   %tapi_file_name_prefix%%table_name_lc%%tapi_file_name_postfix%%spec_file_ext%
+-- Package          :   %tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%
+-- Source file name :   %tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%%spec_file_ext%
 -- Purpose          :   Table API (TAPI) for table %table_name_lc%
 --
 -- HAS COMMITS      :   NO
