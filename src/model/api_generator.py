@@ -212,6 +212,8 @@ class ApiGenerator:
         self.global_substitutions["trigger_owner"] = options_dict["trigger_owner"]
         self.global_substitutions["view_name_suffix_lc"] = self.view_name_suffix.lower()
         self.global_substitutions["view_name_suffix"] = self.view_name_suffix
+        self.global_substitutions["tapi_pkg_name_postfix_lc"] = self.global_substitutions["tapi_pkg_name_postfix"]
+        self.global_substitutions["tapi_pkg_name_prefix_lc"] = self.global_substitutions["tapi_pkg_name_prefix"]
 
         self.table = Table(database_session=database_session,
                            table_owner=table_owner,
