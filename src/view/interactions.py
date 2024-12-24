@@ -6,8 +6,8 @@ import argparse
 
 from lib.config_manager import ConfigManager
 from pathlib import Path
-
 from view.console_display import MsgLvl, ConsoleMgr
+from lib.file_system_utils import project_home
 
 class MissingParameterError(Exception):
     """Exception raised for missing parameters."""
@@ -93,17 +93,17 @@ class Interactions:
         parser.add_argument('-To', '--table_owner', type=str, help="Database schema name of the tables from which to generate the code.",
                             default=table_owner)
 
-        parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names (default: all)",
-                            default='%')
-
         parser.add_argument('-po', '--package_owner', type=str, default=package_owner,
-                            help="Database schema in which to place the TAPI package.")
+                            help="Database schema in which to place the TAPI packages.")
 
-        parser.add_argument('-to', '--trigger_owner', type=str, help="The schema in which owns the generated triggers.",
+        parser.add_argument('-to', '--trigger_owner', type=str, help="The schema in which to place the generated triggers.",
                             default=trigger_owner)
 
-        parser.add_argument('-vo', '--view_owner', type=str, help="The schema in which owns the generated views.",
+        parser.add_argument('-vo', '--view_owner', type=str, help="The schema in which to place the generated views.",
                             default=view_owner)
+
+        parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names (default: all)",
+                            default='%')
 
         parser.add_argument('-u', '--db_username', type=str, help="Database username")
         parser.add_argument('-T', '--api_types', type=str, default=default_api_types,
@@ -152,3 +152,22 @@ class Interactions:
                         f"If any of 'dsn', 'db_username', or 'db_password' is provided, all three must be included: {', '.join(missing_params)}")
 
         return args
+
+
+if __name__ == "__main__":
+    # Create a dummy instance of Interactions to parse arguments
+    class DummyController:
+        pass
+
+    proj_home = project_home()
+    config_file_path = proj_home / "resources" / "config" / "OraTAPI.ini"
+
+    try:
+        interactions = Interactions(controller=DummyController(), config_file_path=config_file_path)
+        # Explicitly invoke argparse's help behavior by parsing arguments
+        interactions.parse_arguments()
+    except SystemExit as e:
+        # argparse will call sys.exit() for -h or missing arguments.
+        # Catch this to avoid abrupt termination in some environments.
+        pass
+
