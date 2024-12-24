@@ -88,8 +88,6 @@ class Interactions:
                             help="Directory for staging area (default: <APP_HOME>/staging)")
         parser.add_argument('-p', '--db_password', type=str, help="Database password")
 
-        parser.add_argument('-s', '--save_connection', action='store_true', default=False,
-                            help="Save/update the connection for future use. Connections are only saved after a successful connection.")
         parser.add_argument('-To', '--table_owner', type=str, help="Database schema name of the tables from which to generate the code.",
                             default=table_owner)
 
@@ -120,21 +118,13 @@ class Interactions:
         dsn = args.dsn
         db_username = args.db_username
         db_password = args.db_password
-        save_connection = args.save_connection
+        save_connection = False
 
         if not conn_name and not (db_username and db_password and dsn):
             raise MissingParameterError('You must specify a named connection or provide a dsn with credentials!')
 
-        # Validation logic
-        if save_connection:
-            # save_connection requires conn_name and all connection parameters
-            missing_params = [param for param in ['conn_name', 'dsn', 'db_username', 'db_password'] if
-                              not getattr(args, param)]
-            if missing_params:
-                parser.error(
-                    f"'save_connection' requires the following parameters: {', '.join(missing_params)}")
-
-        elif conn_name:
+        # Validation
+        if conn_name:
             # conn_name alone is valid (to retrieve connection details)
             if dsn or db_username or db_password:
                 # If any connection parameters are provided with conn_name, all must be provided

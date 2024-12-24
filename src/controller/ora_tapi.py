@@ -67,7 +67,6 @@ class TAPIController:
         self.package_owner = options_dict['package_owner']
         self.package_owner = options_dict['package_owner']
         self.dsn = options_dict['dsn']
-        self.save_connection = options_dict['save_connection']
         self.table_owner = str(options_dict['table_owner']).upper()
         self.table_names = str(options_dict['table_names']).upper()
         self.conn_name = options_dict['conn_name']
@@ -143,15 +142,6 @@ class TAPIController:
         # Database session setup
         self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
         self.view.print_console(msg_level=MsgLvl.info, text="Database session established successfully.")
-
-        # Now check to see if we have a --save_connection flag submitted.
-        if self.save_connection:
-            user_security.update_named_connection(connection_name=self.conn_name,
-                                                  username=self.db_username,
-                                                  password=self.db_password,
-                                                  dsn=self.dsn)
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Connection saved as: {self.conn_name}")
-
 
         # Validate table names and process
         self.process_table_names()

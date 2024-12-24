@@ -145,9 +145,6 @@ options:
                         <APP_HOME>/staging)
   -p DB_PASSWORD, --db_password DB_PASSWORD
                         Database password
-  -s, --save_connection
-                        Save/update the connection for future use. Connections
-                        are only saved after a successful connection.
   -To TABLE_OWNER, --table_owner TABLE_OWNER
                         Database schema name of the tables from which to
                         generate the code.
@@ -187,7 +184,6 @@ ora_tapi.sh --schema_name HR -t employees,departments -conn_name dev_db --tapi_a
 | `-g`, `--staging_area_dir` | Directory for the staging area.                                            | `./staging`              |
 | `-p`, `--db_password`      | Database password.                                                         |                          |
 | `-P`, `--package_owner`    | Schema to own the generated TAPI packages (required).                      |                          |
-| `-s`, `--save_connection`  | Save connection details for future use.                                    | `False`                  |
 | `-S`, `--schema_name`      | Schema containing the target tables (required).                            |                          |
 | `-t`, `--table_names`      | Comma-separated list of tables (use `%` for all tables).                   | `%`                      |
 | `-To`, `--table_owner`     | The table owner/schema on whose tables the generated APIs are to be based. |                          |
