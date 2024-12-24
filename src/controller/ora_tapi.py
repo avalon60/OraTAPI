@@ -110,6 +110,15 @@ class TAPIController:
 
         self.spec_file_ext = self.config_manager.config_value(config_section='file_controls',
                                                               config_key='spec_file_ext')
+
+        self.tapi_file_name_prefix = self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='tapi_file_name_prefix',
+                                                              default='')
+
+        self.tapi_file_name_suffix = self.config_manager.config_value(config_section='file_controls',
+                                                              config_key='tapi_file_name_suffix',
+                                                              default='_tapi')
+
         if self.staging_area_dir == DEFAULT_STAGING:
             self.staging_area_dir = app_home / self.staging_area_dir
 
@@ -236,17 +245,16 @@ class TAPIController:
             for message in expressions_messages:
                 self.view.print_console(msg_level=MsgLvl.warning, text=message)
 
-        tapi_name = f"{table_name_lc}_tapi"
-        self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package: {tapi_name.upper()}")
+        self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package for table: {table_name_lc.upper()}")
         staging_realpath = self.staging_area_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
-        spec_file_name = f"{tapi_name}{self.spec_file_ext}"
+        spec_file_name = f"{self.tapi_file_name_prefix}{table_name_lc}{self.tapi_file_name_suffix }{self.spec_file_ext}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.spec_dir, file_name=spec_file_name,
                              code=package_spec_code)
 
         package_body_code = api_controller.gen_package_body()
-        body_file_name = f"{tapi_name}{self.body_file_ext}"
+        body_file_name = f"{self.tapi_file_name_prefix}{table_name_lc}{self.tapi_file_name_suffix}{self.body_file_ext}"
         self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
                              code=package_body_code)
 
@@ -263,7 +271,7 @@ class TAPIController:
         )
         triggers_dict = api_controller.gen_triggers()
         for trigger_file_name, code in triggers_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger script for {trigger_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger script for trigger: {trigger_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.trigger_dir, file_name=trigger_file_name,
                                  code=code)
 
@@ -282,7 +290,7 @@ class TAPIController:
         views_dict = api_controller.gen_views()
 
         for view_file_name, code in views_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating view view script for {view_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating view script for view: {view_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.view_dir, file_name=view_file_name,
                                  code=code)
 
