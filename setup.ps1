@@ -26,7 +26,7 @@ Write-Host "Step ${step}: ${step_desc}..."
 if (-not (Get-Command pip -ErrorAction SilentlyContinue)) {
     Write-Host "pip not found. Installing pip..."
     Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
-    python3 get-pip.py
+    python get-pip.py
     Remove-Item -Path "get-pip.py" -Force
 } else {
     Write-Host "pip is already installed."
@@ -38,7 +38,7 @@ $step_desc = "Create virtual environment if it doesn't exist"
 Write-Host "Step ${step}: ${step_desc}..."
 if (-not (Test-Path $VENV_DIR)) {
     Write-Host "Creating virtual environment in: $VENV_DIR"
-    python3 -m venv $VENV_DIR
+    python -m venv $VENV_DIR
 } else {
     Write-Host "Virtual environment already exists in: $VENV_DIR"
 }
