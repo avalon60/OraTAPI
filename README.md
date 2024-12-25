@@ -820,8 +820,11 @@ This list should not include the column included to the `row_version_column_name
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
 
 ## Template Substitution Strings
-Any properties from the OraTAPI.ini file may be interpolated into the templates. Values must be delimited by a pair of % characters.  
-In addition the following may be used.
+Any properties from the OraTAPI.ini file may be interpolated into the templates.  
+
+**When embedding into the templates, the substitution strings must be delimited by a pair of % characters**.  
+
+In addition, the following may be used.
 
 | Substitition String      | Description                                                                                      |
 |--------------------------|--------------------------------------------------------------------------------------------------|
