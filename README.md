@@ -825,7 +825,7 @@ In addition the following may be used.
 
 | Substitition String      | Description                                                                                      |
 |--------------------------|--------------------------------------------------------------------------------------------------|
-| STAB                     | Indent Tab-space (%STAB% is converted to (OraTAPI.ini specified) indent_spaces number of spaces) |
+| STAB                     | Indent Tab-space (%STAB% is converted to [OraTAPI.ini specified] indent_spaces number of spaces) |
 | package_owner_lc         | The (lowercase) target schema in which the generated package(s) will be placed                   |
 | table_name_lc            | Table name (in lowercase)                                                                        |
 | table_owner_lc           | Table schema (in lowercase)                                                                      |
