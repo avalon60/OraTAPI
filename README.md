@@ -39,7 +39,7 @@ you should preferably download Python 3.11.
 
 ## Installation
 
-1. Download the OraTAPI.tar.gz Artefact to a staging directory.
+1. Download the OraTAPI-X.Y.Z.tar.gz Artefact to a staging directory.
 
    2. Open a Terminal Window and Extract the Contents:
       For macOS / Linux
@@ -75,9 +75,13 @@ you should preferably download Python 3.11.
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
-   
-If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal.
+
+NOTES:   
+If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal. 
 OraTAPI can be used via Powershell or Git Bash. 
+
+As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the OraTAPI-X.Y.Z.zip file, and install from that.
+
 
 ---
 
