@@ -28,7 +28,7 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 ## Preinstallation
 
 Ensure that you have Python 3.10 or later installed.
-On MacOS you can install Python using:  
+On macOS, you can install Python using:  
 
 `brew install python3` # Install the latest version
 
@@ -37,22 +37,12 @@ On MacOS you can install Python using:
 On Windows, ensure that you obtain Python from: https://www.python.org/downloads/windows/
 you should preferably download Python 3.11. 
 
-If you don't have the `pip` command, you wil need to install it:  
-
-Download pip.
-`curl -O https://bootstrap.pypa.io/get-pip.py`
-
-Install pip.
-`python get-pip.py`
-
-
-
 ## Installation
 
 1. Download the OraTAPI.tar.gz Artefact to a staging directory.
 
-   2. Open a Terminal Window and Extrract the Contents:
-      For MacOS / Linux
+   2. Open a Terminal Window and Extract the Contents:
+      For macOS / Linux
       ```bash
       mkdir <path-to-installation-folder>
       tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
@@ -70,7 +60,7 @@ Install pip.
                 Renaming the `oratapi-<x.y.z>`directory is entirely a matter of choice.
 
 3. Complete the Installation:  
-   MacOS / Linux
+   macOS / Linux
    ```bash
    cd <path-to-installation-folder>
    chmod 750 setup.sh
@@ -84,6 +74,10 @@ Install pip.
     The Windows command must be run from a Windows PowerShell terminal.  
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
+
+   
+If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal.
+OraTAPI can be used via Powershell or Git Bash. 
 
 ---
 
@@ -111,7 +105,7 @@ The following launcher commands are provided:
 - ora_tapi.ps1
 - conn_mgr.ps1
 
-#### MacOS / Linux:
+#### macOS / Linux:
 - ora_tapi.sh
 - conn_mgr.sh
 
@@ -825,6 +819,22 @@ This list should not include the column included to the `row_version_column_name
 ### The row_version_column_name Property
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
 
+## Template Substitution Strings
+Any properties from the OraTAPI.ini file may be interpolated into the templates. Values must be delimited by a pair of % characters.  
+In addition the following may be used.
+
+| Substitition String      | Description                                                                                      |
+|--------------------------|--------------------------------------------------------------------------------------------------|
+| STAB                     | Indent Tab-space (%STAB% is converted to (OraTAPI.ini specified) indent_spaces number of spaces) |
+| package_owner_lc         | The (lowercase) target schema in which the generated package(s) will be placed                   |
+| table_name_lc            | Table name (in lowercase)                                                                        |
+| table_owner_lc           | Table schema (in lowercase)                                                                      |
+| tapi_author_lc           | TAPI author (in lowercase)                                                                       |
+| tapi_pkg_name_prefix_lc  | Package name prefix (in lowercase)                                                               |
+| tapi_pkg_name_postfix_lc | Package name postfix (in lowercase)                                                              |
+| trigger_owner_lc         | Target trigger schema (in lowercase)                                                             |
+| view_name_suffix_lc      | View name postfix (in lowercase)                                                                 |
+| view_owner_lc            | Target Table schema (in lowercase)                                                               |
 
 
 ## Connection Manager
@@ -873,22 +883,6 @@ Connection credentials are stored with 256-bit AES encryption, to a local store,
 
 <b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
 
-## Template Substitution Strings
-Any properties from the OraTAPI.ini file may be interpolated into the templates. Values must be delimited by a pair of % characters.  
-In addition the following may be used.
-
-|  Substitition String          | Description                                                                    |
-|-------------------------------|--------------------------------------------------------------------------------|
-|  STAB                         | Indent Tabspace                                                                |
-|  package_owner_lc             | The (lowercase) target schema in which the generated package(s) will be placed |
-|  table_name_lc                | Table name (in lowercase)                                                      |
-|  table_owner_lc               | Table schema (in lowercase)                                                    |
-|  tapi_author_lc               | TAPI author (in lowercase)                                                     |
-|  tapi_pkg_name_prefix         | Package name prefix (in lowercase)                                             |
-|  tapi_pkg_name_postfix        | Package name postfix (in lowercase)                                            |
-|  trigger_owner_lc             | Target trigger schema (in lowercase)                                           |
-|  view_name_suffix_lc          | View name postfix (in lowercase)                                               |
-|  view_owner_lc                | Target Table schema (in lowercase)                                             |
 
 ## License
 
