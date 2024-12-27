@@ -67,7 +67,7 @@ you should preferably download Python 3.11.
    chmod 750 setup.sh
    ./setup.sh
    ```
-   Windows:
+   Windows PowerShell:
    ```ps1
    cd <path-to-installation-folder>
    ./setup.ps1
@@ -83,7 +83,54 @@ OraTAPI can be used via Powershell or Git Bash.
 
 As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the OraTAPI-X.Y.Z.zip file, and install from that.
 
+## Post Installation
+The next step is to configure the OraTAP.ini file and your template files. Samples of these are provided, and you could
+traverse the various directories, to instantiate all of your files manually, by copying the samples to the requisite file
+names. However, a `quick_config` tool is provided to help get you set up more quickly. There are two options to run with:
 
+- Basic
+- Liquibase
+
+The parameters passed need to be in lowercase. Here we are configuring for Liquibase.
+   macOS / Linux
+   ```bash
+   cd <path-to-installation-folder>
+   ./bin/quick_config.sh -t liquibase
+   ```
+   Windows PowerShell:
+   ```ps1
+   cd <path-to-installation-folder>
+   ./bin/quick_config.ps1 -t liquibase
+   ```
+
+The output should look similar to this:
+
+```
+Copied: resources/config/OraTAPI.ini.sample -> resources/config/OraTAPI.ini
+Copied: resources/templates/column_expressions/inserts/updated_on.tpt.sample -> resources/templates/column_expressions/inserts/updated_on.tpt
+Copied: resources/templates/column_expressions/inserts/updated_by.tpt.sample -> resources/templates/column_expressions/inserts/updated_by.tpt
+Copied: resources/templates/column_expressions/inserts/created_by.tpt.sample -> resources/templates/column_expressions/inserts/created_by.tpt
+Copied: resources/templates/column_expressions/inserts/created_on.tpt.sample -> resources/templates/column_expressions/inserts/created_on.tpt
+Copied: resources/templates/column_expressions/inserts/row_version.tpt.sample -> resources/templates/column_expressions/inserts/row_version.tpt
+Copied: resources/templates/column_expressions/updates/updated_on.tpt.sample -> resources/templates/column_expressions/updates/updated_on.tpt
+Copied: resources/templates/column_expressions/updates/updated_by.tpt.sample -> resources/templates/column_expressions/updates/updated_by.tpt
+Copied: resources/templates/column_expressions/updates/created_by.tpt.sample -> resources/templates/column_expressions/updates/created_by.tpt
+Copied: resources/templates/column_expressions/updates/created_on.tpt.sample -> resources/templates/column_expressions/updates/created_on.tpt
+Copied: resources/templates/column_expressions/updates/row_version.tpt.sample -> resources/templates/column_expressions/updates/row_version.tpt
+Copied: resources/templates/packages/procedures/select.sample -> resources/templates/packages/procedures/select.tpt
+Copied: resources/templates/packages/procedures/delete.sample -> resources/templates/packages/procedures/delete.tpt
+Copied: resources/templates/packages/procedures/upsert.sample -> resources/templates/packages/procedures/upsert.tpt
+Copied: resources/templates/packages/procedures/update.sample -> resources/templates/packages/procedures/update.tpt
+Copied: resources/templates/packages/procedures/merge.sample -> resources/templates/packages/procedures/merge.tpt
+Copied: resources/templates/packages/procedures/insert.sample -> resources/templates/packages/procedures/insert.tpt
+Copied: resources/templates/packages/body/package_footer.liquibase.sample -> resources/templates/packages/body/package_footer.tpt
+Copied: resources/templates/packages/body/package_header.liquibase.sample -> resources/templates/packages/body/package_header.tpt
+Copied: resources/templates/packages/spec/package_footer.liquibase.sample -> resources/templates/packages/spec/package_footer.tpt
+Copied: resources/templates/packages/spec/package_header.liquibase.sample -> resources/templates/packages/spec/package_header.tpt
+Copied: resources/templates/misc/view/view.liquibase.sample -> resources/templates/misc/view/view.tpt
+Copied: resources/templates/misc/trigger/table_name_biu.liquibase.sample -> resources/templates/misc/trigger/table_name_biu.tpt
+
+```
 ---
 
 ## The Primary Components
