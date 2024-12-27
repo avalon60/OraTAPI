@@ -1,2 +1,27 @@
-include setup.sh
+
+# Include license and readme
+include LICENSE
+include README.md
+
+# Include configuration and script files
+include requirements.txt
+include pyproject.toml
 include setup.ps1
+include setup.sh
+
+# Include .sample files only
+recursive-include resources *.sample
+
+# Exclude .tpt files
+exclude resources/**/*.tpt
+exclude resources/**/*.ini
+
+# Include Python source files
+recursive-include src *.py
+
+# Include bin directory files
+include bin/*.*
+
+# Exclude all compiled files and caches
+global-exclude __pycache__
+global-exclude *.py[cod]

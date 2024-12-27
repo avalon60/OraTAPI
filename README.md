@@ -91,7 +91,9 @@ names. However, a `quick_config` tool is provided to help get you set up more qu
 - Basic
 - Liquibase
 
-The parameters passed need to be in lowercase. Here we are configuring for Liquibase.
+The parameters passed need to be in lowercase.  
+Here we are configuring for Liquibase.  
+
    macOS / Linux
    ```bash
    cd <path-to-installation-folder>

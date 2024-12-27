@@ -59,7 +59,15 @@ where = ["src"]
 
 # Include additional resources
 [tool.setuptools.package-data]
-"*" = ["*.ini", "*.ini.sample", "*.tpt", "*.tpt.sample"]
+"*" = [ "resources/config/.ini.sample",
+        "resources/templates/column_expressions/.tpt.sample",
+        "resources/templates/updates/.tpt.sample",
+        "resources/templates/misc/trigger/.tpt.sample",
+        "resources/templates/misc/view/.tpt.sample",
+        "resources/templates/packages/body/.tpt.sample",
+        "resources/templates/packages/procedures/.tpt.sample",
+        "resources/templates/packages/spec/.tpt.sample", ]
+
 
 # Declare scripts as dynamic
 dynamic = ["scripts"]
@@ -68,4 +76,5 @@ dynamic = ["scripts"]
 [project.scripts]
 conn_mgr = "controller.conn_mgr:main"
 ora_tapi = "controller.ora_tapi:main"
+quick_config = "controller.quick_config:main"
 
