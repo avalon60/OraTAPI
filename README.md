@@ -133,7 +133,16 @@ Copied: resources/templates/misc/view/view.liquibase.sample -> resources/templat
 Copied: resources/templates/misc/trigger/table_name_biu.liquibase.sample -> resources/templates/misc/trigger/table_name_biu.tpt
 ```
 
-To underscore the point, you should either specifiy `-t liquibase` or `-t basic. Optionally, specify `--template_category` instead of `-t`.
+To underscore the point, you should either specify `-t liquibase` or `-t basic`. Optionally, specify `--template_category` 
+instead of `-t`.  
+
+If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
+customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag.
+
+   ```bash
+   cd <path-to-installation-folder>
+   ./bin/quick_config.sh -t liquibase --force
+   ```
 
 ---
 
