@@ -10,14 +10,17 @@ import os
 import shutil
 from pathlib import Path
 
-def copy_files(template_category: str) -> None:
+
+def copy_files(template_category: str, force: bool) -> None:
     """
     This copies `.sample` files from the resources directory to
     target locations, based on the template_category, and specific copying rules.
-    We only initialise, if specific files does not exist, we avoid clobbering them.
-    
+    We initialise by copying only when files do not exist, unless `force` is specified.
+
     :param template_category: The template category ("liquibase" or "basic").
     :type template_category: str
+    :param force: Whether to overwrite existing files.
+    :type force: bool
     """
     base_dir = Path("resources")
     config_dir = base_dir / "config"
@@ -26,7 +29,7 @@ def copy_files(template_category: str) -> None:
     # Handle the config directory
     config_sample = config_dir / "OraTAPI.ini.sample"
     config_target = config_dir / "OraTAPI.ini"
-    if config_sample.exists() and not config_target.exists():
+    if config_sample.exists() and (force or not config_target.exists()):
         shutil.copyfile(config_sample, config_target)
         print(f"Copied: {config_sample} -> {config_target}")
 
@@ -41,7 +44,7 @@ def copy_files(template_category: str) -> None:
         if special_dir.exists():
             for sample_file in special_dir.glob("*.sample"):
                 target_file = special_dir / sample_file.stem
-                if not target_file.with_suffix(".tpt").exists():
+                if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
                     print(f"Copied: {sample_file} -> {target_file.with_suffix('.tpt')}")
 
@@ -56,7 +59,7 @@ def copy_files(template_category: str) -> None:
             if file.endswith(f"{template_category}.sample"):
                 sample_file = root_path / file
                 target_file = root_path / (file.replace(f".{template_category}.sample", ".tpt"))
-                if not target_file.exists():
+                if force or not target_file.exists():
                     shutil.copyfile(sample_file, target_file)
                     print(f"Copied: {sample_file} -> {target_file}")
 
@@ -72,11 +75,15 @@ def main() -> None:
         required=True,
         help="Specify the template category ('liquibase' or 'basic')."
     )
+    parser.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="Overwrite existing files."
+    )
     args = parser.parse_args()
 
-    copy_files(args.template_category)
+    copy_files(args.template_category, args.force)
 
 
 if __name__ == "__main__":
     main()
-
