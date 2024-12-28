@@ -2,7 +2,7 @@
 
 # OraTAPI - Oracle Table API Generator 
 
-Version 1.0.21
+Version 1.0.20
 
 OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customisable and standardised APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
 
@@ -131,8 +131,10 @@ Copied: resources/templates/packages/spec/package_footer.liquibase.sample -> res
 Copied: resources/templates/packages/spec/package_header.liquibase.sample -> resources/templates/packages/spec/package_header.tpt
 Copied: resources/templates/misc/view/view.liquibase.sample -> resources/templates/misc/view/view.tpt
 Copied: resources/templates/misc/trigger/table_name_biu.liquibase.sample -> resources/templates/misc/trigger/table_name_biu.tpt
-
 ```
+
+To underscore the point, you should either specifiy `-t liquibase` or `-t basic. Optionally, specify `--template_category` instead of `-t`.
+
 ---
 
 ## The Primary Components
