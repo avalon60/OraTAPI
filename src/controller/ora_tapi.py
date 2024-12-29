@@ -131,7 +131,7 @@ class TAPIController:
             exit(0)
 
         if self.spec_dir == self.body_dir and self.spec_file_ext == self.body_file_ext:
-            self.view.print_console(msg_level=MsgLvl.error, text=f'Conflicting OratAPI.ini properties. The spec_dir and body_dir must be distinct when spec_file_ext and body_file_ext are the same!')
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Conflicting OraTAPI.ini properties. The spec_dir and body_dir must be distinct when spec_file_ext and body_file_ext are the same!')
             exit(0)
 
         for directory in (self.spec_dir, self.body_dir, self.trigger_dir, self.view_dir):
