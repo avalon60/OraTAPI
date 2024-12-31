@@ -27,6 +27,7 @@ def copy_files(template_category: str, force: bool) -> None:
     :param force: Whether to overwrite existing files.
     :type force: bool
     """
+    files_copied = 0
     config_dir = CONFIG_LOCATION
     templates_dir = TEMPLATES_LOCATION
 
@@ -35,6 +36,7 @@ def copy_files(template_category: str, force: bool) -> None:
     config_target = config_dir / "OraTAPI.ini"
     if config_sample.exists() and (force or not config_target.exists()):
         shutil.copyfile(config_sample, config_target)
+        files_copied += 1
         print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
 
     # Directories with special rules
@@ -59,6 +61,7 @@ def copy_files(template_category: str, force: bool) -> None:
                 target_file = special_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
+                    files_copied += 1
                     print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
 
     # Handle regular directories
@@ -69,13 +72,15 @@ def copy_files(template_category: str, force: bool) -> None:
                 target_file = regular_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
+                    files_copied += 1
                     print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
-
+    print(f"{files_copied} files instantiated.")
 
 def main() -> None:
     """
     Main function to parse arguments and initiate file copying.
     """
+    print('OraTAPI quick config started...')
     parser = argparse.ArgumentParser(description="Copy template files based on template category.")
     parser.add_argument(
         "-t", "--template_category",
@@ -91,6 +96,7 @@ def main() -> None:
     args = parser.parse_args()
 
     copy_files(args.template_category, args.force)
+    print('OraTAPI quick config complete.')
 
 
 if __name__ == "__main__":
