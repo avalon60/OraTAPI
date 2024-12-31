@@ -22,7 +22,7 @@ def copy_files(template_category: str, force: bool) -> None:
     target locations, based on the template_category, and specific copying rules.
     We initialise by copying only when files do not exist, unless `force` is specified.
 
-    :param template_category: The template category ("liquibase" or "basic").
+    :param template_category: The template category ("basic", "liquibase" or "llogger").
     :type template_category: str
     :param force: Whether to overwrite existing files.
     :type force: bool
@@ -68,7 +68,7 @@ def copy_files(template_category: str, force: bool) -> None:
     for regular_dir in regular_dirs:
         samples_dir = regular_dir / "samples"
         if samples_dir.exists():
-            for sample_file in samples_dir.glob("*.sample"):
+            for sample_file in samples_dir.glob(f"*.{template_category}.sample"):
                 target_file = regular_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
