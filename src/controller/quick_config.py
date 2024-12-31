@@ -36,8 +36,7 @@ def copy_files(template_category: str, force: bool) -> None:
     # Directories with special rules
     special_dirs = [
         templates_dir / "column_expressions" / "inserts",
-        templates_dir / "column_expressions" / "updates",
-        templates_dir / "packages" / "procedures"
+        templates_dir / "column_expressions" / "updates"
     ]
 
     for special_dir in special_dirs:
@@ -71,7 +70,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Copy template files based on template category.")
     parser.add_argument(
         "-t", "--template_category",
-        choices=["liquibase", "basic"],
+        choices=["liquibase", "basic", "llogger"],
         required=True,
         help="Specify the template category ('liquibase' or 'basic')."
     )

@@ -172,6 +172,14 @@ class ApiGenerator:
                                                                 config_key="view_name_suffix",
                                                                 default="_v")
 
+        self.logger_pkg = self.config_manager.config_value(config_section="logger",
+                                                                config_key="logger_pkg",
+                                                                default="logger")
+
+        self.logger_logs = self.config_manager.config_value(config_section="logger",
+                                                                config_key="logger_logs",
+                                                                default="logger_logs")
+
         self.view_name_suffix_lc = self.view_name_suffix.lower()
         # Populate self.global_substitutions with the .ini file contents.
         # We will use these to inject values into the templates.
@@ -291,6 +299,27 @@ class ApiGenerator:
             raise FileNotFoundError(message)
 
         return messages
+
+    def _logger_appends(self, signature_type: str, soft_tabs:int, skip_list: list = None,) -> str:
+        logger_appends = ''
+        tabs = "%STAB%" * soft_tabs
+        col_id = 0
+        for column_name in self.table.columns_list:
+            column_name_lc = column_name.lower()
+            parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype' else 'p_row.' + column_name_lc
+            data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
+
+            if data_type == 'CLOB' or column_name_lc in skip_list:
+                continue
+
+            col_id += 1
+            if col_id == 1:
+                logger_appends = f"{self.logger_pkg}.append_param(l_params, '{parameter_name_lc}', {parameter_name_lc});\n"
+            else:
+                logger_appends += f"{tabs}{self.logger_pkg}.append_param(l_params, '{parameter_name_lc}', {parameter_name_lc});\n"
+
+        return logger_appends
+
 
     def _noop_assignment(self, column_name, soft_tabs:int) -> str:
         """The _noop_assignment method should only be called for update APIs. It is used to generate cases statements
@@ -835,7 +864,19 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'ins') -> str:
-        """Formulates and returns the API's signature, for "coltype" signatures."""
+        """
+        Processes the `insert` coltype API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
+
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Insert')
@@ -899,7 +940,18 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'ins') -> str:
-        """Formulates and returns the API's signature, for "rowtype" signatures."""
+        """
+        Processes the `insert` rowtype API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Insert')
@@ -995,6 +1047,19 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'sel') -> str:
+
+        """
+        Processes the `select` coltype API specification.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: If set to True, the generated code snippet, is for a procedure specification.
+        :param inc_comments: Set to True to include basic comments before the procedure.
+        :param procedure_name: The name to assign to the select procedure.
+        :return: A string containing the `select` API signature fragment
+        :rtype: str"""
+
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Select')
@@ -1040,6 +1105,18 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'sel') -> str:
+        """
+        Processes the `select` rowtype API specification.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: If set to True, the generated code snippet, is for a procedure specification.
+        :param inc_comments: Set to True to include basic comments before the procedure.
+        :param procedure_name: The name to assign to the select procedure.
+        :return: A string containing the `select` API signature fragment
+        :rtype: str"""
+
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Select')
@@ -1126,6 +1203,18 @@ class ApiGenerator:
                                 package_spec: bool = True,
                                 inc_comments: bool = True,
                                 procedure_name:str = 'upd') -> str:
+        """
+        Processes the `update` coltype API signature.
+
+        This function is called to generate a rowtype API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the update procedure.
+        :return: A string containing the `update` API fragment
+        :rtype: str
+        """
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Update')
@@ -1193,6 +1282,18 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'upd') -> str:
+        """
+        Processes the `update` rowtype API signature.
+
+        This function is called to generate a rowtype API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the update procedure.
+        :return: A string containing the `update` API fragment
+        :rtype: str
+        """
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Update')
@@ -1217,7 +1318,6 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-
 
             signature += param + '\n'
             param = ''
@@ -1254,7 +1354,7 @@ class ApiGenerator:
                         inc_comments: bool = True,
                         procedure_name:str = 'upd') -> str:
         """
-        Processes the `upsert` API signature.
+        Processes the `update` API signature.
 
         This function is called to generate an API signature. As such it is shared for package specification and
         package body code generation.
@@ -1266,8 +1366,8 @@ class ApiGenerator:
         :param signature_type: This should be presented a "rowtype" or "coltype".
         :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
         :param inc_comments: Set to true to include generated comments before procedure declaration.
-        :param procedure_name: The name assigned to the insert procedure.
-        :return: A string containing the `insert` API fragment
+        :param procedure_name: The name assigned to the update procedure.
+        :return: A string containing the `update` API fragment
         :rtype: str
         """
         signature = ''
@@ -1287,6 +1387,18 @@ class ApiGenerator:
                                 package_spec: bool = True,
                                 inc_comments: bool = True,
                                 procedure_name:str = 'ups') -> str:
+        """
+        Processes the `upsert` coltype API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Upsert')
@@ -1350,6 +1462,19 @@ class ApiGenerator:
                                package_spec: bool = True,
                                inc_comments: bool = True,
                                procedure_name:str = 'ups') -> str:
+        """
+        Processes the `upsert` rowtype API signature.
+
+        This function is called to generate an API signature. As such it is shared for package specification and
+        package body code generation.
+
+        :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+        :param inc_comments: Set to true to include generated comments before procedure declaration.
+        :param procedure_name: The name assigned to the insert procedure.
+        :return: A string containing the `insert` API fragment
+        :rtype: str
+        """
+
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Upsert')
@@ -1444,6 +1569,20 @@ class ApiGenerator:
                                 package_spec: bool = True,
                                 inc_comments: bool = True,
                                 procedure_name: str = 'mrg') -> str:
+        """
+         Processes the `merge` coltype API signature.
+
+         This function is called to generate an API signature. As such it is shared for package specification and
+         package body code generation.
+
+
+         :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+         :param inc_comments: Set to true to include generated comments before procedure declaration.
+         :param procedure_name: The name assigned to the insert procedure.
+         :return: A string containing the `insert` API fragment
+         :rtype: str
+         """
+
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Merge')
@@ -1504,6 +1643,20 @@ class ApiGenerator:
                                 package_spec: bool = True,
                                 inc_comments: bool = True,
                                 procedure_name: str = 'mrg') -> str:
+        """
+         Processes the `merge` rowtype API signature.
+
+         This function is called to generate an API signature. As such it is shared for package specification and
+         package body code generation.
+
+
+         :param package_spec: Set to True for a package spec; False for package body (omits semicolon)
+         :param inc_comments: Set to true to include generated comments before procedure declaration.
+         :param procedure_name: The name assigned to the insert procedure.
+         :return: A string containing the `insert` API fragment
+         :rtype: str
+         """
+
         signature = ""
         if inc_comments:
             signature += self.comment_tapi(tapi_description='Merge')
@@ -1617,6 +1770,8 @@ class ApiGenerator:
                                                                soft_tabs=4)
         parameter_list_string = parameter_list_string_lc.upper()
 
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2, skip_list=skip_column_list)
+
         returning_clause_lc = ''
         if self.return_pk_columns or self.return_ak_columns:
             returning_clause_lc = self._returning_into_clause(signature_type=signature_type, soft_tabs=4)
@@ -1624,6 +1779,7 @@ class ApiGenerator:
         substitutions_dict = {
                               "key_predicates_string": column_list_string.upper(),
                               "column_list_string_lc": column_list_string,
+                              "logger_params_append_lc": logger_params_append_lc,
                               "parameter_list_string_lc": parameter_list_string_lc,
                               "parameter_list_string": parameter_list_string,
                               "returning_clause_lc": returning_clause_lc,
@@ -1653,12 +1809,19 @@ class ApiGenerator:
                                                                soft_tabs=3)
         parameter_list_string = parameter_list_string_lc.upper()
 
+        # Convert to lowercase for comparison, return lowercase results. We want a list of columns which are
+        # not primary key columns.
+        skip_list = [item.lower() for item in self.table.columns_list if item.lower() not in [entry.lower() for entry in self.table.pk_columns_list]]
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
+                                                       skip_list=skip_list)
+
         key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=2)
 
         substitutions_dict = {"column_list_string": column_list_string_lc.upper(),
                               "column_list_string_lc": column_list_string_lc,
                               "key_predicates_string": key_predicates_string.upper(),
                               "key_predicates_string_lc": key_predicates_string,
+                              "logger_params_append_lc": logger_params_append_lc,
                               "parameter_list_string_lc": parameter_list_string_lc,
                               "parameter_list_string": parameter_list_string,
                               "procedure_signature": procedure_signature,
@@ -1693,6 +1856,8 @@ class ApiGenerator:
                                                                     skip_list=skip_column_list,
                                                                     operation_type='update', soft_tabs=3)
 
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
+                                                       skip_list=skip_column_list)
         skip_column_list = []
         if self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
             skip_column_list = self.auto_maintained_cols[:]
@@ -1704,6 +1869,7 @@ class ApiGenerator:
 
         substitutions_dict = {"key_predicates_string": key_predicates_string.upper(),
                               "key_predicates_string_lc": key_predicates_string,
+                              "logger_params_append_lc":logger_params_append_lc,
                               "update_assignments_string": update_assignments_string.upper(),
                               "update_assignments_string_lc": update_assignments_string,
                               "returning_clause": returning_clause_lc.upper(),
@@ -1722,7 +1888,11 @@ class ApiGenerator:
 
 
     def _upsert_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        """Put together the "upsert" procedure and its body"""
+        """Construct the "upsert" procedure and its body
+        :param signature_type: Signature format: "coltype" or "rowtype"
+        :param procedure_name: The name to assign the procedure.
+        :return: The procedure body of an upsert operation.
+        """
         procedure_signature = self._upsert_api_sig(signature_type=signature_type, package_spec=False,
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
@@ -1749,6 +1919,9 @@ class ApiGenerator:
                                                                     operation_type='modify',
                                                                     skip_list=skip_column_list, soft_tabs=3)
 
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
+                                                       skip_list=skip_column_list)
+
         upd_returning_clause_lc = ''
         if self.return_pk_columns or self.return_ak_columns:
             upd_returning_clause_lc = self._returning_into_clause(signature_type=signature_type, soft_tabs=3)
@@ -1767,6 +1940,7 @@ class ApiGenerator:
                               "update_assignments_string_lc": update_assignments_string,
                               "ins_returning_clause": ins_returning_clause_lc.upper(),
                               "ins_returning_clause_lc": ins_returning_clause_lc,
+                              "logger_params_append_lc": logger_params_append_lc,
                               "upd_returning_clause": upd_returning_clause_lc.upper(),
                               "upd_returning_clause_lc": upd_returning_clause_lc,
                               "procedure_signature": procedure_signature,
@@ -1783,7 +1957,11 @@ class ApiGenerator:
 
 
     def _delete_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        """Put together the "delete" procedure and its body"""
+        """Construct the "delete" procedure and its body
+        :param signature_type: Signature format: "coltype" or "rowtype"
+        :param procedure_name: The name to assign the procedure.
+        :return: The procedure body of a delete operation.
+        """
         procedure_signature = self._delete_api_sig(signature_type=signature_type, package_spec=False,
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
@@ -1802,8 +1980,20 @@ class ApiGenerator:
             returning_clause_lc = self._returning_into_clause(signature_type=signature_type,
                                                               skip_list=column_skip_list, soft_tabs=4)
 
+        skip_column_list = []
+        k = ["A", "b", "C"]
+        c = ["a", "B", "c", "d", "e", "F"]
+
+        # Convert to lowercase for comparison, return lowercase results. We want a list of columns which are
+        # not primary key columns.
+        skip_list = [item.lower() for item in self.table.columns_list if item.lower() not in [entry.lower() for entry in self.table.pk_columns_list]]
+
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
+                                                       skip_list=skip_list)
+
         substitutions_dict = {"key_predicates_string": key_predicates_string.upper(),
                               "key_predicates_string_lc": key_predicates_string,
+                              "logger_params_append_lc": logger_params_append_lc,
                               "returning_clause": returning_clause_lc.upper(),
                               "returning_clause_lc": returning_clause_lc,
                               "procedure_signature": procedure_signature,
@@ -1819,7 +2009,11 @@ class ApiGenerator:
         return procedure_body_template
 
     def _merge_api_body(self, signature_type: str, procedure_name:str = 'ins') -> str:
-        """Put together the "merge" procedure and its body"""
+        """Construct the "merge" procedure and its body
+        :param signature_type: Signature format: "coltype" or "rowtype"
+        :param procedure_name: The name to assign the procedure.
+        :return: The procedure body of a merge operation.
+        """
         procedure_signature = self._merge_api_sig(signature_type=signature_type, package_spec=False,
                                                    procedure_name=procedure_name) + ""
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
@@ -1850,11 +2044,15 @@ class ApiGenerator:
                                                                       skip_list=skip_column_list,
                                                                       soft_tabs=5)
 
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
+                                                       skip_list=skip_column_list)
+
         substitutions_dict = {"mrg_param_alias_list_lc": mrg_param_alias_list_lc,
                               "mrg_param_alias_list": mrg_param_alias_list_lc.upper(),
                               "mrg_predicates_string_lc": mrg_predicates_string,
                               "mrg_predicates_string": mrg_predicates_string.upper(),
                               "key_predicates_string": mrg_predicates_string.upper(),
+                              "logger_params_append_lc": logger_params_append_lc,
                               "key_predicates_string_lc": mrg_predicates_string,
                               "update_assignments_string": mrg_update_assignments_string.upper(),
                               "update_assignments_string_lc": mrg_update_assignments_string,
@@ -1874,7 +2072,7 @@ class ApiGenerator:
         return procedure_body_template
 
     def _create_trigger_code(self, trigger_template:str) -> str:
-        """Put together the "select" procedure and its body"""
+        """Construct table trigger creation code"""
 
         _trigger_template = trigger_template
         column_list_string_lc = self._column_list_string(soft_tabs=3)
@@ -1891,7 +2089,7 @@ class ApiGenerator:
         return _trigger_template
 
     def _create_view_code(self, view_template:str) -> str:
-        """Put together the "select" procedure and its body"""
+        """Construct view creation code."""
 
         _view_template = view_template
         column_list_string_lc = self._column_list_string(soft_tabs=3)
@@ -2099,35 +2297,8 @@ class ApiGenerator:
 
         return view_code_dict
 
-    def _inject_commit_logic(self, procedure_template: str) -> str:
-        """
-        Injects commit logic into the given procedure template before the line containing "%STAB%end".
-
-        :param procedure_template: str, the input multi-line template string
-        :return: str, the modified template with injected commit logic
-        """
-        # Commit logic to be injected
-        inject_string = "%STAB%%STAB%if p_commit\n"
-        inject_string += "%STAB%%STAB%then\n"
-        inject_string += "%STAB%%STAB%%STAB%commit;\n"
-        inject_string += "%STAB%%STAB%end if;\n"
-
-        # Split the template into lines
-        lines = procedure_template.splitlines()
-
-        # Find the index of the line containing "%STAB%end"
-        for i, line in enumerate(lines):
-            if line.strip().startswith("%STAB%end"):
-                # Insert the inject_string before this line
-                lines.insert(i, inject_string)
-                break
-
-        # Reassemble the template
-        injected_template = "\n".join(lines)
-
-        return injected_template
-
-    def _inject_commit_logic(self, procedure_template: str) -> str:
+    @staticmethod
+    def _inject_commit_logic(procedure_template: str) -> str:
         """
         Injects commit logic into the given procedure template before the line containing "%STAB%end".
 

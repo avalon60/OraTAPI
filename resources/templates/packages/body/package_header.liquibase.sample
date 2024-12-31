@@ -2,8 +2,7 @@
 
 --changeset %tapi_author%:%tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%_create_body stripComments:false endDelimiter:/ runOnChange:true
 
-create or replace package %package_owner_lc%.%table_name_lc%_tapi
-authid definer
+create or replace package body %package_owner_lc%.%table_name_lc%_tapi
 as
 --------------------------------------------------------------------------------
 --
@@ -26,10 +25,6 @@ as
 
 --------------------------------------------------------------------------------
 --< PUBLIC TYPES AND GLOBALS >--------------------------------------------------
-
-   subtype ty_row is %table_name_lc%%rowtype;
-
-   g_row ty_row;
 
 --------------------------------------------------------------------------------
 

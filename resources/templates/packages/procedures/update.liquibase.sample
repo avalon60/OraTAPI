@@ -1,0 +1,12 @@
+%procedure_signature%
+%STAB%-- #update#
+%STAB%begin
+
+%STAB%%STAB%update %table_name_lc%
+%STAB%%STAB%set
+%STAB%%STAB%%STAB% %update_assignments_string_lc%
+%STAB%%STAB%where
+%STAB%%STAB%%STAB%%key_predicates_string_lc%
+%STAB%%STAB%%returning_clause_lc%;
+
+%STAB%end %procedure_name%;
