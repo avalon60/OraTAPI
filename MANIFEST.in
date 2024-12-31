@@ -1,4 +1,3 @@
-
 # Include license and readme
 include LICENSE
 include README.md
@@ -8,6 +7,9 @@ include requirements.txt
 include pyproject.toml
 include setup.ps1
 include setup.sh
+include resources/config/*.ini.sample
+include resources/templates/**/*.sample
+
 
 # Include .sample files only
 recursive-include resources *.sample
@@ -25,3 +27,6 @@ include bin/*.*
 # Exclude all compiled files and caches
 global-exclude __pycache__
 global-exclude *.py[cod]
+
+# Exclude the development OraTAPI.ini
+exclude resources/config/OraTAPI.ini
