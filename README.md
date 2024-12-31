@@ -428,8 +428,6 @@ This document explains the different sections and parameters of the configuratio
   - **Purpose**: Includes a commit parameter to implement a transactional behaviour.
   - 
 ---
-logger_pkg = logger_user.logger
-logger_logs = logger_user.logger_logs
 #### [logger]
 - **logger_pkg**: Specifies the name/alias of the logger package.
   - Example: `logger_pkg = logger`
