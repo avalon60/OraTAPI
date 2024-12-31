@@ -409,7 +409,7 @@ This document explains the different sections and parameters of the configuratio
 
 - **noop_column_string**: Defines a string to be used for non-key, character string type column parameter defaults.
   - Example: `noop_column_string = auto`
-  - **Purpose**: Helps avoid passing unnecessary parameters by preserving existing values. Comment out of remove value assigned to disable the feature. The value can be set to a character string, the value `auto`, or `dynamic`. Setting to `dynamic` involves a slight resource overhead at runtime. Only works for character string columns (VARCHAR2, CLOB etc.)
+  - **Purpose**: Helps avoid passing unnecessary parameters by preserving existing values. Comment out or remove value assigned to disable the feature. The value can be set to a character string, the value `auto`, or `dynamic`. Setting to `dynamic` involves a slight resource overhead at runtime. Only works for character string columns (VARCHAR2, CLOB etc.)
 
 - **default_api_types**: Specifies which types of APIs should be included by default.
   - Example: `default_api_types = insert, select, update, delete`
