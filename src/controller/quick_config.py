@@ -6,11 +6,8 @@ Description: Script to initialise config and template files from resources/templ
 """
 
 import argparse
-import os
 import shutil
-from lib.config_manager import ConfigManager
 from lib.file_system_utils import project_home
-from pathlib import Path
 
 CONFIG_LOCATION = project_home() / 'resources' / 'config'
 TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
@@ -45,6 +42,7 @@ def copy_files(template_category: str, force: bool) -> None:
         templates_dir / "column_expressions" / "updates"
     ]
 
+    # These directories have files reflecting "basic", "liquibase" ot "llogger" template samples.
     regular_dirs = [
         templates_dir / "misc" / "trigger",
         templates_dir / "misc" / "view",

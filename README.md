@@ -112,29 +112,34 @@ Here we are configuring for Liquibase.
 The output should look similar to this:
 
 ```
-Copied: resources/config/OraTAPI.ini.sample -> resources/config/OraTAPI.ini
-Copied: resources/templates/column_expressions/inserts/updated_on.tpt.sample -> resources/templates/column_expressions/inserts/updated_on.tpt
-Copied: resources/templates/column_expressions/inserts/updated_by.tpt.sample -> resources/templates/column_expressions/inserts/updated_by.tpt
-Copied: resources/templates/column_expressions/inserts/created_by.tpt.sample -> resources/templates/column_expressions/inserts/created_by.tpt
-Copied: resources/templates/column_expressions/inserts/created_on.tpt.sample -> resources/templates/column_expressions/inserts/created_on.tpt
-Copied: resources/templates/column_expressions/inserts/row_version.tpt.sample -> resources/templates/column_expressions/inserts/row_version.tpt
-Copied: resources/templates/column_expressions/updates/updated_on.tpt.sample -> resources/templates/column_expressions/updates/updated_on.tpt
-Copied: resources/templates/column_expressions/updates/updated_by.tpt.sample -> resources/templates/column_expressions/updates/updated_by.tpt
-Copied: resources/templates/column_expressions/updates/created_by.tpt.sample -> resources/templates/column_expressions/updates/created_by.tpt
-Copied: resources/templates/column_expressions/updates/created_on.tpt.sample -> resources/templates/column_expressions/updates/created_on.tpt
-Copied: resources/templates/column_expressions/updates/row_version.tpt.sample -> resources/templates/column_expressions/updates/row_version.tpt
-Copied: resources/templates/packages/procedures/select.sample -> resources/templates/packages/procedures/select.tpt
-Copied: resources/templates/packages/procedures/delete.sample -> resources/templates/packages/procedures/delete.tpt
-Copied: resources/templates/packages/procedures/upsert.sample -> resources/templates/packages/procedures/upsert.tpt
-Copied: resources/templates/packages/procedures/update.sample -> resources/templates/packages/procedures/update.tpt
-Copied: resources/templates/packages/procedures/merge.sample -> resources/templates/packages/procedures/merge.tpt
-Copied: resources/templates/packages/procedures/insert.sample -> resources/templates/packages/procedures/insert.tpt
-Copied: resources/templates/packages/body/package_footer.liquibase.sample -> resources/templates/packages/body/package_footer.tpt
-Copied: resources/templates/packages/body/package_header.liquibase.sample -> resources/templates/packages/body/package_header.tpt
-Copied: resources/templates/packages/spec/package_footer.liquibase.sample -> resources/templates/packages/spec/package_footer.tpt
-Copied: resources/templates/packages/spec/package_header.liquibase.sample -> resources/templates/packages/spec/package_header.tpt
-Copied: resources/templates/misc/view/view.liquibase.sample -> resources/templates/misc/view/view.tpt
-Copied: resources/templates/misc/trigger/table_name_biu.liquibase.sample -> resources/templates/misc/trigger/table_name_biu.tpt
+$ bin/quick_config.sh -t llogger
+OraTAPI quick config started...
+Copied: resources/config/samples/OraTAPI.ini.sample -> resources/config/OraTAPI.ini
+Copied: resources/templates/column_expressions/inserts/samples/updated_on.tpt.sample -> resources/templates/column_expressions/inserts/updated_on.tpt
+Copied: resources/templates/column_expressions/inserts/samples/updated_by.tpt.sample -> resources/templates/column_expressions/inserts/updated_by.tpt
+Copied: resources/templates/column_expressions/inserts/samples/created_by.tpt.sample -> resources/templates/column_expressions/inserts/created_by.tpt
+Copied: resources/templates/column_expressions/inserts/samples/created_on.tpt.sample -> resources/templates/column_expressions/inserts/created_on.tpt
+Copied: resources/templates/column_expressions/inserts/samples/row_version.tpt.sample -> resources/templates/column_expressions/inserts/row_version.tpt
+Copied: resources/templates/column_expressions/updates/samples/updated_on.tpt.sample -> resources/templates/column_expressions/updates/updated_on.tpt
+Copied: resources/templates/column_expressions/updates/samples/updated_by.tpt.sample -> resources/templates/column_expressions/updates/updated_by.tpt
+Copied: resources/templates/column_expressions/updates/samples/created_by.tpt.sample -> resources/templates/column_expressions/updates/created_by.tpt
+Copied: resources/templates/column_expressions/updates/samples/created_on.tpt.sample -> resources/templates/column_expressions/updates/created_on.tpt
+Copied: resources/templates/column_expressions/updates/samples/row_version.tpt.sample -> resources/templates/column_expressions/updates/row_version.tpt
+Copied: resources/templates/misc/trigger/samples/table_name_biu.llogger.sample -> resources/templates/misc/trigger/table_name_biu.tpt
+Copied: resources/templates/misc/view/samples/view.llogger.sample -> resources/templates/misc/view/view.tpt
+Copied: resources/templates/packages/body/samples/package_footer.llogger.sample -> resources/templates/packages/body/package_footer.tpt
+Copied: resources/templates/packages/body/samples/package_header.llogger.sample -> resources/templates/packages/body/package_header.tpt
+Copied: resources/templates/packages/spec/samples/package_footer.llogger.sample -> resources/templates/packages/spec/package_footer.tpt
+Copied: resources/templates/packages/spec/samples/package_header.llogger.sample -> resources/templates/packages/spec/package_header.tpt
+Copied: resources/templates/packages/procedures/samples/insert.llogger.sample -> resources/templates/packages/procedures/insert.tpt
+Copied: resources/templates/packages/procedures/samples/merge.llogger.sample -> resources/templates/packages/procedures/merge.tpt
+Copied: resources/templates/packages/procedures/samples/delete.llogger.sample -> resources/templates/packages/procedures/delete.tpt
+Copied: resources/templates/packages/procedures/samples/update.llogger.sample -> resources/templates/packages/procedures/update.tpt
+Copied: resources/templates/packages/procedures/samples/upsert.llogger.sample -> resources/templates/packages/procedures/upsert.tpt
+Copied: resources/templates/packages/procedures/samples/select.llogger.sample -> resources/templates/packages/procedures/select.tpt
+23 files instantiated.
+OraTAPI quick config complete.
+
 ```
 
 To underscore the point, you should either specify `-t basic`, `-t liquibase` or `-t llogger`. Optionally, specify `--template_category` 
