@@ -428,7 +428,16 @@ This document explains the different sections and parameters of the configuratio
   - **Purpose**: Includes a commit parameter to implement a transactional behaviour.
   - 
 ---
-
+logger_pkg = logger_user.logger
+logger_logs = logger_user.logger_logs
+#### [logger]
+- **logger_pkg**: Specifies the name/alias of the logger package.
+  - Example: `logger_pkg = logger`
+  - **Purpose**: Defines the logger package name (optionally prefixed by the owning schema, e.g. logger_user.logger).
+- **logger_logs**: Specifies the logger_logs table.
+  - Example: `logger_logs = logger_logs`
+  - **Purpose**: Defines the logger_logs table name (optionally prefixed by the owning schema, e.g. logger_user.logger_logs). This is used purely for data typing inside the generated package code.
+---
 #### [schemas]
 - **default_table_owner**: Specifies the default schema for tables.
   - Example: `default_table_owner = aut`
@@ -470,7 +479,7 @@ This document explains the different sections and parameters of the configuratio
 
 ```ini
 [OraTAPI]
-version = 1.0.6
+version = 1.1.5
 
 [project]
 default_app_name = Human Resources
@@ -494,9 +503,9 @@ indent_spaces = 3
 # The root location where the generated files are to be written. A simple directory name is assumed to be located
 # below the OraTAPI root folder. Full path-names are permissible.
 default_staging_dir = staging
-# The suffix properties are appended to the respective files.
-spec_file_ext  = .sql
+# The file extension properties are appended to the respective files.
 body_file_ext = .sql
+spec_file_ext = .sql
 
 # spec_dir/body_dir: these define the locations where the package specification and package body files are to be
 # written. Simple names (no slashes) are assumed to below the install home directory of OraTAPI.
@@ -512,7 +521,7 @@ view_dir = view
 ora_tapi_csv_dir =
 
 [api_controls]
-# API naming properties follow. Set these to the preferred procedure names, of the APIs
+# API naming properties follow. Set these to the preferred procedure names of the respective APIs
 delete_procname = del
 select_procname = get
 insert_procname = ins
@@ -520,15 +529,15 @@ merge_procname  = mrg
 update_procname = upd
 upsert_procname = ups
 
-# auto_maintained_cols is a comma separated list of columns which are not to be set by the TAPI parameters.
-# These are columns typically auto-maintained by triggers or column expressions. As such they are not included in APIs
-# responsible for data modifications. However they are included in select API return parameters.
-auto_maintained_cols = created_by, created_on, updated_by, updated_on
-
 # col_auto_maintain_method: Set to `trigger` or `expression`, it is assumed that your table triggers
 # are to manage the modification of the columns. However, if set to `expression`, you must define a column expression
 # for each of the named columns.
 col_auto_maintain_method = trigger
+
+# auto_maintained_cols is a comma separated list of columns which are not to be set by the TAPI parameters.
+# These are columns typically auto-maintained by triggers or column expressions. As such they are not included in APIs
+# responsible for data modifications. However they are included in select API return parameters.
+auto_maintained_cols = created_by, created_on, updated_by, updated_on
 
 # row_vers_column_name: For optimistic locking (optional). Name the optimistic column name.
 # Leave empty or comment out, if not implemented. Update TAPIs, return this as an "out" parameter.
@@ -547,14 +556,19 @@ include_defaults = true
 # If the default is detected, then the column value in the database is preserved. This provides a mechanism of
 # avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
 # signature_types property). Set to auto, to have a (static) generated, enhanced GUID (42 characters in total) Set to
-dynamic to have the NOOP character string (partly, by sys_guid()) dynamically generated on a per-session basis.
+# dynamic to have the NOOP character string (partly, by sys_guid()) dynamically generated on a per-session basis.
 # noop_column_string = auto
 # noop_column_string = #NO~OP#
 
 # default_api_types: Specifies the default of which APIs to include to the package.
 # Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
 # default_api_types = insert, select, update, delete, upsert, merge
-default_api_types = insert
+default_api_types = insert, select, update, delete
+
+# The parameters influence the generated name packages.
+# The default package name format is <table_name_lc>_tapi
+tapi_pkg_name_prefix =
+tapi_pkg_name_postfix = _tapi
 
 # return_pk_columns: If set to true, causes primary/unique keys to be in/out parameters. Returning the values.
 # This applies to APIs which modify data.
@@ -562,7 +576,14 @@ return_key_columns = true
 return_pk_columns = true
 return_ak_columns = false
 # Include p_commit boolean parameter (in). Should be set to true or false. Typically this would be set to false.
-include_commit = true
+include_commit = false
+
+[logger]
+# If you have not set up synonyms, we need prefix with the schema where logger is installed.
+# By default we assume logger_user. If you have run create_logger_synonyms.sql, you don't need to
+# prefix these.
+logger_pkg = logger_user.logger
+logger_logs = logger_user.logger_logs
 
 [schemas]
 # Set default owners. These can be overridden on the command line.
@@ -590,7 +611,6 @@ CRIT_COLOUR = bold red
 HIGH_COLOUR = bold blue
 # Set colour_console to false, to disable colour output.
 colour_console = true
-
 ```
 
 
