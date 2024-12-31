@@ -13,6 +13,7 @@ as
 -- Purpose          :   Table API (TAPI) for table %table_name_lc%
 --
 -- Notes            :   Generated using OraTAPI, by %tapi_author% on %run_date_time%.
+--                  :   From basic sample
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
