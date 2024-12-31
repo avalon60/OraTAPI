@@ -1,0 +1,9 @@
+--liquibase formatted sql
+
+--changeset %tapi_author_lc%:%table_name_lc%%view_name_suffix%_create stripComments:false runOnChange:true
+
+create or replace force view %view_owner_lc%.%table_name_lc%%view_name_suffix% as
+%STAB%select
+%STAB%%STAB%%column_list_string_lc%
+%STAB%%STAB% from %table_name_lc%;
+--rollback drop view %view_owner_lc%.%table_name_lc%%view_name_suffix%;
