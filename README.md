@@ -579,7 +579,8 @@ include_commit = false
 [logger]
 # If you have not set up synonyms, we need prefix with the schema where logger is installed.
 # By default we assume logger_user. If you have run create_logger_synonyms.sql, you don't need to
-# prefix these.
+# prefix these. If these are absent, defaults are assumed to be `logger` and `logger_logs`. The `llogger` sample
+# templates take advantage of these settings.
 logger_pkg = logger_user.logger
 logger_logs = logger_user.logger_logs
 
