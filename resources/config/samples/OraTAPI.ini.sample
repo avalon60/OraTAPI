@@ -1,5 +1,5 @@
 [OraTAPI]
-version = 1.0.23
+version = 1.1.0
 
 [project]
 default_app_name = Human Resources
@@ -97,6 +97,13 @@ return_pk_columns = true
 return_ak_columns = false
 # Include p_commit boolean parameter (in). Should be set to true or false. Typically this would be set to false.
 include_commit = false
+
+[logger]
+# If you have not set up synonyms, we need prefix with the schema where logger is installed.
+# By default we assume logger_user. If you have run create_logger_synonyms.sql, you don't need to
+# prefix these.
+logger_pkg = logger_user.logger
+logger_logs = logger_user.logger_logs
 
 [schemas]
 # Set default owners. These can be overridden on the command line.

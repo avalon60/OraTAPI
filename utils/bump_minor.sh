@@ -2,8 +2,8 @@
 ##############################################################################
 # Author: Clive Bostock
 #   Date: 16 Dec 2024 (A Merry Christmas to one and all! :o)
-#   Name: bump_patch.sh
-#  Descr: Bump the version patch number
+#   Name: bump_minor.sh
+#  Descr: Bump the version minor number
 ##############################################################################
 # Use a workaround for realpath if it's not available (possibly not on Mac)
 realpath() {
@@ -22,4 +22,4 @@ APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
 source venv/bin/activate
 echo "App home: ${APP_HOME}"
-bump2version patch
+bump2version minor

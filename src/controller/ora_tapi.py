@@ -1,7 +1,7 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
-__version__ = "1.0.23"
+__version__ = "1.1.0"
 import copy
 import time
 
@@ -28,7 +28,8 @@ prog_name = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
-class TAPIController:
+class TAPIGenerator:
+    """Table API generator class"""
     def __init__(self, trace: bool = False):
         proj_home = project_home()  # project_home returns a Path object
         chdir(proj_home)
@@ -313,7 +314,7 @@ class TAPIController:
             return result[0] > 0
 
 def main():
-    TAPIController()
+    TAPIGenerator()
 
 if __name__ == "__main__":
     main()

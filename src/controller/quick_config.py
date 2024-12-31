@@ -8,12 +8,17 @@ Description: Script to initialise config and template files from resources/templ
 import argparse
 import os
 import shutil
+from lib.config_manager import ConfigManager
+from lib.file_system_utils import project_home
 from pathlib import Path
 
+CONFIG_LOCATION = project_home() / 'resources' / 'config'
+TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
+config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
 
 def copy_files(template_category: str, force: bool) -> None:
     """
-    This copies `.sample` files from the resources directory to
+    This copies `.sample` files from a `samples` subdirectory to
     target locations, based on the template_category, and specific copying rules.
     We initialise by copying only when files do not exist, unless `force` is specified.
 
@@ -22,46 +27,49 @@ def copy_files(template_category: str, force: bool) -> None:
     :param force: Whether to overwrite existing files.
     :type force: bool
     """
-    base_dir = Path("resources")
-    config_dir = base_dir / "config"
-    templates_dir = base_dir / "templates"
+    config_dir = CONFIG_LOCATION
+    templates_dir = TEMPLATES_LOCATION
 
     # Handle the config directory
-    config_sample = config_dir / "OraTAPI.ini.sample"
+    config_sample = config_dir / "samples" / "OraTAPI.ini.sample"
     config_target = config_dir / "OraTAPI.ini"
     if config_sample.exists() and (force or not config_target.exists()):
         shutil.copyfile(config_sample, config_target)
-        print(f"Copied: {config_sample} -> {config_target}")
+        print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
 
     # Directories with special rules
     special_dirs = [
         templates_dir / "column_expressions" / "inserts",
-        templates_dir / "column_expressions" / "updates",
-        templates_dir / "packages" / "procedures"
+        templates_dir / "column_expressions" / "updates"
     ]
 
+    regular_dirs = [
+        templates_dir / "misc" / "trigger",
+        templates_dir / "misc" / "view",
+        templates_dir / "packages" / "body",
+        templates_dir / "packages" / "spec",
+        templates_dir / "packages" / "procedures",
+    ]
+
+    # Handle special directories
     for special_dir in special_dirs:
-        if special_dir.exists():
-            for sample_file in special_dir.glob("*.sample"):
+        samples_dir = special_dir / "samples"
+        if samples_dir.exists():
+            for sample_file in samples_dir.glob("*.sample"):
                 target_file = special_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
-                    print(f"Copied: {sample_file} -> {target_file.with_suffix('.tpt')}")
+                    print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
 
-    # Handle the other directories
-    for root, _, files in os.walk(templates_dir):
-        root_path = Path(root)
-        # Skip special directories
-        if any(root_path == special_dir for special_dir in special_dirs):
-            continue
-
-        for file in files:
-            if file.endswith(f"{template_category}.sample"):
-                sample_file = root_path / file
-                target_file = root_path / (file.replace(f".{template_category}.sample", ".tpt"))
-                if force or not target_file.exists():
-                    shutil.copyfile(sample_file, target_file)
-                    print(f"Copied: {sample_file} -> {target_file}")
+    # Handle regular directories
+    for regular_dir in regular_dirs:
+        samples_dir = regular_dir / "samples"
+        if samples_dir.exists():
+            for sample_file in samples_dir.glob("*.sample"):
+                target_file = regular_dir / sample_file.stem
+                if force or not target_file.with_suffix(".tpt").exists():
+                    shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
+                    print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
 
 
 def main() -> None:
@@ -71,7 +79,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Copy template files based on template category.")
     parser.add_argument(
         "-t", "--template_category",
-        choices=["liquibase", "basic"],
+        choices=["liquibase", "basic", "llogger"],
         required=True,
         help="Specify the template category ('liquibase' or 'basic')."
     )

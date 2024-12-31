@@ -1,0 +1,28 @@
+%procedure_signature%
+%STAB%-- #merge#
+%STAB%begin
+
+%STAB%%STAB%merge into %table_name_lc% tgt
+%STAB%%STAB%using (
+%STAB%%STAB%%STAB%%STAB%select
+%STAB%%STAB%%STAB%%STAB%%STAB%%STAB%%mrg_param_alias_list_lc%
+%STAB%%STAB%%STAB%%STAB% from dual
+%STAB%%STAB%%STAB%%STAB%) src
+%STAB%%STAB%%STAB%on
+%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB% %key_predicates_string_lc%
+%STAB%%STAB%%STAB%)
+%STAB%%STAB%when matched then
+%STAB%%STAB%%STAB%update set
+%STAB%%STAB%%STAB%%STAB%%update_assignments_string_lc%
+%STAB%%STAB%when not matched then
+%STAB%%STAB%%STAB%insert
+%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%column_list_string_lc%
+%STAB%%STAB%%STAB%%STAB%)
+%STAB%%STAB%%STAB%values
+%STAB%%STAB%%STAB%%STAB%(
+%STAB%%STAB%%STAB%%STAB%%STAB%%mrg_src_column_list_string_lc%
+%STAB%%STAB%%STAB%%STAB%);
+
+%STAB%end %procedure_name%;
