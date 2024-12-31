@@ -1,9 +1,11 @@
----
+
 
 # OraTAPI - Oracle Table API Generator 
 
 Version 1.1.1
 
+
+## About OraTAPI
 OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customisable and standardised APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
 
 OraTAPI connects to an Oracle database, retrieves table and column metadata, and generates the API package files in a staging area. These files can then be deployed to an Oracle database.
@@ -18,6 +20,7 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Views**: Generates view DDL scripts.
 - **Template-Based**: Generated code is largely template based, offering an extra degree of customisation.
 - **Optimistic Locking Support**: Includes support for concurrency control "row version" columns, used for optimistic locking implementation.
+- **Support for PLSQL Logger**: Supports the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).
 - **Column-Specific Logic**: Exclude auto-maintained columns (e.g. maintained by triggers) from API interface, and manage column defaults efficiently.
 - **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
 - **Error Handling**: Configurable behaviour for missing tables (skip or stop processing).
@@ -90,6 +93,7 @@ names. However, a `quick_config` tool is provided to help get you set up more qu
 
 - Basic
 - Liquibase
+- LLogger (Liquibase with logger)
 
 The parameters passed need to be in lowercase.  
 Here we are configuring for Liquibase.  
@@ -133,7 +137,7 @@ Copied: resources/templates/misc/view/view.liquibase.sample -> resources/templat
 Copied: resources/templates/misc/trigger/table_name_biu.liquibase.sample -> resources/templates/misc/trigger/table_name_biu.tpt
 ```
 
-To underscore the point, you should either specify `-t liquibase` or `-t basic`. Optionally, specify `--template_category` 
+To underscore the point, you should either specify `-t basic`, `-t liquibase` or `-t llogger`. Optionally, specify `--template_category` 
 instead of `-t`.  
 
 If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
