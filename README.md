@@ -139,6 +139,9 @@ names. However, a `quick_config` tool is provided to help get you set up more qu
 - LLogger (Liquibase with logger)
 
 The parameters passed need to be in lowercase.  
+
+If you opt for the `llogger` templates, you will need to install the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).  
+
 Here we are configuring for Liquibase.  
 
    macOS / Linux
@@ -182,8 +185,8 @@ Copied: resources/templates/packages/procedures/samples/upsert.llogger.sample ->
 Copied: resources/templates/packages/procedures/samples/select.llogger.sample -> resources/templates/packages/procedures/select.tpt
 23 files instantiated.
 OraTAPI quick config complete.
-
 ```
+Note that in this example, we are opting for the "Liquibase with Logger" templates.  
 
 To underscore the point, you should either specify `-t basic`, `-t liquibase` or `-t llogger`. Optionally, specify `--template_category` 
 instead of `-t`.  
