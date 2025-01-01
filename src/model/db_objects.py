@@ -25,6 +25,7 @@ class Table:
         :type trace: bool
         """
         self.schema_name = table_owner.upper()
+        self.schema_name_lc = table_owner.lower()
         self.table_name = table_name.upper()
         self.table_name_lc = table_name.lower()
         self.trace = trace

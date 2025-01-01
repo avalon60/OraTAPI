@@ -4,6 +4,47 @@
 
 Version 1.1.8
 
+- [OraTAPI - Oracle Table API Generator](#oratapi---oracle-table-api-generator)
+  - [About OraTAPI](#about-oratapi)
+  - [Features \& Limitations](#features--limitations)
+    - [Features](#features)
+    - [Limitations](#limitations)
+  - [Preinstallation](#preinstallation)
+  - [Installation](#installation)
+  - [Post Installation](#post-installation)
+  - [The Primary Components](#the-primary-components)
+    - [Command Line Tools](#command-line-tools)
+      - [Windows:](#windows)
+      - [macOS / Linux:](#macos--linux)
+  - [Usage](#usage)
+    - [Basic Example:](#basic-example)
+    - [Full Command-Line Arguments:](#full-command-line-arguments)
+  - [Output Structure](#output-structure)
+    - [Configuration Settings for OraTAPI.ini](#configuration-settings-for-oratapiini)
+      - [\[OraTAPI\]](#oratapi)
+      - [\[project\]](#project)
+      - [\[copyright\]](#copyright)
+      - [\[behaviour\]](#behaviour)
+      - [\[formatting\]](#formatting)
+      - [\[file\_controls\]](#file_controls)
+      - [\[api\_controls\]](#api_controls)
+      - [\[logger\]](#logger)
+      - [\[schemas\]](#schemas)
+      - [\[misc\]](#misc)
+      - [\[console\]](#console)
+      - [Example configuration file:](#example-configuration-file)
+    - [Sample Generated API:](#sample-generated-api)
+  - [Auto Column Management](#auto-column-management)
+    - [The col\_auto\_maintain\_method Property](#the-col_auto_maintain_method-property)
+      - [Maintained by Trigger](#maintained-by-trigger)
+      - [Maintained by Column Expression](#maintained-by-column-expression)
+    - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
+    - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
+  - [Find Grained File Control](#find-grained-file-control)
+  - [Template Substitution Strings](#template-substitution-strings)
+  - [Connection Manager](#connection-manager)
+  - [License](#license)
+
 
 ## About OraTAPI
 OraTAPI is a Python-based tool that generates PL/SQL APIs for Oracle database tables. This tool simplifies the process of interacting with Oracle database tables by creating customisable and standardised APIs for common database operations like `insert`, `update`, `delete`, `select`, operations and more.  
@@ -625,7 +666,7 @@ as
 --
 --------------------------------------------------------------------------------
 -- Application      :   Human Resources
--- Sub-module       :   %sub_module%
+-- Domain           :   %table_domain%
 -- Source file name :   employees_tapi.sql
 -- Purpose          :   Table API (TAPI) for table employees
 --
@@ -697,7 +738,7 @@ as
 --
 --------------------------------------------------------------------------------
 -- Application      :   Human Resources
--- Sub-module       :   %sub_module%
+-- Domain           :   %table_domain%
 -- Package          :   %schema_name_lc%.employees_tapi
 -- Source file name :   employees_tapi.sql
 -- Purpose          :   Table API (TAPI) for table employees
@@ -884,33 +925,58 @@ This has two subdirectories:
 
 If the `col_auto_maintain_method` property, is set to `expression`, then for each column listed in the `auto_maintained_cols` and `row_vers_column_name` proprties, a template entry is needed for each column in th `inserts` and `updates` directories. These expressions are injected into assignment statements for the generated API procedures. For example, assume we have a column called `row_version`, we would expect to find a `row_version.tpt` file in each of the `inserts` and `updates` directories. The contents of these might look like this:
 
-inserts\row_version.tpt:
+inserts/row_version.tpt:
 ```
 1
 ```
-updates\row_version.tpt:
+updates/row_version.tpt:
 ```
 row_version + 1
 ```
 When it comes to the "who" columns, we have to be slightly creative. For example, take the `created_by` column; we might have something like this:
 
-inserts\created_by.tpt:
+inserts/created_by.tpt:
 ```
 current_user
 ```
-updates\created_by.tpt:
+updates/created_by.tpt:
 ```
 created_by
 ```
 Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column to its current value.
 
 ### The auto_maintained_cols Property
-This is a comma separated list of columns which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
+This is a comma separated list of column names which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
 
 This list should not include the column included to the `row_version_column_name` property (if one is set).
 
 ### The row_version_column_name Property
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
+
+## Fine Grained File Controls
+Fine grain control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
+this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
+`OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
+location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
+sets ths ;location to `resources/config`.  
+
+The file can be maintained as a spreadsheet. 
+Each row represents a schema / table. The following 
+columns are represented:
+
+- Schema Name
+- Table Name
+- Packages Enabled
+- Views Enabled
+- Triggers Enabled
+
+The file is auto-populated when you generate scripts. If a schema/table combination is missing, a row is automatically 
+added. Once rows are added, you can maintain the last 3 columns. Setting these to `True`, `1`, or `On` instructs OraTAPI 
+that the respective files can be created/overwritten. Setting these to `False`, `0` or `Off` will instruct OraTAPI to not 
+create/overwrite the file.  
+
+Note that OraTAPI updates the file after each run and all settings are normalised to either 
+`True` or `False`.
 
 ## Template Substitution Strings
 Any properties from the OraTAPI.ini file may be interpolated into the templates.  

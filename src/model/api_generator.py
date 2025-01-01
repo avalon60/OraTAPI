@@ -18,14 +18,17 @@ from typing import Any, Dict
 from copy import deepcopy
 from itertools import chain
 from lib.app_utils import enhanced_guid, random_string
+from model.ora_tapi_csv import CSVManager
+from model.pi_csv import PIColumnsManager
 
 
 # Define our substitution placeholder string for indent spaces.
 # The number of spaces for an indent tab, is defined in OraTAPI.ini
 IDNT = '%indent_spaces%'
 
-TEMPLATES_LOCATION = project_home()/ 'resources' / 'templates'
-CONFIG_LOCATION = project_home()/ 'resources' / 'config'
+APP_HOME = project_home()
+TEMPLATES_LOCATION = APP_HOME / 'resources' / 'templates'
+CONFIG_LOCATION = APP_HOME / 'resources' / 'config'
 
 # Get the current date
 date_now = datetime.now()
@@ -86,6 +89,7 @@ class ApiGenerator:
         """
         self.proj_home = project_home()  # project_home returns a Path object
         proj_config_file = CONFIG_LOCATION/ 'OraTAPI.ini'
+        pi_csv_file_path = CONFIG_LOCATION / 'pi_columns.csv'
         self.column_expressions_dir = TEMPLATES_LOCATION / 'column_expressions'
         self.view_template_dir =  TEMPLATES_LOCATION / 'misc' / 'view'
         self.trigger_template_dir =  TEMPLATES_LOCATION / 'misc' / 'trigger'
@@ -180,6 +184,20 @@ class ApiGenerator:
                                                                 config_key="logger_logs",
                                                                 default="logger_logs")
 
+        pi_columns_csv_dir = self.config_manager.config_value(config_section="file_controls",
+                                                                config_key="pi_columns_csv_dir",
+                                                                default="resources/config")
+
+        ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
+                                                    config_key='ora_tapi_csv_dir',
+                                                    default=str(APP_HOME / 'OraTAPI.csv'))
+        ora_tapi_csv_dir = Path(ora_tapi_csv_dir)
+        self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv',
+                                      config_file_path=self.config_manager.config_file_path,
+                                      cleanup=False)
+
+        pi_csv_file_path = Path(pi_columns_csv_dir) / 'pi_columns.csv'
+        self.pi_column_manager = PIColumnsManager(pi_columns_csv_path=pi_csv_file_path)
         self.view_name_suffix_lc = self.view_name_suffix.lower()
         # Populate self.global_substitutions with the .ini file contents.
         # We will use these to inject values into the templates.
@@ -206,12 +224,18 @@ class ApiGenerator:
             self.noop_column_string = f"~{rand_text1}' || sys_guid() || '~  ' || sys_guid() || '{rand_text2}~"
             self.global_substitutions["noop_column_string"] = self.noop_column_string
 
+
+        table_domain = self.csv_manager.csv_dict_property(schema_name=self.table.schema_name_lc,
+                                                             table_name=table_name,
+                                                             property_selector='domain')
+
         self.global_substitutions["sig_file_ext"] = self.sig_file_ext
         self.global_substitutions["body_file_ext"] = self.body_file_ext
         self.global_substitutions["run_date_time"] = current_date
         self.global_substitutions["table_name_lc"] = table_name.lower()
         self.global_substitutions["table_owner_lc"] = self.table_owner.lower()
         self.global_substitutions["table_owner"] = self.table_owner
+        self.global_substitutions["table_domain"] = table_domain
         self.global_substitutions["tapi_author"] = options_dict["tapi_author"]
         self.global_substitutions["tapi_author_lc"] = options_dict["tapi_author"].lower()
         self.global_substitutions["view_owner_lc"] = options_dict["view_owner"].lower()
@@ -222,6 +246,7 @@ class ApiGenerator:
         self.global_substitutions["view_name_suffix"] = self.view_name_suffix
         self.global_substitutions["tapi_pkg_name_postfix_lc"] = self.global_substitutions["tapi_pkg_name_postfix"]
         self.global_substitutions["tapi_pkg_name_prefix_lc"] = self.global_substitutions["tapi_pkg_name_prefix"]
+
 
         self.table = Table(database_session=database_session,
                            table_owner=table_owner,
@@ -308,15 +333,20 @@ class ApiGenerator:
             column_name_lc = column_name.lower()
             parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype' else 'p_row.' + column_name_lc
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
-
+            is_pk_column = self.table.column_property_value(column_name=column_name, property_name='is_pk_column')
+            param_prefix = '* ' if is_pk_column else '  '
             if data_type == 'CLOB' or column_name_lc in skip_list:
                 continue
 
+            is_pi = self.pi_column_manager.check_column(schema_name=self.table.schema_name_lc,
+                                                        table_name=self.table.table_name_lc,
+                                                        column_name=column_name_lc)
+            comment = '-- PI column: ' if is_pi else ''
             col_id += 1
             if col_id == 1:
-                logger_appends = f"{self.logger_pkg}.append_param(l_params, '{parameter_name_lc}', {parameter_name_lc});\n"
+                logger_appends = f"{comment}{self.logger_pkg}.append_param(l_params, '{param_prefix}{parameter_name_lc}', {parameter_name_lc});\n"
             else:
-                logger_appends += f"{tabs}{self.logger_pkg}.append_param(l_params, '{parameter_name_lc}', {parameter_name_lc});\n"
+                logger_appends += f"{tabs}{comment}{self.logger_pkg}.append_param(l_params, '{param_prefix}{parameter_name_lc}', {parameter_name_lc});\n"
 
         return logger_appends
 

@@ -2,7 +2,7 @@
 
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
-__description__ = "Manages the database connection/close."
+__description__ = "Manages the database connection."
 
 import oracledb
 
@@ -127,12 +127,12 @@ class DBSession(oracledb.Connection):
 
 if __name__ == "__main__":
     # Connection parameters
-    dsn = "localhost:1245/UTPLSQL"
+    _dsn = "localhost:1245/UTPLSQL"
     username = "aut"
     password = "Wibble123"
 
     # Initialise the DB session
-    db_session = DBSession(dsn=dsn, db_username=username, db_password=password)
+    db_session = DBSession(dsn=_dsn, db_username=username, db_password=password)
     binds = {'employee_id': 117}
 
     # Test the new method

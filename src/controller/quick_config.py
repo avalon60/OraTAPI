@@ -36,6 +36,13 @@ def copy_files(template_category: str, force: bool) -> None:
         files_copied += 1
         print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
 
+    config_sample = config_dir / "samples" / "pi_columns.csv.sample"
+    config_target = config_dir / "pi_columns.csv"
+    if config_sample.exists() and (force or not config_target.exists()):
+        shutil.copyfile(config_sample, config_target)
+        files_copied += 1
+        print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
+
     # Directories with special rules
     special_dirs = [
         templates_dir / "column_expressions" / "inserts",

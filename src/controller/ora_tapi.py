@@ -14,7 +14,7 @@ from model.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
-from view.ora_tapi_csv import CSVManager
+from model.ora_tapi_csv import CSVManager
 
 CONFIG_LOCATION = project_home()/ 'resources' / 'config'
 
@@ -78,12 +78,12 @@ class TAPIGenerator:
         self.proj_home = project_home()
 
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
-        csv_path = self.config_manager.config_value(config_section='file_controls',
+        ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
                                                     default=str(app_home / 'OraTAPI.csv'))
-        csv_path = Path(csv_path)
+        ora_tapi_csv_dir = Path(ora_tapi_csv_dir)
 
-        self.csv_manager = CSVManager(csv_pathname=csv_path / 'OraTAPI.csv', config_file_path=config_file_path)
+        self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv', config_file_path=config_file_path)
 
         self.ora_tapi_version = self.config_manager.config_value(config_section='OraTAPI',
                                                                  config_key='version')
