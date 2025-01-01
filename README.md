@@ -40,7 +40,9 @@ Version 1.1.8
       - [Maintained by Column Expression](#maintained-by-column-expression)
     - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
     - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
-  - [Find Grained File Control](#find-grained-file-control)
+  - [Fine Grained File Controls](#fine-grained-file-controls)
+    - [Generated File Updates](#generated-file-updates)
+    - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
   - [License](#license)
@@ -398,9 +400,12 @@ This document explains the different sections and parameters of the configuratio
   - **Purpose**:  Organises generated view source files in a specific staging subdirectory for clarity and structure.
 
 - **ora_tapi_csv_dir**: Defines the directory for the OraTAPI CSV file.
-  - Example: `ora_tapi_csv_dir = `
-  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found.
+  - Example: `ora_tapi_csv_dir = resources/config`
+  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain%) to be configured.
 
+- **pi_columns_csv_dir**: Defines the directory for the OraTAPI CSV file.
+  - Example: `pi_columns_csv_dir = resources/config`
+  - **Purpose**: Used to control which columns should be omitted from parameter logging when the `llogger` templates are active. This is provided to avoid PI (personal information) columns being logged.
 ---
 
 #### [api_controls]
@@ -954,6 +959,7 @@ This list should not include the column included to the `row_version_column_name
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
 
 ## Fine Grained File Controls
+### Generated File Updates
 Fine grain control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
@@ -977,6 +983,34 @@ create/overwrite the file.
 
 Note that OraTAPI updates the file after each run and all settings are normalised to either 
 `True` or `False`.
+
+### PI (Personal Information) Columns & Logging
+If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
+This is only pertinent, if you are working with the `llogger` based templates (or similar).  
+
+The file contains the following columns:
+
+- Schema Name
+- Table Name
+- Column Name
+- Description
+
+This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to the list.  
+
+When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
+
+```
+logger_user.logger.append_param(l_params, '* p_row.employee_id', p_row.employee_id);
+logger_user.logger.append_param(l_params, '  p_row.first_name', p_row.first_name);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.last_name', p_row.last_name);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.email', p_row.email);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.phone_number', p_row.phone_number);
+logger_user.logger.append_param(l_params, '  p_row.hire_date', p_row.hire_date);
+logger_user.logger.append_param(l_params, '  p_row.job_id', p_row.job_id);
+logger_user.logger.append_param(l_params, '  p_row.salary', p_row.salary);
+```
+
+
 
 ## Template Substitution Strings
 Any properties from the OraTAPI.ini file may be interpolated into the templates.  
