@@ -30,3 +30,6 @@ global-exclude *.py[cod]
 
 # Exclude the development OraTAPI.ini
 exclude resources/config/OraTAPI.ini
+
+# Exclude the development pi_columns.csv
+exclude resources/config/pi_columns.csv
