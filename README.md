@@ -63,7 +63,7 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Views**: Generates view DDL scripts.
 - **Template-Based**: Generated code is largely template based, offering an extra degree of customisation.
 - **Optimistic Locking Support**: Includes support for concurrency control "row version" columns, used for optimistic locking implementation.
-- **Support for PLSQL Logger**: Supports the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).
+- **Support for PLSQL Logger**: Integrates with the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).
 - **Column-Specific Logic**: Exclude auto-maintained columns (e.g. maintained by triggers) from API interface, and manage column defaults efficiently.
 - **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
 - **Error Handling**: Configurable behaviour for missing tables (skip or stop processing).
