@@ -523,7 +523,7 @@ This document explains the different sections and parameters of the configuratio
 
 ```ini
 [OraTAPI]
-version = 1.1.5
+version = 1.1.9
 
 [project]
 default_app_name = Human Resources
@@ -562,7 +562,11 @@ view_dir = view
 
 # Set the directory pathname to locate the OraTAPI.csv file. If unset it is assumed to be located under the OraTAPI
 # install directory. This file is used to fine control which files should be generated.
-ora_tapi_csv_dir =
+ora_tapi_csv_dir = resources/config
+
+# Set the path to the OraTAPI pi_columns.csv file. This CSV file is used to flag columns as personal information.
+# Such columns are not logged when using the llogger format templates.
+pi_columns_csv_dir = resources/config
 
 [api_controls]
 # API naming properties follow. Set these to the preferred procedure names of the respective APIs
