@@ -155,7 +155,7 @@ Here we are configuring for Liquibase.
    ./bin/quick_config.ps1 -t liquibase
    ```
 
-The output should look similar to this:
+Assuming we were to configure for "Liquibase with Logger", the output should look similar to this:
 
 ```
 $ bin/quick_config.sh -t llogger
