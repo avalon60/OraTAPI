@@ -1,23 +1,51 @@
 #!/usr/bin/env python3
 """
 Author: Clive Bostock
-Date: 2024-12-27
+Date: 2024-12-31
 Description: Script to initialise config and template files from resources/templates.
 """
 
 import argparse
 import shutil
+from configparser import ConfigParser
 from lib.file_system_utils import project_home
 
 CONFIG_LOCATION = project_home() / 'resources' / 'config'
 TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
 config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
 
+def update_version_from_sample(sample_file, target_file):
+    """
+    Reads the version from the OraTAPI.ini.sample file and updates it in the target OraTAPI.ini file.
+
+    :param sample_file: Path to the sample configuration file.
+    :param target_file: Path to the target configuration file.
+    """
+    sample_config = ConfigParser()
+    sample_config.read(sample_file)
+
+    if "OraTAPI" in sample_config and "version" in sample_config["OraTAPI"]:
+        version = sample_config["OraTAPI"]["version"]
+
+        target_config = ConfigParser()
+        if target_file.exists():
+            target_config.read(target_file)
+        else:
+            target_config.add_section("OraTAPI")
+
+        target_config["OraTAPI"]["version"] = version
+
+        with target_file.open("w", encoding="utf-8") as f:
+            target_config.write(f)
+
+        print(f"Updated version in {target_file.relative_to(project_home())} to {version}.")
+    else:
+        print(f"Version not found in {sample_file.relative_to(project_home())}.")
+
 def copy_files(template_category: str, force: bool) -> None:
     """
-    This copies `.sample` files from a `samples` subdirectory to
-    target locations, based on the template_category, and specific copying rules.
-    We initialise by copying only when files do not exist, unless `force` is specified.
+    Copies `.sample` files from a `samples` subdirectory to target locations, based on the
+    template_category, and specific copying rules. Ensures OraTAPI.ini version consistency.
 
     :param template_category: The template category ("basic", "liquibase" or "llogger").
     :type template_category: str
@@ -31,10 +59,14 @@ def copy_files(template_category: str, force: bool) -> None:
     # Handle the config directory
     config_sample = config_dir / "samples" / "OraTAPI.ini.sample"
     config_target = config_dir / "OraTAPI.ini"
-    if config_sample.exists() and (force or not config_target.exists()):
-        shutil.copyfile(config_sample, config_target)
-        files_copied += 1
-        print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
+
+    if config_sample.exists():
+        if force or not config_target.exists():
+            shutil.copyfile(config_sample, config_target)
+            files_copied += 1
+            print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
+        else:
+            update_version_from_sample(config_sample, config_target)
 
     config_sample = config_dir / "samples" / "pi_columns.csv.sample"
     config_target = config_dir / "pi_columns.csv"
@@ -49,7 +81,7 @@ def copy_files(template_category: str, force: bool) -> None:
         templates_dir / "column_expressions" / "updates"
     ]
 
-    # These directories have files reflecting "basic", "liquibase" ot "llogger" template samples.
+    # These directories have files reflecting "basic", "liquibase" or "llogger" template samples.
     regular_dirs = [
         templates_dir / "misc" / "trigger",
         templates_dir / "misc" / "view",

@@ -111,7 +111,7 @@ you should preferably download Python 3.11.
    ```bash
    cd <path-to-installation-folder>
    chmod 750 setup.sh
-   ./setup.sh
+   ./setup.sh -
    ```
    Windows PowerShell:
    ```ps1
@@ -119,15 +119,6 @@ you should preferably download Python 3.11.
    ./setup.ps1
    ```
     The Windows command must be run from a Windows PowerShell terminal.  
-
-4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
-
-
-NOTES:   
-If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal. 
-OraTAPI can be used via Powershell or Git Bash. 
-
-As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the OraTAPI-X.Y.Z.zip file, and install from that.
 
 ## Post Installation
 The next step is to configure the OraTAP.ini file and your template files. Samples of these are provided, and you could
@@ -193,6 +184,26 @@ instead of `-t`.
 
 If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
 customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag.
+
+## Upgrading
+To upgrade:
+1. Take a backup of your current installation
+2. Download the new release of OraTAPI
+3. Unpack as outlined previously, replacing the existing installation.
+4. Run the `setup` and `quick_config` commands, as outlined in the Installation section.  
+
+This will not overwrite your existing configuration (assuming that you don't use the `--force` flag with the 
+`quick_config` command).
+
+4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
+
+
+NOTES:   
+If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal. 
+OraTAPI can be used via Powershell or Git Bash. 
+
+As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the OraTAPI-X.Y.Z.zip file, and install from that.
+
 
    ```bash
    cd <path-to-installation-folder>
