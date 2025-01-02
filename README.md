@@ -87,7 +87,7 @@ you should preferably download Python 3.11.
 
 ## Installation
 
-1. Download the OraTAPI-X.Y.Z.tar.gz Artefact to a staging directory.
+1. Download the OraTAPI-X.Y.Z.tar.gz artefact to a staging directory. You can obtain the artefects from the [OraTAPI Releases](https://github.com/avalon60/OraTAPI/releases) page.
 
    2. Open a Terminal Window and Extract the Contents:
       For macOS / Linux
@@ -257,7 +257,7 @@ The `ora_tapi` command line tool is used to launch the code generation process.
 The code templates form the basic shape of the generated source code files. There are various templates which are read 
 at runtime and constitute regions such as package file headers, footers and procedures. You can also implement view and 
 trigger templates, and sample templates are provided for you to copy and modify. You should not amend the original sample 
-files. These have a suffix of `.tpt.sample`. There are also `column expression` templates. These will are discussed in 
+files. These have a suffix of `.tpt.sample`. There are also `column expression` templates. These are discussed in 
 the [Maintained by Column Expression](#maintained-by-column-expression) section.
 
 Finally, much of the behaviour of OraTAPI is governed by the configuration of the `OraTAPI.ini` file, which is located 
