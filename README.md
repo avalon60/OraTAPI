@@ -184,8 +184,12 @@ To underscore the point, you should either specify `-t basic`, `-t liquibase` or
 instead of `-t`.  
 
 If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
-customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag.
+customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag. Example:
 
+   ```bash
+   cd <path-to-installation-folder>
+   ./bin/quick_config.sh -t liquibase --force
+   ```
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
@@ -196,11 +200,6 @@ OraTAPI can be used via Powershell or Git Bash.
 
 As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the OraTAPI-X.Y.Z.zip file, and install from that.
 
-
-   ```bash
-   cd <path-to-installation-folder>
-   ./bin/quick_config.sh -t liquibase --force
-   ```
 
 ## Performing Upgrades
 To upgrade:
