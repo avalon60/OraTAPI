@@ -204,8 +204,9 @@ As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the 
 ## Performing Upgrades
 It's worth noting that when you unzip the installation archive file, it creates a directory, whose name is of the form 
 `oratapi-M.m.p`, where the M, m and p, represent the major, minor and patch components of the version. This means 
-that you should be able to locate the archive and unzip it from the same location as you did for previous installation, 
-and it will automatically extract to its own directory.
+that you should be able to locate the archive and unzip it from the same location as you did for previous your installation(s), 
+and it will automatically extract to its own directory.  
+
 
 To complete the installation and migrate your previous settings, perform these steps:
 
@@ -224,7 +225,10 @@ Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
 
 If new config settings are introduced then you will get feedback from the migration tool. It will list any new 
 OraTAPI.ini sections which you have missing as well as any properties. In addition, it will inform you if there are 
-any obsoleted entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.
+any obsoleted entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.  
+
+Your previously configured named database connections are preserved since they are located under the directory 
+$HOME/.OraTAPI.  
 
 The synopsis for the `migrate_config` command is:
 
@@ -457,7 +461,7 @@ This document explains the different sections and parameters of the configuratio
   - **Purpose**: Customises the naming conventions for the delete procedure.
 
 - **select_procname**: Specifies the procedure name to be used for select API.
-  - Example: `select_procname = get`
+z  - Example: `select_procname = get`
   - **Purpose**: Customises the naming conventions for the select procedure.
 
 - **insert_procname**: Specifies the procedure name to be used for insert API.
