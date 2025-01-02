@@ -90,7 +90,7 @@ you should preferably download Python 3.11.
 
 ### Familiarisation with the Layout
 
-The file system layout for an OraTAPI installation, looks similare to what we see here:
+The file system layout for an OraTAPI installation, looks similar to what we see here:
 
 ```
 ora_tapi.1.1.19
@@ -145,7 +145,7 @@ ora_tapi.1.1.19
 └── setup.sh
 
 ```
-For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's worth mentioning that sample configuration files are provided and leveraged during setup. These are nnot shown, as they would clutter the display. These are located in the various `resources/templates` and `resources/config` subdirectories, within various `samples` subdirectories.
+For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's worth mentioning that sample configuration files are provided and leveraged during setup. These are not shown, as they would clutter the display. These are located in the various `resources/templates` and `resources/config` subdirectories, within various `samples` subdirectories.
 
 The key take-away from the above is the config directory which is where the OraTAPI.ini is located, as well as a couple of CSV files which are all used to influnce the behaviour of OraTAPI. The various template files `.tpt` also influence the behavious, in as much as they shape the code and content of the generated files.
 
@@ -298,14 +298,44 @@ $HOME/.OraTAPI.
 The synopsis for the `migrate_config` command is:
 
 ```
-usage: migrate_config.py [-h] -o OLD_INSTALL_DIR
+usage: migrate_config.py [-h] (-o OLD_INSTALL_DIR | -e <export_zip_path> | -i <import_zip_path>)
 
-Migrate configuration files (OraTAPI.ini, CSV and templates) from a previous installation.
+Migrate, export, or import OraTAPI configuration and template files.
 
 options:
   -h, --help            show this help message and exit
   -o OLD_INSTALL_DIR, --old_install_dir OLD_INSTALL_DIR
                         Specify the old OraTAPI installation directory.
+  -e <export_zip_path>, --export <export_zip_path>
+                        Export resources to a ZIP file.
+  -i <import_zip_path>, --import_resources <import_zip_path>
+                        Import resources from a ZIP file.
+```
+Hopefully you have noticed that `migrate_config` also has export/import options. 
+You can use this to backup/restore or transport settings.
+
+Example export:
+```
+$ bin/migrate_config.sh --export /tmp/mig.zip
+OraTAPI config migration started...
+Exported resources to /tmp/mig.zip
+OraTAPI operation complete.
+```
+
+Example import:
+```
+$ bin/migrate_config.sh --import /tmp/mig.zip
+OraTAPI config migration started...
+Imported resources from /tmp/mig.zip
+Updated version in resources/config/OraTAPI.ini to 1.1.19.
+
+Checking for OraTAPI.ini updates/obsolescence...
+
+No config changes introduced with release.
+
+OraTAPI.ini checks complete.
+
+OraTAPI operation complete.
 ```
 
 ---
