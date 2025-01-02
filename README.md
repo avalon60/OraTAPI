@@ -124,7 +124,7 @@ you should preferably download Python 3.11.
 ## Post Installation
 The next step is to configure the OraTAP.ini file and your template files. Samples of these are provided, and you could
 traverse the various directories, to instantiate all of your files manually, by copying the samples to the requisite file
-names. However, a `quick_config` tool is provided to help get you set up more quickly. There are two options to run with:
+names. However, a `quick_config` tool is provided to help get you set up more quickly. There are several options to run with:
 
 - Basic
 - Liquibase
