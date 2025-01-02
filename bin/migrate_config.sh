@@ -2,22 +2,25 @@
 #------------------------------------------------------------------------------
 # Author: Clive Bostock
 #   Date: 5 August 2024
-#   Name: ora_tapi.sh
-#  Descr: Wrapper shell for calling OraTAPI/src/controller/quick_config.py
+#   Name: migrate_config.sh
+#  Descr: Wrapper shell for calling OraTAPI/src/controller/migrate_config.py
 #  
-# This utility copies `.sample` files from the resources directory to
-# target locations, based on the template_category, and specific copying rules.
-# We only initialise, if specific files does not exist, we avoid clobbering them.
+# This script migrates settings from an old OraTAPI installation to a new installation.
+#
+# This utility copies your configurations (OraTAPI.ini, CSV files, templates) from a previous installation to a new one.
+#
+# For help, use:
+#    <OraTAPI-Home>\bin\migrate_config.ps1 -h
 #
 #    For help, use:
 #
-#      <OraTAPI-Home>/bin/quick_config.sh -h
+#      <OraTAPI-Home>/bin/migrate_config.sh -h
 #
 #    For Mac or Linux, before the first execution, ensure you set the
 #    execute permissions:
 #
 #    cd <OraTAPI-Home>/bin
-#    chmod 750 quick_config.sh
+#    chmod 750 migrate_config.sh
 #
 #------------------------------------------------------------------------------
 
@@ -25,7 +28,7 @@
 realpath() {
   [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
-ENTRY_POINT="quick_config.py"
+ENTRY_POINT="migrate_config.py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
 BIN_DIR="${PROJECT_DIR}/bin"

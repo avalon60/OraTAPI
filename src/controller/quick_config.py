@@ -8,11 +8,56 @@ Description: Script to initialise config and template files from resources/templ
 import argparse
 import shutil
 from configparser import ConfigParser
+
+from setuptools.command.setopt import config_file
+
 from lib.file_system_utils import project_home
+from pathlib import Path
 
 CONFIG_LOCATION = project_home() / 'resources' / 'config'
 TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
-config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
+CONFIG_FILE_PATH = CONFIG_LOCATION / 'OraTAPI.ini'
+
+def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
+    """
+    Compares the OraTAPI.ini file with the OraTAPI.ini.sample file to report
+    new sections/keys and deprecated sections/keys.
+
+    :param config_file_path: Path to the target configuration file.
+    :param config_sample_file: Path to the sample configuration file.
+    """
+    current_config = ConfigParser()
+    sample_config = ConfigParser()
+
+    current_config.read(config_file_path)
+    sample_config.read(config_sample_file)
+
+    new_sections = set(sample_config.sections()) - set(current_config.sections())
+    deprecated_sections = set(current_config.sections()) - set(sample_config.sections())
+    print(f"New sections found in sample: {', '.join(new_sections)}")
+    print(f"Deprecated sections: {', '.join(deprecated_sections)}")
+
+    for section in sample_config.sections():
+        if section not in current_config:
+            print(f"Section [{section}] not found in current config.")
+            continue
+
+        new_keys = set(sample_config[section].keys()) - set(current_config[section].keys())
+        deprecated_keys = set(current_config[section].keys()) - set(sample_config[section].keys())
+
+        if new_keys:
+            print(f"New keys found in section [{section}]: {', '.join(new_keys)}")
+
+        if deprecated_keys:
+            print(f"Deprecated keys in section [{section}]: {', '.join(deprecated_keys)}")
+
+        for key in new_keys:
+            print(f"New key in [{section}]: {key} = {sample_config[section][key]}")
+        for key in deprecated_keys:
+            print(f"Deprecated key in [{section}]: {key} = {current_config[section][key]}")
+
+    if 'logger' in deprecated_sections:
+        print("Deprecated section: [logger]")
 
 def update_version_from_sample(sample_file, target_file):
     """
@@ -68,12 +113,12 @@ def copy_files(template_category: str, force: bool) -> None:
         else:
             update_version_from_sample(config_sample, config_target)
 
-    config_sample = config_dir / "samples" / "pi_columns.csv.sample"
-    config_target = config_dir / "pi_columns.csv"
+    csv_sample = config_dir / "samples" / "pi_columns.csv.sample"
+    csv_target = config_dir / "pi_columns.csv"
     if config_sample.exists() and (force or not config_target.exists()):
-        shutil.copyfile(config_sample, config_target)
+        shutil.copyfile(csv_sample, csv_target)
         files_copied += 1
-        print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
+        print(f"Copied: {csv_sample.relative_to(project_home())} -> {csv_target.relative_to(project_home())}")
 
     # Directories with special rules
     special_dirs = [
@@ -112,6 +157,7 @@ def copy_files(template_category: str, force: bool) -> None:
                     files_copied += 1
                     print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
     print(f"{files_copied} files instantiated.")
+    compare_config_files(config_file_path=config_target, config_sample_file=config_sample)
 
 def main() -> None:
     """

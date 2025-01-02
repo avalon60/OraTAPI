@@ -189,8 +189,16 @@ customisations to the configuration. However, you can force an overwrite, by add
 To upgrade:
 1. Take a backup of your current installation
 2. Download the new release of OraTAPI
-3. Unpack as outlined previously, replacing the existing installation.
-4. Run the `setup` and `quick_config` commands, as outlined in the Installation section.  
+3. Unpack as outlined previously.
+4. Run the `setup` command
+5. Run `quick_config` as per the example below.
+
+``
+   cd <path-to-installation-folder>
+   ./bin/quick_config.sh -t liquibase -T <path_to_old_install_dir>
+``
+The option used with the `-t` flag is arbitrary, since we are copying the previous installation configurations across.
+This will result in the OraTAPI.ini file, CSV files and templates being copied to the new installation.
 
 This will not overwrite your existing configuration (assuming that you don't use the `--force` flag with the 
 `quick_config` command).
