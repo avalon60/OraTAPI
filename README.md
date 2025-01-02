@@ -190,18 +190,15 @@ To upgrade:
 1. Take a backup of your current installation
 2. Download the new release of OraTAPI
 3. Unpack as outlined previously.
-4. Run the `setup` command
-5. Run `quick_config` as per the example below.
+4. Run the `setup` command as outlined previously
+5. Run `migrate_config` command as per the example below.
 
 ``
    cd <path-to-installation-folder>
-   ./bin/quick_config.sh -t liquibase -T <path_to_old_install_dir>
+   ./bin/migrate_config.sh -o <path_to_old_install_dir>
 ``
-The option used with the `-t` flag is arbitrary, since we are copying the previous installation configurations across.
-This will result in the OraTAPI.ini file, CSV files and templates being copied to the new installation.
-
-This will not overwrite your existing configuration (assuming that you don't use the `--force` flag with the 
-`quick_config` command).
+This will result in your old OraTAPI.ini file, CSV files and templates being copied to the new installation.
+Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
