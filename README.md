@@ -10,6 +10,8 @@ Version 1.1.19
     - [Features](#features)
     - [Limitations](#limitations)
   - [Preinstallation](#preinstallation)
+    - [Preparing the Environment](#preparing-the-environment)
+    - [Familiarisation with the Layout](#familiarisation-with-the-layout)
   - [Installation](#installation)
   - [Post Installation](#post-installation)
   - [Performing Upgrades](#performing-upgrades)
@@ -74,8 +76,9 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 ---
 
 ## Preinstallation
+### Preparing the Environment
 
-Ensure that you have Python 3.10 or later installed.
+In order to make OraTAPI installable, you nbeed to ensure that you have Python 3.10 or later installed.  
 On macOS, you can install Python using:  
 
 `brew install python3` # Install the latest version
@@ -84,6 +87,67 @@ On macOS, you can install Python using:
 
 On Windows, ensure that you obtain Python from: https://www.python.org/downloads/windows/
 you should preferably download Python 3.11. 
+
+### Familiarisation with the Layout
+
+The file system layout for an OraTAPI installation, looks similare to what we see here:
+
+```
+ora_tapi.1.1.19
+├── bin
+│   ├── conn_mgr.ps1
+│   ├── conn_mgr.sh
+│   ├── migrate_config.ps1
+│   ├── migrate_config.sh
+│   ├── ora_tapi.ps1
+│   ├── ora_tapi.sh
+│   ├── quick_config.ps1
+│   └── quick_config.sh
+├── resources
+│   ├── config
+│   │   ├── OraTAPI.csv
+│   │   ├── OraTAPI.ini
+│   │   └── pi_columns.csv
+│   └── templates
+│       ├── column_expressions
+│       │   ├── inserts
+│       │   │   ├── created_by.tpt
+│       │   │   ├── created_on.tpt
+│       │   │   ├── row_version.tpt
+│       │   │   ├── updated_by.tpt
+│       │   │   └── updated_on.tpt
+│       │   └── updates
+│       │       ├── created_by.tpt
+│       │       ├── created_on.tpt
+│       │       ├── row_version.tpt
+│       │       ├── updated_by.tpt
+│       │       └── updated_on.tpt
+│       ├── misc
+│       │   ├── trigger
+│       │   │   └── table_name_biu.tpt
+│       │   └── view
+│       │       └── view.tpt
+│       └── packages
+│           ├── body
+│           │   ├── package_footer.tpt
+│           │   └── package_header.tpt
+│           ├── procedures
+│           │   ├── delete.tpt
+│           │   ├── insert.tpt
+│           │   ├── merge.tpt
+│           │   ├── select.tpt
+│           │   ├── update.tpt
+│           │   └── upsert.tpt
+│           └── spec
+│               ├── package_footer.tpt
+│               └── package_header.tpt
+├── setup.ps1
+└── setup.sh
+
+```
+For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's worth mentioning that sample configuration files are provided and leveraged during setup. These are nnot shown, as they would clutter the display. These are located in the various `resources/templates` and `resources/config` subdirectories, within various `samples` subdirectories.
+
+The key take-away from the above is the config directory which is where the OraTAPI.ini is located, as well as a couple of CSV files which are all used to influnce the behaviour of OraTAPI. The various template files `.tpt` also influence the behavious, in as much as they shape the code and content of the generated files.
 
 ## Installation
 
@@ -124,7 +188,8 @@ you should preferably download Python 3.11.
 ## Post Installation
 The next step is to configure the OraTAP.ini file and your template files. Samples of these are provided, and you could
 traverse the various directories, to instantiate all of your files manually, by copying the samples to the requisite file
-names. However, a `quick_config` tool is provided to help get you set up more quickly. There are several options to run with:
+names. However, a `quick_config` tool is provided to help get you set up more quickly. There are several options to 
+choose from:
 
 - Basic
 - Liquibase
@@ -981,7 +1046,7 @@ end;
 /
 ```
 #### Maintained by Column Expression
-Column expressions are configured, via special templates. These are located in the `templates/column_expressions` directory.
+Column expressions are configured, via special templates. These are located in the `resources/templates/column_expressions` directory.
 This has two subdirectories:
 
 - inserts
