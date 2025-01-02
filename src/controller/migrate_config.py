@@ -2,26 +2,52 @@
 """
 Author: Clive Bostock
 Date: 2024-12-31
-Description: Script to initialise config and template files from resources/templates.
+Description: Script to initialise, export, or import configuration and template files for OraTAPI.
 """
 
 import argparse
 import shutil
+import zipfile
 from configparser import ConfigParser
-
-from setuptools.command.setopt import config_file
+from pathlib import Path
 
 from lib.file_system_utils import project_home
-from pathlib import Path
+
+
+def export_resources(export_path: Path) -> None:
+    """
+    Export the resources directory (excluding 'samples') to a ZIP file.
+
+    :param export_path: Path to the export ZIP file.
+    """
+    resources_dir = project_home() / "resources"
+    with zipfile.ZipFile(export_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file in resources_dir.rglob('*'):
+            if "samples" in file.parts:
+                continue
+            relative_path = file.relative_to(resources_dir)
+            zipf.write(file, relative_path)
+    print(f"Exported resources to {export_path}")
+
+
+def import_resources(import_path: Path) -> None:
+    """
+    Import a ZIP archive into the resources' directory.
+
+    :param import_path: Path to the import ZIP file.
+    """
+    resources_dir = project_home() / "resources"
+    with zipfile.ZipFile(import_path, 'r') as zipf:
+        zipf.extractall(resources_dir)
+    print(f"Imported resources from {import_path}")
 
 
 def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
     """
-    Compares the OraTAPI.ini file with the OraTAPI.ini.sample file to report
-    new sections/keys and deprecated sections/keys.
+    Compare configuration files to detect changes.
 
-    :param config_file_path: Path to the target configuration file.
-    :param config_sample_file: Path to the sample configuration file.
+    :param config_file_path: Path to the current config file.
+    :param config_sample_file: Path to the sample config file.
     """
     print('\nChecking for OraTAPI.ini updates/deprecations...')
     current_config = ConfigParser()
@@ -38,7 +64,6 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
     if deprecated_sections:
         print(f"Deprecated sections: {', '.join(deprecated_sections)}")
 
-    # If no changes found in sections
     if not new_sections and not deprecated_sections:
         print("\nNo config changes introduced with release.")
 
@@ -66,9 +91,9 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
     print('\nOraTAPI.ini checks complete.\n')
 
 
-def update_version_from_sample(sample_file, target_file):
+def update_version_from_sample(sample_file: Path, target_file: Path) -> None:
     """
-    Reads the version from the OraTAPI.ini.sample file and updates it in the target OraTAPI.ini file.
+    Update the version in the configuration file from the sample file.
 
     :param sample_file: Path to the sample configuration file.
     :param target_file: Path to the target configuration file.
@@ -97,8 +122,9 @@ def update_version_from_sample(sample_file, target_file):
 
 def migrate_files(previous_install_dir: Path) -> None:
     """
-    Migrate `OraTAPI.ini`, `pi_columns.csv`, and template files from the previous installation's resources/config and
-    resources/templates sub-folders to the new installation.
+    Migrate files from the previous installation.
+
+    :param previous_install_dir: Path to the previous installation directory.
     """
     files_migrated = 0
     new_install_resources = project_home() / 'resources'
@@ -164,20 +190,38 @@ def migrate_files(previous_install_dir: Path) -> None:
 
 def main() -> None:
     """
-    Main function to parse arguments and initiate file copying.
+    Main function to parse arguments and perform actions.
     """
     print('OraTAPI config migration started...')
-    parser = argparse.ArgumentParser(description="Migrate configuration files (OraTAPI.ini, CSV and templates) from a previous installation.")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(
+        description="Migrate, export, or import OraTAPI configuration and template files."
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "-o", "--old_install_dir",
-        required=True,
         help="Specify the old OraTAPI installation directory."
+    )
+    group.add_argument(
+        "-e", "--export",
+        metavar="<export_zip_path>",
+        help="Export resources to a ZIP file."
+    )
+    group.add_argument(
+        "-i", "--import_resources",
+        metavar="<import_zip_path>",
+        help="Import resources from a ZIP file."
     )
 
     args = parser.parse_args()
 
-    migrate_files(Path(args.old_install_dir))
-    print('OraTAPI migration complete.')
+    if args.old_install_dir:
+        migrate_files(Path(args.old_install_dir))
+    elif args.export:
+        export_resources(Path(args.export))
+    elif args.import_resources:
+        import_resources(Path(args.import_resources))
+
+    print('OraTAPI operation complete.')
 
 
 if __name__ == "__main__":
