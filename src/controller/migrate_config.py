@@ -41,6 +41,12 @@ def import_resources(import_path: Path) -> None:
         zipf.extractall(resources_dir)
     print(f"Imported resources from {import_path}")
 
+    # Call update_version_from_sample after import
+    config_sample = resources_dir / "config" / "samples" / "OraTAPI.ini.sample"
+    config_target = resources_dir / "config" / "OraTAPI.ini"
+    update_version_from_sample(config_sample, config_target)
+    compare_config_files(config_sample_file=config_sample, config_file_path=config_target)
+
 
 def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
     """
@@ -49,7 +55,7 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
     :param config_file_path: Path to the current config file.
     :param config_sample_file: Path to the sample config file.
     """
-    print('\nChecking for OraTAPI.ini updates/deprecations...')
+    print('\nChecking for OraTAPI.ini updates/obsolescence...')
     current_config = ConfigParser()
     sample_config = ConfigParser()
 
