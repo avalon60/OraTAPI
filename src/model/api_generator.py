@@ -228,6 +228,7 @@ class ApiGenerator:
         table_domain = self.csv_manager.csv_dict_property(schema_name=self.table.schema_name_lc,
                                                              table_name=table_name,
                                                              property_selector='domain')
+        table_domain_lc = str(table_domain).lower()
 
         self.global_substitutions["sig_file_ext"] = self.sig_file_ext
         self.global_substitutions["body_file_ext"] = self.body_file_ext
@@ -236,6 +237,7 @@ class ApiGenerator:
         self.global_substitutions["table_owner_lc"] = self.table_owner.lower()
         self.global_substitutions["table_owner"] = self.table_owner
         self.global_substitutions["table_domain"] = table_domain
+        self.global_substitutions["table_domain_lc"] = table_domain_lc
         self.global_substitutions["tapi_author"] = options_dict["tapi_author"]
         self.global_substitutions["tapi_author_lc"] = options_dict["tapi_author"].lower()
         self.global_substitutions["view_owner_lc"] = options_dict["view_owner"].lower()

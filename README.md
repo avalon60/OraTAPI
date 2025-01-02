@@ -435,7 +435,7 @@ This document explains the different sections and parameters of the configuratio
 
 - **ora_tapi_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `ora_tapi_csv_dir = resources/config`
-  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain%) to be configured.
+  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain_lc%) to be configured.
 
 - **pi_columns_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `pi_columns_csv_dir = resources/config`
@@ -709,7 +709,7 @@ as
 --
 --------------------------------------------------------------------------------
 -- Application      :   Human Resources
--- Domain           :   %table_domain%
+-- Domain           :   %table_domain_lc%
 -- Source file name :   employees_tapi.sql
 -- Purpose          :   Table API (TAPI) for table employees
 --
@@ -781,7 +781,7 @@ as
 --
 --------------------------------------------------------------------------------
 -- Application      :   Human Resources
--- Domain           :   %table_domain%
+-- Domain           :   %table_domain_lc%
 -- Package          :   %schema_name_lc%.employees_tapi
 -- Source file name :   employees_tapi.sql
 -- Purpose          :   Table API (TAPI) for table employees
@@ -997,7 +997,7 @@ This list should not include the column included to the `row_version_column_name
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
 
 ## Fine Grained File Controls
-### Generated File Updates
+### Controlling File Updates
 Fine grain control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
@@ -1010,6 +1010,7 @@ columns are represented:
 
 - Schema Name
 - Table Name
+- Domain
 - Packages Enabled
 - Views Enabled
 - Triggers Enabled
@@ -1021,6 +1022,9 @@ create/overwrite the file.
 
 Note that OraTAPI updates the file after each run and all settings are normalised to either 
 `True` or `False`.
+
+The `Domain` column is provided so that table domain mappings can be recorded. These are then automatically substituted 
+to the %table_domain_lc% substitution string in the templates.
 
 ### PI (Personal Information) Columns & Logging
 If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
@@ -1061,6 +1065,7 @@ In addition, the following may be used.
 |--------------------------|--------------------------------------------------------------------------------------------------|
 | STAB                     | Indent Tab-space (%STAB% is converted to [OraTAPI.ini specified] indent_spaces number of spaces) |
 | package_owner_lc         | The (lowercase) target schema in which the generated package(s) will be placed                   |
+| table_domain_lc          | The table domain mapping (maintained in OraTAPI.csv)     
 | table_name_lc            | Table name (in lowercase)                                                                        |
 | table_owner_lc           | Table schema (in lowercase)                                                                      |
 | tapi_author_lc           | TAPI author (in lowercase)                                                                       |

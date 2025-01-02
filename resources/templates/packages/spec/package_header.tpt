@@ -8,7 +8,7 @@ as
 --
 --------------------------------------------------------------------------------
 -- Application      :   %app_name%
--- Domain           :   %table_domain%
+-- Domain           :   %table_domain_lc%
 -- Package          :   %tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%
 -- Source file name :   %tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%%spec_file_ext%
 -- Purpose          :   Table API (TAPI) for table %table_name_lc%

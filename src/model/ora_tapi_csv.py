@@ -25,6 +25,7 @@ class CSVManager:
         self.cleanup = cleanup
 
     def init_csv(self):
+        """Open the OraTAPI.csv file. If it doesn't exist, instantiate it."""
         if not self.csv_pathname.exists():
             try:
                 with self.csv_pathname.open(mode='w', newline='', encoding='utf-8') as csv_file:
@@ -50,6 +51,7 @@ class CSVManager:
                                                    msg_level=MsgLvl.critical)
 
     def read_csv_to_dict(self):
+        """Read the OraTAPI.csv file, into a dictionary, keyed on schema name and table name."""
         if not self.success:
             print("Cannot read CSV to dict: invalid headers.")
             return
@@ -69,7 +71,13 @@ class CSVManager:
             self.console_manager.print_console(text=f"An error occurred while reading the CSV file: {e}",
                                                msg_level=MsgLvl.critical)
 
-    def csv_dict_property(self, schema_name: str, table_name: str, property_selector: str) -> bool:
+    def csv_dict_property(self, schema_name: str, table_name: str, property_selector: str) -> str:
+        """Returns the requested property value, associated with property_selector, from the OraTAPI.csv data.
+        :param schema_name: Table schema name
+        :param table_name: Table name
+        :param property_selector: The property key
+        :return: The property value
+        """
         if not self.success:
             raise RuntimeError("Cannot modify data due to invalid CSV headers.")
 
@@ -100,6 +108,7 @@ class CSVManager:
         return entry[property_key]
 
     def write_dict_to_csv(self):
+        """Update the CSV file from our in-memory dictionary."""
         if not self.success:
             print("Skipping writing to CSV as headers are invalid.")
             self.console_manager.print_console(text="Skipping writing to CSV as headers are invalid.",
@@ -125,6 +134,9 @@ class CSVManager:
                                                msg_level=MsgLvl.critical)
 
     def _cleanup(self):
+        """If instantiated with cleanup = True, we perform a cleanup on exit. There are cases where we don't want to
+        performa a cleanup. For example, we instantiate a CSVManager, from the api_generator.py, just for reading
+        the table domain mappings. We don't want to update the  CSV file after every table is processed."""
         if not self.cleanup:
             return
         if not self.success:
