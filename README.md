@@ -458,12 +458,15 @@ ora_tapi.sh --schema_name HR -t employees,departments -conn_name dev_db --tapi_a
 ## Output Structure
 
 Generated files are written to the staging area and organised into subdirectories:
-- **Package Specification (`spec_dir`)**: Contains `.sql` files defining the PL/SQL package interface.
-- **Package Body (`body_dir`)**: Contains `.sql` files implementing the PL/SQL package logic.
-- **View (`view`)**: Contains `.sql` files implementing any generated view scripts.
-- **Trigger (`view`)**: Contains `.sql` files implementing any generated trigger scripts.
+- **Package Specification (`spec_dir`)**: Contains DDL source files defining the PL/SQL package interface.
+- **Package Body (`body_dir`)**: Contains DDL source files implementing the PL/SQL package logic.
+- **View (`view`)**: Contains DDL source files implementing any generated view scripts.
+- **Trigger (`view`)**: Contains DDL source files implementing any generated trigger scripts.
 
-Each API package is customised based on a combination of the `.ini` configuration, command-line options and template files.
+Each API package is customised based on a combination of the `.ini` configuration, command-line options and template 
+files. File extensions for package spec and body source files can be configured via the 
+OraTAPI.ini file, under the `file_controls` section. Look for the `body_file_ext` and
+`spec_file_ext` properties.
 
 The majority of command line options have defaults which can be set via the OraTAPI.ini configuration file. 
 
