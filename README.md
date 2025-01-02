@@ -227,7 +227,7 @@ If new config settings are introduced then you will get feedback from the migrat
 OraTAPI.ini sections which you have missing as well as any properties. In addition, it will inform you if there are 
 any obsoleted entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.  
 
-Your previously configured named database connections are preserved since they are located under the directory 
+Any previously configured named database connections (see [Connection Manager](#connection-manager)) are preserved since they are located under the directory 
 $HOME/.OraTAPI.  
 
 The synopsis for the `migrate_config` command is:
@@ -254,14 +254,22 @@ The OraTAPI tools consists of 3 major components:
 
 The `ora_tapi` command line tool is used to launch the code generation process.
 
-The code templates form the basic shape of the generated source code files. There are various templates which are read at runtime and constitute regions such as package file headers, footers and procedures. You can also implement view and trigger templates, and sample templates are provided for you to copy and modify. You should not amend the original sample files. These have a suffix of `.tpt.sample`. There are also `column expression` templates. These will be discussed in more detail later.
+The code templates form the basic shape of the generated source code files. There are various templates which are read 
+at runtime and constitute regions such as package file headers, footers and procedures. You can also implement view and 
+trigger templates, and sample templates are provided for you to copy and modify. You should not amend the original sample 
+files. These have a suffix of `.tpt.sample`. There are also `column expression` templates. These will are discussed in 
+the [Maintained by Column Expression](#maintained-by-column-expression) section.
 
-Finally, much of the behaviour of OraTAPI is governed by the configuration of the `OraTAPI.ini` file, which is located in the `config` directory. The OraTAPI.ini file consists of property/value pairs, which are located into various sections, which are used to categorise their purpose. Section names are enclosed in square brackets (<i>e.g. [<api_controls]</i>). For the purposes of the OraTAPI, each property name in the file must be globally unique, irrespective of which section it belongs to.
+Finally, much of the behaviour of OraTAPI is governed by the configuration of the `OraTAPI.ini` file, which is located 
+in the `config` directory. The OraTAPI.ini file consists of property/value pairs, which are located into various 
+sections, which are used to categorise their purpose. Section names are enclosed in square brackets 
+(<i>e.g. [<api_controls]</i>). For the purposes of the OraTAPI, each property name in the file must be globally unique, 
+irrespective of which section it belongs to.
 
 ### Command Line Tools
 Launching the command line tools, varies slightly depending on your target operating system. There are two tools that you will need to work with, `conn_mgr` and `ora_tapi`. The latter of these will be used more frequently.
 
-In respect of the `conn_mgr` tool, this is used to securely store database connections (credentials and DSNs).
+In respect of the `conn_mgr` tool (see [Connection Manager](#connection-manager)), this is used to securely store database connections (credentials and DSNs).
 
 The following launcher commands are provided:
 
