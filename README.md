@@ -12,6 +12,7 @@ Version 1.1.17
   - [Preinstallation](#preinstallation)
   - [Installation](#installation)
   - [Post Installation](#post-installation)
+  - [Performing Upgrades](#performing-upgrades)
   - [The Primary Components](#the-primary-components)
     - [Command Line Tools](#command-line-tools)
       - [Windows:](#windows)
@@ -185,7 +186,7 @@ instead of `-t`.
 If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
 customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag.
 
-## Upgrading
+## Performing Upgrades
 To upgrade:
 1. Take a backup of your current installation
 2. Download the new release of OraTAPI
