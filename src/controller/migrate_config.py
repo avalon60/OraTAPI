@@ -54,11 +54,11 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
             print(f"WARNING: New keys introduced for section [{section}]: {', '.join(new_keys)}")
 
         if deprecated_keys:
-            print(f"WARNING: Deprecated keys from section [{section}]: {', '.join(deprecated_keys)}")
+            print(f"WARNING: Obsoleted keys from section [{section}]: {', '.join(deprecated_keys)}")
 
     for section in current_config.sections():
         if section not in sample_config:
-            print(f"WARNING: Deprecated section found: [{section}] - persists in current config.")
+            print(f"WARNING: Obsoleted section found: [{section}] - persists in current config.")
 
     if 'logger' in deprecated_sections:
         print("Deprecated section: [logger]")

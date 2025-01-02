@@ -42,7 +42,7 @@ Version 1.1.19
     - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
     - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
   - [Fine Grained File Controls](#fine-grained-file-controls)
-    - [Generated File Updates](#generated-file-updates)
+    - [Controlling File Updates](#controlling-file-updates)
     - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
@@ -202,19 +202,29 @@ As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the 
 
 
 ## Performing Upgrades
-To upgrade:
-1. Take a backup of your current installation
-2. Download the new release of OraTAPI
-3. Unpack as outlined previously.
-4. Run the `setup` command as outlined previously
-5. Run `migrate_config` command as per the example below.
+It's worth noting that when you unzip the installation archive file, it creates a directory, whose name is of the form 
+`oratapi-M.m.p`, where the M, m and p, represent the major, minor and patch components of the version. This means 
+that you should be able to locate the archive and unzip it from the same location as you did for previous installation, 
+and it will automatically extract to its own directory.
+
+To complete the installation and migrate your previous settings, perform these steps:
+
+1. Download the new release of OraTAPI
+2. Unpack as outlined previously.
+3. Run the `setup` command as outlined previously
+4. Run `migrate_config` command as per the example below.
 
 ```
    cd <path-to-installation-folder>
    ./bin/migrate_config.sh -o <path_to_old_install_dir>
 ```
-This will result in your old OraTAPI.ini file, CSV files and templates being copied to the new installation.
+This will result in your old OraTAPI.ini file, CSV files and templates, being copied to the new installation.  
+
 Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
+
+If new config settings are introduced then you will get feedback from the migration tool. It will list any new 
+OraTAPI.ini sections which you have missing as well as any properties. In addition, it will inform you if there are 
+any obsoleted entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.
 
 The synopsis for the `migrate_config` command is:
 
