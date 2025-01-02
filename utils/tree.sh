@@ -23,6 +23,9 @@ pushd ${APP_HOME}
 if [ "$1" = "terse" ]
 then
   tree -I "dist|logs|venv|staging|*egg-info*|.idea|.git|build|*.pyc|*pycache*|*utils*|*template*"
+elif [ "$1" = "user" ]
+then
+  tree -I "dist|logs|venv|staging|*egg-info*|.idea|.git|build|*.pyc|*pycache*|*utils*|*src*|*employee*|*MANIFEST*|*README*|*pyproject*|requirements.txt|LICENSE|*samples*"
 else
   tree -I "dist|logs|venv|staging|*egg-info*|.idea|.git|build|*.pyc|*pycache*|*utils*"
 fi
