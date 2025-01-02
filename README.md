@@ -186,20 +186,6 @@ instead of `-t`.
 If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
 customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag.
 
-## Performing Upgrades
-To upgrade:
-1. Take a backup of your current installation
-2. Download the new release of OraTAPI
-3. Unpack as outlined previously.
-4. Run the `setup` command as outlined previously
-5. Run `migrate_config` command as per the example below.
-
-``
-   cd <path-to-installation-folder>
-   ./bin/migrate_config.sh -o <path_to_old_install_dir>
-``
-This will result in your old OraTAPI.ini file, CSV files and templates being copied to the new installation.
-Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
 
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
@@ -215,6 +201,34 @@ As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the 
    cd <path-to-installation-folder>
    ./bin/quick_config.sh -t liquibase --force
    ```
+
+## Performing Upgrades
+To upgrade:
+1. Take a backup of your current installation
+2. Download the new release of OraTAPI
+3. Unpack as outlined previously.
+4. Run the `setup` command as outlined previously
+5. Run `migrate_config` command as per the example below.
+
+```
+   cd <path-to-installation-folder>
+   ./bin/migrate_config.sh -o <path_to_old_install_dir>
+```
+This will result in your old OraTAPI.ini file, CSV files and templates being copied to the new installation.
+Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
+
+The synopsis for the `migrate_config` command is:
+
+```
+usage: migrate_config.py [-h] -o OLD_INSTALL_DIR
+
+Migrate configuration files (OraTAPI.ini, CSV and templates) from a previous installation.
+
+options:
+  -h, --help            show this help message and exit
+  -o OLD_INSTALL_DIR, --old_install_dir OLD_INSTALL_DIR
+                        Specify the old OraTAPI installation directory.
+```
 
 ---
 
