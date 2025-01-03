@@ -4,7 +4,7 @@ __date__ = "2024-11-09"
 __description__ = "Home of the table metadata APIs. Here we model Table classes. This is utilised by the api.py module when generating the TAPIs."
 """
 
-# DBSession is a sub-class of oracledb.Connection which has a self.cursor() attribute.
+# DBSession is a subclass of oracledb.Connection which has a self.cursor() attribute.
 from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 
@@ -91,6 +91,8 @@ class Table:
                 for row in cursor:
                     column_name, data_type, data_default, nullable = row
                     # Record whether this is part of a PK or UK
+                    if data_default is not None:
+                        data_default = str(data_default).strip()
                     column_keyed = self._is_column_keyed(column_name=column_name)
                     is_pk_column = self._is_pk_col(column_name=column_name)
 
