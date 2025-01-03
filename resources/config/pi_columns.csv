@@ -1,4 +1,0 @@
-Schema Name,Table Name,Column Name,Description
-aut,employees,email,Email Address constitutes PI
-aut,all,phone_number,Avoid logging phone numbers
-all,all,last_name,Don’t log people names
