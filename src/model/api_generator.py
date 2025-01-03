@@ -943,7 +943,7 @@ class ApiGenerator:
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
             if self.include_defaults and default_value and column_name not in self.table.out_column_list:
-                param = f"{param:<75}"
+                param = f"{param:<99}"
                 param += f'{STAB} := {default_value}'
 
             signature += param + '\n'
@@ -955,7 +955,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1027,7 +1027,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1281,7 +1281,7 @@ class ApiGenerator:
 
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
             if self.noop_column_string and column_name not in block_list and data_type in NO_OP_DATA_TYPES:
-                param = f"{param:<75}"
+                param = f"{param:<99}"
                 param += f"{STAB} := NOOP"
 
             signature += param + '\n'
@@ -1297,7 +1297,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1367,7 +1367,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1477,7 +1477,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1548,7 +1548,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1658,7 +1658,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
@@ -1732,7 +1732,7 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
-            param = f"{param:<75}"
+            param = f"{param:<99}"
             param += f'{STAB} := false'
             signature += param + '\n'
 
