@@ -49,13 +49,13 @@ class TAPIGenerator:
         epoc_start_ts = int(time.time())
         self.view.print_console(text=f'{prog_name}: Command line parameters:-',
                                 msg_level=MsgLvl.highlight)
-        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 80)
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
         for key in sorted(options_dict.keys()):  # Sort the keys
             value = options_dict[key]
             if key == 'db_password':
                 value = '***************'
             self.view.print_console(msg_level=MsgLvl.highlight, text=f"{key:<40} = {value}")
-        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 80)
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
 
 
         options_dict["config_file_path"] = config_file_path
