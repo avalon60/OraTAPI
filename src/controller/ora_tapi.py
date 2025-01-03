@@ -156,24 +156,25 @@ class TAPIGenerator:
         # Validate table names and process. We get a dictionary of results returned.
         results = self.process_table_names()
 
-        self.view.print_console(text=f'Packages generated: {results["packages_skipped"]}',
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
+        self.view.print_console(text=f'   Packages generated: {results["packages_generated"]}',
                                 msg_level=MsgLvl.highlight)
 
-        self.view.print_console(text=f'Views generated: {results["views_skipped"]}',
+        self.view.print_console(text=f'  Packages skipped: {results["packages_skipped"]}',
+                                msg_level=MsgLvl.warning)
+
+        self.view.print_console(text=f'      Views generated: {results["views_generated"]}',
                                 msg_level=MsgLvl.highlight)
 
-        self.view.print_console(text=f'Triggers generated: {results["triggers_generated"]}',
+        self.view.print_console(text=f'     Views skipped: {results["views_skipped"]}',
+                                msg_level=MsgLvl.warning)
+
+        self.view.print_console(text=f'   Triggers generated: {results["triggers_generated"]}',
                                 msg_level=MsgLvl.highlight)
 
-        self.view.print_console(text=f'Packages skipped: {results["packages_generated"]}',
-                                msg_level=MsgLvl.highlight)
-
-        self.view.print_console(text=f'Views skipped: {results["views_generated"]}',
-                                msg_level=MsgLvl.highlight)
-
-        self.view.print_console(text=f'Triggers skipped: {results["triggers_skipped"]}',
-                                msg_level=MsgLvl.highlight)
-
+        self.view.print_console(text=f'  Triggers skipped: {results["triggers_skipped"]}',
+                                msg_level=MsgLvl.warning)
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
         exec_end_timestamp = current_timestamp()
         epoc_end_ts = int(time.time())
         self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
