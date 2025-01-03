@@ -153,9 +153,26 @@ class TAPIGenerator:
         self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
         self.view.print_console(msg_level=MsgLvl.info, text="Database session established successfully.")
 
-        # Validate table names and process
-        self.process_table_names()
+        # Validate table names and process. We get a dictionary of results returned.
+        results = self.process_table_names()
 
+        self.view.print_console(text=f'Packages generated: {results["packages_skipped"]}',
+                                msg_level=MsgLvl.highlight)
+
+        self.view.print_console(text=f'Views generated: {results["views_skipped"]}',
+                                msg_level=MsgLvl.highlight)
+
+        self.view.print_console(text=f'Triggers generated: {results["triggers_generated"]}',
+                                msg_level=MsgLvl.highlight)
+
+        self.view.print_console(text=f'Packages skipped: {results["packages_generated"]}',
+                                msg_level=MsgLvl.highlight)
+
+        self.view.print_console(text=f'Views skipped: {results["views_generated"]}',
+                                msg_level=MsgLvl.highlight)
+
+        self.view.print_console(text=f'Triggers skipped: {results["triggers_skipped"]}',
+                                msg_level=MsgLvl.highlight)
 
         exec_end_timestamp = current_timestamp()
         epoc_end_ts = int(time.time())
@@ -184,7 +201,7 @@ class TAPIGenerator:
                              f"Valid options are: {', '.join(VALID_API_TYPES)}")
         return api_types
 
-    def process_table_names(self):
+    def process_table_names(self) -> dict:
         """
         Process the provided table names, ensuring they exist in the database.
         """
@@ -199,6 +216,13 @@ class TAPIGenerator:
 
         table_count = len(self.table_names_list)
         self.view.print_console(text=f'{table_count} tables selected.', msg_level=MsgLvl.info)
+        packages_skipped = 0
+        views_skipped = 0
+        triggers_skipped = 0
+
+        packages_generated = 0
+        views_generated = 0
+        triggers_generated = 0
 
         for table_name in self.table_names_list:
             package_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
@@ -219,10 +243,30 @@ class TAPIGenerator:
             else:
                 if package_enabled:
                     self.generate_api_for_table(table_name)
+                    packages_generated += 1
+                else:
+                    packages_skipped += 1
                 if view_enabled:
                     self.generate_views_for_table(table_name)
+                    views_generated += 1
+                else:
+                    views_skipped += 1
                 if trigger_enabled:
                     self.generate_triggers_for_table(table_name)
+                    triggers_generated += 1
+                else:
+                    triggers_skipped += 1
+
+        result = {
+            "packages_generated": packages_generated,
+            "packages_skipped": packages_skipped,
+            "views_generated": views_generated,
+            "views_skipped": views_skipped,
+            "triggers_generated": triggers_generated,
+            "triggers_skipped": triggers_skipped,
+        }
+
+        return result
 
 
     def generate_api_for_table(self, table_name: str):
