@@ -1,5 +1,4 @@
 %procedure_signature%
-%STAB%-- #merge#
 %STAB%begin
 
 %STAB%%STAB%merge into %table_name_lc% tgt

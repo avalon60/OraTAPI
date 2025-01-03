@@ -3,7 +3,6 @@
 %STAB%%STAB%l_scope           %logger_logs%.scope%type    := gc_unit_prefix || '%delete_procname%';
 %STAB%%STAB%l_params          %logger_pkg%.tab_param;
 
-%STAB%-- #delete#
 %STAB%begin
 
 %STAB%%STAB%-- We don't log any CLOB parameters here.
