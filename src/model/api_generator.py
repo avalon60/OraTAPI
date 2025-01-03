@@ -35,6 +35,7 @@ date_now = datetime.now()
 
 # Format the date as DD-Mon-YYYY
 current_date = date_now.strftime("%d-%b-%Y")
+current_year = date_now.strftime("%Y")
 
 # Define the list of noop_column_string supported data-types.
 NO_OP_DATA_TYPES = (
@@ -212,7 +213,7 @@ class ApiGenerator:
         # Check to see if the copyright date is expected to be set to today's date.
         # If not set as "current_date", we assume it's a static date.
         if self.global_substitutions["copyright_year"] == "current":
-            self.global_substitutions["copyright_year"] = current_date
+            self.global_substitutions["copyright_year"] = current_year
 
         if self.noop_column_string == 'auto':
             self.noop_column_string = f"~{enhanced_guid()}~"
