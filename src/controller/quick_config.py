@@ -20,12 +20,12 @@ CONFIG_FILE_PATH = CONFIG_LOCATION / 'OraTAPI.ini'
 
 def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
     """
-    Compares the OraTAPI.ini file with the OraTAPI.ini.sample file to report
-    new sections/keys and deprecated sections/keys.
+    Compare configuration files to detect changes.
 
-    :param config_file_path: Path to the target configuration file.
-    :param config_sample_file: Path to the sample configuration file.
+    :param config_file_path: Path to the current config file.
+    :param config_sample_file: Path to the sample config file.
     """
+    print('\nChecking for OraTAPI.ini updates/obsolescence...')
     current_config = ConfigParser()
     sample_config = ConfigParser()
 
@@ -34,30 +34,37 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
 
     new_sections = set(sample_config.sections()) - set(current_config.sections())
     deprecated_sections = set(current_config.sections()) - set(sample_config.sections())
-    print(f"New sections found in sample: {', '.join(new_sections)}")
-    print(f"Deprecated sections: {', '.join(deprecated_sections)}")
+
+    if new_sections:
+        print(f"New sections found in supplied OraTAPI.ini.sample: {', '.join(new_sections)}")
+    if deprecated_sections:
+        print(f"Deprecated sections: {', '.join(deprecated_sections)}")
+
+    if not new_sections and not deprecated_sections:
+        print("\nNo config changes introduced with release.")
 
     for section in sample_config.sections():
         if section not in current_config:
-            print(f"Section [{section}] not found in current config.")
+            print(f"WARNING: New section introduced: [{section}] - not yet implemented in current config.")
             continue
 
         new_keys = set(sample_config[section].keys()) - set(current_config[section].keys())
         deprecated_keys = set(current_config[section].keys()) - set(sample_config[section].keys())
 
         if new_keys:
-            print(f"New keys found in section [{section}]: {', '.join(new_keys)}")
+            print(f"WARNING: New keys introduced for section [{section}]: {', '.join(new_keys)}")
 
         if deprecated_keys:
-            print(f"Deprecated keys in section [{section}]: {', '.join(deprecated_keys)}")
+            print(f"WARNING: Obsoleted keys from section [{section}]: {', '.join(deprecated_keys)}")
 
-        for key in new_keys:
-            print(f"New key in [{section}]: {key} = {sample_config[section][key]}")
-        for key in deprecated_keys:
-            print(f"Deprecated key in [{section}]: {key} = {current_config[section][key]}")
+    for section in current_config.sections():
+        if section not in sample_config:
+            print(f"WARNING: Obsoleted section found: [{section}] - persists in current config.")
 
     if 'logger' in deprecated_sections:
         print("Deprecated section: [logger]")
+
+    print('\nOraTAPI.ini checks complete.\n')
 
 def update_version_from_sample(sample_file, target_file):
     """
