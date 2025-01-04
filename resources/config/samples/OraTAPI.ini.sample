@@ -128,10 +128,12 @@ default_trigger_owner = aut
 view_name_suffix = _v
 
 [console]
-INFO_COLOUR = white
-WARN_COLOUR = bold yellow
-ERR_COLOUR = bold red
-CRIT_COLOUR = bold red
-HIGH_COLOUR = bold blue
+# Console text colours
+info_colour = white
+warn_colour = bold yellow
+err_colour = bold red
+crit_colour = bold red
+high_colour = bold blue
+success_colour = bold green
 # Set colour_console to false, to disable colour output.
 colour_console = true
