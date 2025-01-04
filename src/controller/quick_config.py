@@ -87,7 +87,7 @@ def update_version_from_sample(sample_file, target_file):
     else:
         print(f"Version not found in {sample_file.relative_to(project_home())}.")
 
-def copy_files(template_category: str, force: bool) -> None:
+def copy_files(template_category: str, force: bool, templates_only: bool=False) -> None:
     """
     Copies `.sample` files from a `samples` subdirectory to target locations, based on the
     template_category, and specific copying rules. Ensures OraTAPI.ini version consistency.
@@ -96,6 +96,7 @@ def copy_files(template_category: str, force: bool) -> None:
     :type template_category: str
     :param force: Whether to overwrite existing files.
     :type force: bool
+    :param templates_only: Only instantiate the sample templates.
     """
     files_copied = 0
     config_dir = CONFIG_LOCATION
@@ -105,17 +106,16 @@ def copy_files(template_category: str, force: bool) -> None:
     config_sample = config_dir / "samples" / "OraTAPI.ini.sample"
     config_target = config_dir / "OraTAPI.ini"
 
-    if config_sample.exists():
-        if force or not config_target.exists():
-            shutil.copyfile(config_sample, config_target)
-            files_copied += 1
-            print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
-        else:
-            update_version_from_sample(config_sample, config_target)
+    if config_sample.exists() and (force or not config_target.exists()) and not templates_only:
+        shutil.copyfile(config_sample, config_target)
+        files_copied += 1
+        print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
+    else:
+        update_version_from_sample(config_sample, config_target)
 
     csv_sample = config_dir / "samples" / "pi_columns.csv.sample"
     csv_target = config_dir / "pi_columns.csv"
-    if config_sample.exists() and (force or not config_target.exists()):
+    if config_sample.exists() and ((force and not templates_only) or not csv_target.exists()):
         shutil.copyfile(csv_sample, csv_target)
         files_copied += 1
         print(f"Copied: {csv_sample.relative_to(project_home())} -> {csv_target.relative_to(project_home())}")
@@ -163,13 +163,20 @@ def main() -> None:
     """
     Main function to parse arguments and initiate file copying.
     """
-    print('OraTAPI quick config started...')
-    parser = argparse.ArgumentParser(description="Copy template files based on template category.")
+    parser = argparse.ArgumentParser(description="Copy template files based on template category.",
+                                     epilog=" This also instantiates the control files: OraTAPI.ini, pi_columns.csv")
     parser.add_argument(
         "-t", "--template_category",
         choices=["liquibase", "basic", "llogger"],
         required=True,
         help="Specify the template category ('liquibase' or 'basic')."
+    )
+    parser.add_argument(
+        "-T", "--templates_only",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Only instantiate templates (Do not overwrite control files)."
     )
     parser.add_argument(
         "-f", "--force",
@@ -178,7 +185,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    copy_files(args.template_category, args.force)
+    if args.templates_only and not args.force:
+        print("ERROR: The -T/--templates_only argument must accompany -f/--force (Doesn't overwrite config files)")
+        exit(1)
+
+    print('OraTAPI quick config started...')
+    copy_files(args.template_category, args.force, templates_only=args.templates_only)
     print('OraTAPI quick config complete.')
 
 
