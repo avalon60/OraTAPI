@@ -283,9 +283,6 @@ NOTES:
 If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal. 
 OraTAPI can be used via Powershell or Git Bash. 
 
-As an alternative to downloading the OraTAPI-X.Y.Z.tar.gz, you can download the OraTAPI-X.Y.Z.zip file, and install from that.
-
-
 ## Performing Upgrades
 It's worth noting that when you unzip the installation archive file, it creates a directory, whose name is of the form 
 `oratapi-M.m.p`, where the M, m and p, represent the major, minor and patch components of the version. This means 
