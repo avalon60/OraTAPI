@@ -17,30 +17,6 @@ staging/package_spec/
 
 src/controller/example.csv
 
-staging/view/countries_v.sql
-
-staging/view/job_history_v.sql
-
-staging/view/jobs_v.sql
-
-staging/view/locations_v.sql
-
-staging/view/regions_v.sql
-
-OraTAPI.csv
-
-staging/trigger/countries_biu.sql
-
-staging/trigger/departments_biu.sql
-
-staging/trigger/job_history_biu.sql
-
-staging/trigger/jobs_biu.sql
-
-staging/trigger/locations_biu.sql
-
-staging/trigger/regions_biu.sql
-
 *.sql
 
 OraTAPI.egg-info/
@@ -55,4 +31,3 @@ src/__pycache__/
 
 dist/
 
-resources/config/pi_columns.csv

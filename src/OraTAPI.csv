@@ -1,0 +1,8 @@
+Schema Name,Table Name,Packages Enabled,Views Enabled,Triggers Enabled
+aut,DEPARTMENTS,True,True,True
+aut,EMPLOYEES,True,True,True
+aut,JOBS,True,True,True
+aut,JOB_HISTORY,True,True,True
+aut,LOCATIONS,True,True,True
+aut,REGIONS,True,True,True
+aut,COUNTRIES,True,True,True

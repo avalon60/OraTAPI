@@ -536,24 +536,14 @@ class ApiGenerator:
 
         return params_out
 
-    def _mrg_predicates_string(self, signature_type:str, soft_tabs:int = 4) -> str:
+    def _mrg_predicates_string(self, soft_tabs:int = 4) -> str:
         """Returns a line separated (\n) list of the predicates"""
         tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
-        if signature_type == "coltype":
-            predicates_out = ""
-            for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
-                column_name_lc = column_name.lower()
-                # The first column has it's indent defined in the template
-                predicates_out += f"  tgt.{column_name_lc} = src.{column_name_lc}" if column_id == 1 else  f"\n{tabs}and tgt.{column_name_lc} = src.{column_name_lc}"
-        elif signature_type == "rowtype":
-            predicates_out = ""
-            for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
-                column_name_lc = column_name.lower()
-                # The first column has it's indent defined in the template
-                predicates_out += f"  tgt.{column_name_lc} = src.{column_name_lc}" if column_id == 1 else  f"\n{tabs}and tgt.{column_name_lc} = src.{column_name_lc}"
-        else:
-            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
-            raise ValueError(message)
+        predicates_out = ""
+        for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
+            column_name_lc = column_name.lower()
+            # The first column has it's indent defined in the template
+            predicates_out += f"  tgt.{column_name_lc} = src.{column_name_lc}" if column_id == 1 else f"\n{tabs}and tgt.{column_name_lc} = src.{column_name_lc}"
 
         return predicates_out
 
@@ -680,24 +670,14 @@ class ApiGenerator:
 
         return params_out
 
-    def _predicates_string(self, signature_type:str, soft_tabs:int = 4) -> str:
+    def _predicates_string(self, soft_tabs:int = 4) -> str:
         """Returns a line separated (\n) list of the predicates"""
         tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
-        if signature_type == "coltype":
-            predicates_out = ""
-            for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
-                column_name_lc = column_name.lower()
-                # The first column has it's indent defined in the template
-                predicates_out += f"   {column_name_lc} = p_{column_name_lc}" if column_id == 1 else  f"\n{tabs}  and {column_name_lc} = p_{column_name_lc}"
-        elif signature_type == "rowtype":
-            predicates_out = ""
-            for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
-                column_name_lc = column_name.lower()
-                # The first column has it's indent defined in the template
-                predicates_out += f"   {column_name_lc} = p_row.{column_name_lc}" if column_id == 1 else  f"\n{tabs}  and {column_name_lc} = p_row.{column_name_lc}"
-        else:
-            message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
-            raise ValueError(message)
+        predicates_out = ""
+        for column_id, column_name in enumerate(self.table.pk_columns_list, start=1):
+            column_name_lc = column_name.lower()
+            # The first column has it's indent defined in the template
+            predicates_out += f"   {column_name_lc} = p_{column_name_lc}" if column_id == 1 else f"\n{tabs}  and {column_name_lc} = p_{column_name_lc}"
 
         return predicates_out
 
@@ -1848,7 +1828,7 @@ class ApiGenerator:
         logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
                                                        skip_list=skip_list)
 
-        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=2)
+        key_predicates_string = self._predicates_string(soft_tabs=2)
 
         substitutions_dict = {"column_list_string": column_list_string_lc.upper(),
                               "column_list_string_lc": column_list_string_lc,
@@ -1883,7 +1863,7 @@ class ApiGenerator:
             skip_column_list = self.auto_maintained_cols[:]
             skip_column_list.append(self.table.row_vers_column_name)
 
-        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=3)
+        key_predicates_string = self._predicates_string(soft_tabs=3)
 
         update_assignments_string = self._update_assignments_string(signature_type=signature_type,
                                                                     skip_list=skip_column_list,
@@ -1947,7 +1927,7 @@ class ApiGenerator:
                                                                soft_tabs=4)
         parameter_list_string = parameter_list_string_lc.upper()
 
-        key_predicates_string = self._predicates_string(signature_type=signature_type, soft_tabs=3)
+        key_predicates_string = self._predicates_string(soft_tabs=3)
         update_assignments_string = self._update_assignments_string(signature_type=signature_type,
                                                                     operation_type='modify',
                                                                     skip_list=skip_column_list, soft_tabs=3)
@@ -2004,7 +1984,7 @@ class ApiGenerator:
 
         procedure_body_template = procedure_body_template.replace('%procedure_signature%', procedure_signature)
         procedure_body_template = procedure_body_template.replace('%procedure_name%', procedure_name)
-        key_predicates_string = self._predicates_string(signature_type='coltype', soft_tabs=3)
+        key_predicates_string = self._predicates_string(soft_tabs=3)
 
         column_skip_list = self.table.ak_columns_list_lc
         returning_clause_lc = ''
@@ -2065,7 +2045,7 @@ class ApiGenerator:
                                                                     soft_tabs=6)
 
 
-        mrg_predicates_string = self._mrg_predicates_string(signature_type=signature_type, soft_tabs=5)
+        mrg_predicates_string = self._mrg_predicates_string(soft_tabs=5)
 
         mrg_update_assignments_string = self._mrg_update_assignments_string(operation_type='merge_modify',
                                                                             signature_type=signature_type,

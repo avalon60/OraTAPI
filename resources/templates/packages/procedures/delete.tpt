@@ -1,0 +1,10 @@
+%procedure_signature%
+%STAB%begin
+
+%STAB%%STAB%  delete
+%STAB%%STAB%%STAB% from %table_name_lc%
+%STAB%%STAB%%STAB%where
+%STAB%%STAB%%STAB%%STAB%%key_predicates_string_lc%
+%STAB%%STAB%%returning_clause_lc%;
+
+%STAB%end %procedure_name%;

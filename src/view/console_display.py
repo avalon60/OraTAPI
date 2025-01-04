@@ -14,6 +14,7 @@ class MsgLvl(Enum):
     error = 3
     critical = 4
     highlight = 5
+    success = 6
 
 class ConsoleMgr:
     def __init__(self, config_file_path: Path):
@@ -21,11 +22,12 @@ class ConsoleMgr:
         self.config_manager = ConfigManager(config_file_path=self.config_file_path)
         colour_console = self.config_manager.bool_config_value(config_section='console',
                                                                config_key='colour_console')
-        self.INFO_COLOUR = self.config_manager.config_value(config_section='console', config_key='INFO_COLOUR')
-        self.WARN_COLOUR = self.config_manager.config_value(config_section='console', config_key='WARN_COLOUR')
-        self.ERR_COLOUR = self.config_manager.config_value(config_section='console', config_key='ERR_COLOUR')
-        self.CRIT_COLOUR = self.config_manager.config_value(config_section='console', config_key='CRIT_COLOUR')
-        self.HIGH_COLOUR = self.config_manager.config_value(config_section='console', config_key='HIGH_COLOUR')
+        self.INFO_COLOUR = self.config_manager.config_value(config_section='console', config_key='info_colour')
+        self.WARN_COLOUR = self.config_manager.config_value(config_section='console', config_key='warn_colour')
+        self.ERR_COLOUR = self.config_manager.config_value(config_section='console', config_key='err_colour')
+        self.CRIT_COLOUR = self.config_manager.config_value(config_section='console', config_key='crit_colour')
+        self.HIGH_COLOUR = self.config_manager.config_value(config_section='console', config_key='high_colour')
+        self.SUCCESS_COLOUR = self.config_manager.config_value(config_section='console', config_key='success_colour')
 
         no_colour = True if not colour_console else False
         # Create a console without color support
@@ -43,7 +45,8 @@ class ConsoleMgr:
             MsgLvl.warning: self.print_warning,
             MsgLvl.error: self.print_error,
             MsgLvl.critical: self.print_critical,
-            MsgLvl.highlight: self.print_highlight
+            MsgLvl.highlight: self.print_highlight,
+            MsgLvl.success: self.print_success
         }
 
         # Fetch the appropriate method and call it
@@ -67,6 +70,9 @@ class ConsoleMgr:
 
     def print_critical(self, text: str):
         self.console.print(f"[{self.CRIT_COLOUR}][CRITICAL]: {text} [/{self.CRIT_COLOUR}]")
+
+    def print_success(self, text: str):
+        self.console.print(f"[{self.SUCCESS_COLOUR}][SUCCESS]: {text} [/{self.SUCCESS_COLOUR}]")
 
 if __name__ == "__main__":
     config_file = Path('../../resources/config/samples/OraTAPI.ini.sample')
