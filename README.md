@@ -151,7 +151,7 @@ The key take-away from the above is the config directory which is where the OraT
 
 ## Installation
 
-1. Download the OraTAPI-X.Y.Z.tar.gz artefact to a staging directory. You can obtain the artefects from the [OraTAPI Releases](https://github.com/avalon60/OraTAPI/releases) page.
+1. Download the oratapi-X.Y.Z.tar.gz artefact to a staging directory. You can obtain the artefacts from the [OraTAPI Releases](https://github.com/avalon60/OraTAPI/releases) page. Ensure not to download one of the two source code files.
 
    2. Open a Terminal Window and Extract the Contents:
       For macOS / Linux
