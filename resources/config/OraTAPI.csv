@@ -1,0 +1,8 @@
+Schema Name,Table Name,Domain,Packages Enabled,Views Enabled,Triggers Enabled
+aut,DEPARTMENTS,Undefined,True,True,True
+aut,EMPLOYEES,Undefined,True,True,True
+aut,JOBS,Undefined,True,True,True
+aut,JOB_HISTORY,Undefined,True,True,True
+aut,LOCATIONS,Undefined,True,True,False
+aut,REGIONS,Undefined,True,False,False
+aut,COUNTRIES,Undefined,False,False,False
