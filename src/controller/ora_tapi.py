@@ -151,26 +151,27 @@ class TAPIGenerator:
 
         # Database session setup
         self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
-        self.view.print_console(msg_level=MsgLvl.info, text="Database session established successfully.")
+        self.view.print_console(msg_level=MsgLvl.success, text="Database session established successfully.")
 
         # Validate table names and process. We get a dictionary of results returned.
         results = self.process_table_names()
 
+        self.view.print_console(msg_level=MsgLvl.highlight, text=f"Results stats follow, as governed by OraTAPI.csv rules.")
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
-        self.view.print_console(text=f'   Packages generated: {results["packages_generated"]}',
-                                msg_level=MsgLvl.highlight)
+        self.view.print_console(text=f'Packages generated: {results["packages_generated"]}',
+                                msg_level=MsgLvl.success)
 
         self.view.print_console(text=f'  Packages skipped: {results["packages_skipped"]}',
                                 msg_level=MsgLvl.warning)
 
-        self.view.print_console(text=f'      Views generated: {results["views_generated"]}',
-                                msg_level=MsgLvl.highlight)
+        self.view.print_console(text=f'   Views generated: {results["views_generated"]}',
+                                msg_level=MsgLvl.success)
 
         self.view.print_console(text=f'     Views skipped: {results["views_skipped"]}',
                                 msg_level=MsgLvl.warning)
 
-        self.view.print_console(text=f'   Triggers generated: {results["triggers_generated"]}',
-                                msg_level=MsgLvl.highlight)
+        self.view.print_console(text=f'Triggers generated: {results["triggers_generated"]}',
+                                msg_level=MsgLvl.success)
 
         self.view.print_console(text=f'  Triggers skipped: {results["triggers_skipped"]}',
                                 msg_level=MsgLvl.warning)
