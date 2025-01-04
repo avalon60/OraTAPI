@@ -33,3 +33,5 @@ exclude resources/config/OraTAPI.ini
 
 # Exclude the development pi_columns.csv
 exclude resources/config/pi_columns.csv
+
+recursive-exclude resources/templates *.tpt
