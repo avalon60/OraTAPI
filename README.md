@@ -256,6 +256,26 @@ customisations to the configuration. However, you can force an overwrite, by add
    ./bin/quick_config.sh -t liquibase --force
    ```
 
+The full command synopsis is:
+```
+$ bin/quick_config.sh -h
+usage: quick_config.py [-h] -t {liquibase,basic,llogger} [-T] [-f]
+
+Copy template files based on template category.
+
+options:
+  -h, --help            show this help message and exit
+  -t {liquibase,basic,llogger}, --template_category {liquibase,basic,llogger}
+                        Specify the template category ('liquibase' or 'basic').
+  -T, --templates_only  Only instantiate templates (Do not overwrite control files).
+  -f, --force           Overwrite existing files.
+
+This also instantiates the control files: OraTAPI.ini, pi_columns.csv
+```
+Note that the `-T/--templates_only` can be used in conjunction with the `-f/--force option`, to re-instantiate the templates.
+This may be useful if you have started configuring your control files, but wish to switch to a different template set 
+to that originally chosen, assuming that you don't wish to reset your bespoke config.
+
 4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
 
@@ -311,8 +331,10 @@ options:
   -i <import_zip_path>, --import_resources <import_zip_path>
                         Import resources from a ZIP file.
 ```
-Hopefully you have noticed that `migrate_config` also has export/import options. 
-You can use this to backup/restore or transport settings.
+Hopefully you will have noticed that `migrate_config`, also has export / import options. 
+You can use this to back-up / restore or transport settings.These also constitute an alternative to 
+using the `-o / --old_install_dir` option, since you can take an export of your old configuration, 
+and import from the export file to your new installation.
 
 Example export:
 ```
