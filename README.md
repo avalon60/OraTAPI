@@ -1064,7 +1064,16 @@ end employees_tapi;
 ---
 
 ## Auto Column Management
-Under the `api_controls` section of `OraTAPI.ini`, there are two entries, pertaining to auto managed columns. These allow you to configure how you manage your auto-managed columns. These are typically columns which you wish to be managed either by triggers or via the table APIs, and as such there are no input parameters to populate them. For example, you may have columns which are used to track, who created or last updated a row. The entries that control the bahaviour are:
+### What are Auto-managed Columns?
+In this context, the term auto-managed columns, refers to columns whose data are not managed directly via the application. 
+Rather, they are populated/updated by table triggers, default values or expressions which are effectively virtualised by the API.  
+
+
+### Configuring the Column Management Method
+Under the `api_controls` section of `OraTAPI.ini`, there are two entries pertaining to auto managed columns. These allow 
+you to configure how you manage your auto-managed columns. Because the management is made almost transparent to the 
+developer, there are no input parameters to populate them via the API. For example, you may have columns which are used 
+to track who created, or last updated a row. The entries that control the bahaviour are:
 
 - col_auto_maintain_method
 - auto_maintained_cols
@@ -1077,8 +1086,8 @@ If you are using columns which you want to be automatically updated during DML o
 - expression
 
 #### Maintained by Trigger 
-If you set the `col_auto_maintain_method` property to <i>trigger</i>, you should ensure that your trigger template(s) is/are designed to make appropriate updates, to the columns that are listed.
-
+If you set the `col_auto_maintain_method` property to <i>trigger</i>, you should ensure that your trigger template(s) 
+are designed to make appropriate updates to the columns that are listed vis this property.
 ```
 create or replace trigger %trigger_owner_lc%.%table_name_lc%_biu
 before insert or update on %table_owner_lc%.%table_name_lc%
@@ -1097,13 +1106,18 @@ end;
 /
 ```
 #### Maintained by Column Expression
-Column expressions are configured, via special templates. These are located in the `resources/templates/column_expressions` directory.
-This has two subdirectories:
+Column expressions are configured using special templates located in the resources/templates/column_expressions 
+directory. This directory contains two subdirectories, allowing you to differentiate column expressions for 
+inserts and updates. The subdirectories are listed here:
 
 - inserts
 - updates
 
-If the `col_auto_maintain_method` property, is set to `expression`, then for each column listed in the `auto_maintained_cols` and `row_vers_column_name` proprties, a template entry is needed for each column in th `inserts` and `updates` directories. These expressions are injected into assignment statements for the generated API procedures. For example, assume we have a column called `row_version`, we would expect to find a `row_version.tpt` file in each of the `inserts` and `updates` directories. The contents of these might look like this:
+If the col_auto_maintain_method property is set to expression, then for each column listed in the auto_maintained_cols 
+and row_vers_column_name properties, a corresponding template entry is required in both the inserts and updates 
+directories. These expressions are injected into assignment statements for the generated API procedures.
+
+For example, assume we have a column called row_version. We would expect to find a row_version.tpt file in both the inserts and updates directories. The contents of these files might look like this:
 
 inserts/row_version.tpt:
 ```
@@ -1139,9 +1153,12 @@ Fine grain control over which files can or cannot be updated, is implemented via
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
 location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
-sets ths ;location to `resources/config`.  
+sets ths location to `resources/config`.  
 
-The file can be maintained as a spreadsheet. 
+The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
+on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
+ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
+
 Each row represents a schema / table. The following 
 columns are represented:
 
@@ -1174,7 +1191,10 @@ The file contains the following columns:
 - Column Name
 - Description
 
-This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to the list.  
+This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` 
+and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always 
+enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to 
+the list.  
 
 When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
 
@@ -1188,7 +1208,8 @@ logger_user.logger.append_param(l_params, '  p_row.hire_date', p_row.hire_date);
 logger_user.logger.append_param(l_params, '  p_row.job_id', p_row.job_id);
 logger_user.logger.append_param(l_params, '  p_row.salary', p_row.salary);
 ```
-
+The pi_columns.csv file contents should be maintained as a spreadsheet, but ensure that it is saved as a CSV file when 
+exporting it from the spreadsheet application.
 
 
 ## Template Substitution Strings
@@ -1215,7 +1236,7 @@ In addition, the following may be used.
 
 ## Connection Manager
 
-The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DNS (TNS) strings can be stored and retrieved locally, by use of a conventient name. Credentials are transparrently encrypted/decrypted from a locally maintained store. The `ora_tapi` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
+The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DNS (TNS) strings can be stored and retrieved locally, by use of a conventient name. Credentials are transparrently encrypted/decrypted from a locally maintained store. The `conn_mgr` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
 
 - -p / --db_password
 - -u / --db_username
