@@ -62,18 +62,20 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 
 ## Features & Limitations
 ### Features
-- **Metadata-Driven**: Automatically generates PL/SQL APIs using Oracle database metadata.
-- **Customisable APIs**: Define API names, signatures, and behaviour through a configuration file.
-- **Table Triggers**: Generates customisable table level trigger code.
-- **Views**: Generates view DDL scripts.
-- **Template-Based**: Generated code is largely template based, with example templates supplied, offering an extra customisation capabilities.
-- **Optimistic Locking Support**: Includes support for concurrency control "row version" columns, used for optimistic locking implementation.
-- **Support for PLSQL Logger**: Easy integration with the [PLSQL logging utility](https://github.com/OraOpenSource/Logger). This includes a mechanism to control which columns should be block-listed form being logged.
-- **Fine Grained Control**: Fine grained control over which tables should have which components generated.
-- **Column-Specific Logic**: Exclude auto-maintained columns (e.g. maintained by triggers) from API interface, and manage column defaults efficiently.
-- **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
-- **Error Handling**: Configurable behaviour for missing tables (skip or stop processing).
-- **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be transparently, and securely stored locally.
+OraTAPI is a versatile tool that offers the following configurable options:
+
+- **Metadata-Driven**: Automatically generates PL/SQL APIs based on Oracle database metadata.  
+- **Customisable APIs**: Allows you to define API names, signatures, and behaviors through a configuration file.  
+- **Table Triggers**: Generates customisable table-level trigger code.  
+- **View Generation**: Automatically generates view DDL scripts.  
+- **Template-Based Customisation**: Code generation is largely template-driven, with example templates provided, offering extensive customization capabilities.  
+- **Optimistic Locking Support**: Supports concurrency control with "row version" columns for implementing optimistic locking.  
+- **PL/SQL Logger Integration**: Easily integrates with the PL/SQL Logger utility, including mechanisms to blocklist specific columns from being logged.  
+- **Fine-Grained Control**: Provides detailed control over which components are generated for specific tables.  
+- **Auto-Maintained Column Support**: Offers a flexible solution for managing auto-maintained columns, either through generated triggers or configurable column expressions.  
+- **Organised Output**: Output files are neatly arranged in staging directories for streamlined deployment.  
+- **Error Handling**: Configurable behavior for handling missing tables, with options to skip or halt processing.  
+- **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be securely stored and used transparently.  
 
 ### Limitations
 - As of this release, database connections are basic - cloud wallets are not supported.
@@ -82,7 +84,7 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 ## Preinstallation
 ### Preparing the Environment
 
-In order to make OraTAPI installable, you nbeed to ensure that you have Python 3.10 or later installed.  
+In order to make OraTAPI installable, you need to ensure that you have Python 3.10 or later installed.  
 On macOS, you can install Python using:  
 
 `brew install python3` # Install the latest version
