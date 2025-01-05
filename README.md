@@ -38,6 +38,8 @@ Version 1.2.12
       - [Example configuration file:](#example-configuration-file)
     - [Sample Generated API:](#sample-generated-api)
   - [Auto Column Management](#auto-column-management)
+    - [What are Auto-managed Columns?](#what-are-auto-managed-columns)
+    - [Configuring the Column Management Method](#configuring-the-column-management-method)
     - [The col\_auto\_maintain\_method Property](#the-col_auto_maintain_method-property)
       - [Maintained by Trigger](#maintained-by-trigger)
       - [Maintained by Column Expression](#maintained-by-column-expression)
@@ -64,12 +66,14 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 - **Customisable APIs**: Define API names, signatures, and behaviour through a configuration file.
 - **Table Triggers**: Generates customisable table level trigger code.
 - **Views**: Generates view DDL scripts.
-- **Template-Based**: Generated code is largely template based, offering an extra degree of customisation.
+- **Template-Based**: Generated code is largely template based, with example templates supplied, offering an extra customisation capabilities.
 - **Optimistic Locking Support**: Includes support for concurrency control "row version" columns, used for optimistic locking implementation.
-- **Support for PLSQL Logger**: Integrates with the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).
+- **Support for PLSQL Logger**: Easy integration with the [PLSQL logging utility](https://github.com/OraOpenSource/Logger). This includes a mechanism to control which columns should be block-listed form being logged.
+- **Fine Grained Control**: Fine grained control over which tables should have which components generated.
 - **Column-Specific Logic**: Exclude auto-maintained columns (e.g. maintained by triggers) from API interface, and manage column defaults efficiently.
 - **Directory Configuration**: Output files are neatly organised into staging directories for easy deployment.
 - **Error Handling**: Configurable behaviour for missing tables (skip or stop processing).
+- **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be transparently, and securely stored locally.
 
 ### Limitations
 - As of this release, database connections are basic - cloud wallets are not supported.
