@@ -1,12 +1,12 @@
 """
 __author__: Clive Bostock
-__date__: 2024-05-23
+__date__: 2024-12-01
 __description__: User/Security module. This is responsible for managing developer specific settings; primarily
                  password encryption/decryption and configuration settings.
 
                  Passwords are located to the $HOME/<sanitised_project_name>/<typ>_credentials.ini file.
 
-                 Typically, <type> would be dsn."
+                 Typically, <type> would be dsn.
 """
 
 from base64 import b64encode, b64decode
@@ -30,9 +30,6 @@ OHAI_TEST_INI = CONFIG_DIR / 'config.ini'
 REPORTS_DIR = APP_HOME / "reports"
 LOGS_DIR = APP_HOME / "logs"
 SCREENSHOTS_DIR = APP_HOME / "screenshots"
-# Define constant USER_CONFIG_DIR, which names the directory below $HOME, where user config is located.
-# The primary use is to locate encrypted secrets.
-USER_CONFIG_DIR = '.bdds'
 USER_SECRETS_INI = 'secrets.ini'
 
 
@@ -158,7 +155,7 @@ class UserSecurity:
 
     def _create_user_credentials_file(self, new_connection_name: str | None = None) -> None:
         """
-        Create a configparser file in the user's .bdds directory.
+        Create a configparser file in the user's .<project_identifier> directory.
         If the file already exists, do nothing. If an initial_section is passed, add it to the file.
 
         :param new_connection_name: Initial connection name to add to the credentials config file.
@@ -179,7 +176,6 @@ class UserSecurity:
         """
         Create a new section in the configparser file if it does not already exist.
 
-        :param config_filename: Name of the config file.
         :param connection_name: Section to add to the config file.
         """
         config = configparser.ConfigParser()
@@ -262,21 +258,22 @@ class UserSecurity:
         return config.get(connection_name, credential_key)
 
     def user_credential(self, connection_name: str, credential_key: str = 'password'):
-        """Returns the selected (by credential_key) password in plain text. :param credential_key: Used to specify which
-        password or username we wish to retrieve from the credentials section of the ini file.
-        :type credential_key: str
-        :return: Plain text password.
+        """Returns the selected (by credential_key) credential component in plain text.
+
+        :param connection_name: The named connection.
+        :param credential_key: Used to specify which password or username we wish to retrieve from the credentials section of the ini file.
+        :return: Plain text credential.
         :rtype: str
         """
 
-        encrypted_password = self._user_credential_value(connection_name=connection_name,
+        encrypted_credential = self._user_credential_value(connection_name=connection_name,
                                                          credential_key=credential_key)
-        password = _decrypted_user_credential(encrypted_credential=encrypted_password)
-        return password
+        decrypted_credential = _decrypted_user_credential(encrypted_credential=encrypted_credential)
+        return decrypted_credential
 
 
-    def _decrypted_username(self, connection_name: str):
-        """Returns the selected (by username_key) username in plain text.
+    def decrypted_username(self, connection_name: str):
+        """Returns the selected (by username key) username in plain text.
         :param connection_name: The name of the stored database connection.
         :return: Plain text username.
         :rtype: str
@@ -287,8 +284,8 @@ class UserSecurity:
         return username
 
 
-    def _decrypted_password(self, connection_name: str):
-        """Returns the selected (by username_key) username in plain text.
+    def decrypted_password(self, connection_name: str):
+        """Returns the selected (by password key) username in plain text.
         :param connection_name: The name of the stored database connection.
         :return: Plain text username.
         :rtype: str
@@ -332,7 +329,7 @@ def _encrypted_user_credential(credential: str) -> str:
     which is locked in (encrypted) to the users machine.
 
     Args:
-        password (str): The plaintext password.
+        credential (str): The plaintext credential component (username, password...).
 
     Returns:
         str: The base64-encoded encrypted username/password, including the salt, IV, tag, and ciphertext.
@@ -426,13 +423,10 @@ def _data_decrypt(encrypted_data: str, encryption_password: str) -> str:
     return decrypted_data.decode('utf-8')
 
 
-
-
-
 if __name__ == "__main__":
     # Example data_encrypt()/data_decrypt() usage:
     original_data = "This is a secret message."
-    passwd = "strongpassword123"
+    passwd = "strong-password-123"
 
     # Encrypt the data
     encrypted = _data_encrypt(original_data, passwd)
@@ -442,9 +436,10 @@ if __name__ == "__main__":
     decrypted = _data_decrypt(encrypted, passwd)
     print(f"Decrypted: {decrypted}")
     user_security = UserSecurity(project_identifier='UserSecurity')
+    print("NOTE: A .UserSecurity directory has been created, under your home directory, as part of this test!")
     user_security.update_named_connection(connection_name="bozzy", username='clive', password='Wibble', dsn='bozzy_tns')
-    db_username = user_security._decrypted_username(connection_name='bozzy')
-    db_password = user_security._decrypted_password(connection_name='bozzy')
+    db_username = user_security.decrypted_username(connection_name='bozzy')
+    db_password = user_security.decrypted_password(connection_name='bozzy')
 
     print(f'Retrieved Username: {db_username}; password: {db_password}')
 
