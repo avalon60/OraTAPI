@@ -85,14 +85,20 @@ def dotted_print(text: str, pad_length: int = MESSAGE_PAD_LENGTH) -> None:
     sys.stdout.flush()
 
 def text_to_boolean(value: str) -> bool:
+    """Converts a string to a boolean value.
+    :param value: String value to convert
+    :return: Boolean representation
     """
-    Converts a string value into a boolean based on common boolean representations.
+    true_values = {"true", "1", "yes", "on"}
+    false_values = {"false", "0", "no", "off"}
 
-    :param value: str, The string value to convert (e.g., 'yes', 'no', 'true', 'false', etc.)
-    :return: bool, The corresponding boolean value
-    """
-    # List of strings considered as "True" or "False"
-    return value.strip().lower() in ['yes', 'true', '1']
+    value = str(value).strip().lower()
+    if value in true_values:
+        return True
+    elif value in false_values:
+        return False
+    raise ValueError(f"Invalid boolean string: {value}")
+
 
 def text_to_boolean(value: str) -> bool:
     """
