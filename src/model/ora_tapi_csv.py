@@ -81,6 +81,9 @@ class CSVManager:
         if not self.success:
             raise RuntimeError("Cannot modify data due to invalid CSV headers.")
 
+        schema_name_lc = schema_name.lower()
+        table_name_lc = table_name.lower()
+
         # Default values for the properties
         default_values = {
             "Domain": "Undefined",
@@ -89,10 +92,10 @@ class CSVManager:
             "Triggers Enabled": True
         }
 
-        if (schema_name, table_name) not in self.data:
-            self.data[(schema_name, table_name)] = default_values.copy()
+        if (schema_name_lc, table_name_lc) not in self.data:
+            self.data[(schema_name.lower(), table_name.lower())] = default_values.copy()
 
-        entry = self.data[(schema_name, table_name)]
+        entry = self.data[(schema_name_lc, table_name_lc)]
 
         property_map = {
             "domain": "Domain",

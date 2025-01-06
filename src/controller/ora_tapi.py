@@ -65,14 +65,18 @@ class TAPIGenerator:
         self.tapi_author = options_dict['tapi_author']
         self.db_username = options_dict['db_username']
         self.db_password = options_dict['db_password']
-        self.package_owner = options_dict['package_owner']
-        self.package_owner = options_dict['package_owner']
+        self.package_owner:str = options_dict['package_owner']
+        self.package_owner_lc = self.package_owner.lower()
+        self.view_owner:str = options_dict['view_owner']
+        self.view_owner_lc = self.view_owner.lower()
+        self.trigger_owner:str = options_dict['trigger_owner']
+        self.trigger_owner_lc = self.trigger_owner .lower()
         self.dsn = options_dict['dsn']
         self.table_owner = str(options_dict['table_owner']).upper()
+        self.table_owner_lc = self.table_owner.lower()
         self.table_names = str(options_dict['table_names']).upper()
         self.conn_name = options_dict['conn_name']
         self.staging_area_dir = Path(options_dict['staging_area_dir'])
-
 
         self.trace = trace
         self.proj_home = project_home()
@@ -153,6 +157,11 @@ class TAPIGenerator:
         self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
         self.view.print_console(msg_level=MsgLvl.success, text="Database session established successfully.")
 
+        if not self.schema_exists(schema_name=self.table_owner):
+            self.view.print_console(msg_level=MsgLvl.error,
+                                    text=f"Cannot find table schema by the name of: {self.table_owner}")
+            exit(0)
+
         # Validate table names and process. We get a dictionary of results returned.
         results = self.process_table_names()
 
@@ -226,12 +235,23 @@ class TAPIGenerator:
         views_generated = 0
         triggers_generated = 0
 
+        schemas = {"Package Owner": self.package_owner,
+                   "View Owner": self.view_owner,
+                   "Trigger Owner": self.trigger_owner}
+
+        for descriptor, schema_name in schemas.items():  # Use .items() to iterate over key-value pairs
+            if not self.schema_exists(schema_name=schema_name):
+                self.view.print_console(
+                    text=f'The {descriptor} schema ("{schema_name}") was not found in this database.',
+                    msg_level=MsgLvl.warning
+                )
+
         for table_name in self.table_names_list:
-            package_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
+            package_enabled = self.csv_manager.csv_dict_property(self.table_owner_lc, table_name=table_name,
                                                                  property_selector='package')
-            view_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
+            view_enabled = self.csv_manager.csv_dict_property(self.table_owner_lc, table_name=table_name,
                                                                  property_selector='view')
-            trigger_enabled = self.csv_manager.csv_dict_property(self.package_owner, table_name=table_name,
+            trigger_enabled = self.csv_manager.csv_dict_property(self.table_owner_lc, table_name=table_name,
                                                                  property_selector='trigger')
 
             exists_status = self.check_table_exists(schema_name=self.table_owner, table_name=table_name)
@@ -269,6 +289,35 @@ class TAPIGenerator:
         }
 
         return result
+
+    def schema_exists(self, schema_name: str) -> bool:
+        """
+        Checks if a schema exists in the Oracle database.
+
+        :param schema_name: The name of the schema to check.
+        :return: True if the schema exists, False otherwise.
+        """
+        query = """SELECT COUNT(*)
+                   FROM all_users
+                   WHERE username = :schema_name"""
+
+        try:
+            with self.db_session.cursor() as cursor:
+                if self.trace:
+                    print(f"Executing query: {query}")
+                    print(f"Parameters: schema_name={schema_name}")
+
+                # Bind schema_name to the query
+                cursor.execute(query, {"schema_name": schema_name.upper()})
+
+                result = cursor.fetchone()
+                schema_count = result[0] if result else 0
+
+                return schema_count > 0
+        except Exception as e:
+            if self.trace:
+                print(f"An error occurred: {e}")
+            return False
 
 
     def generate_api_for_table(self, table_name: str):
