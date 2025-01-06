@@ -923,7 +923,8 @@ class ApiGenerator:
 
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
-            if self.include_defaults and default_value and column_name not in self.table.out_column_list:
+            if self.include_defaults and default_value and column_name not in self.table.out_column_list \
+                    and column_name not in self.table.in_out_column_list:
                 param = f"{param:<99}"
                 param += f'{STAB} := {default_value}'
 
