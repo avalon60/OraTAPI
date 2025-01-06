@@ -1,6 +1,6 @@
 Schema Name,Table Name,Domain,Packages Enabled,Views Enabled,Triggers Enabled
 aut,departments,Undefined,False,True,True
-aut,employees,Undefined,False,True,True
+aut,employees,Undefined,True,True,True
 aut,jobs,Undefined,True,False,True
 aut,job_history,Undefined,True,False,False
 aut,locations,Undefined,True,True,False
