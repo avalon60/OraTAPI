@@ -151,9 +151,15 @@ ora_tapi.1.1.19
 └── setup.sh
 
 ```
-For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's worth mentioning that sample configuration files are provided and leveraged during setup. These are not shown, as they would clutter the display. These are located in the various `resources/templates` and `resources/config` subdirectories, within various `samples` subdirectories.
+For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's 
+worth mentioning that sample configuration files are provided and leveraged during setup. They are not shown, as they 
+would clutter the display. These are implemented as subdirectories within the various `resources/templates` and 
+`resources/config` subdirectories. For example the `resources/templates/packages/body` and 
+`resources/templates/packages/spec` directories, each have a `samples` subdirectory.
 
-The key take-away from the above is the config directory which is where the OraTAPI.ini is located, as well as a couple of CSV files which are all used to influnce the behaviour of OraTAPI. The various template files `.tpt` also influence the behavious, in as much as they shape the code and content of the generated files.
+The key take-away from the above is the config directory which is where the OraTAPI.ini is located, as well as a couple 
+of CSV files which are all used to influence the behaviour of OraTAPI. The various template files `.tpt` also influence 
+the behaviour, in as much as they shape the code and content of the generated files.
 
 ## Installation
 
