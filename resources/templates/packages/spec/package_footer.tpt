@@ -1,3 +1,2 @@
 end %tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%;
 /
---rollback drop package %package_owner_lc%.%tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%

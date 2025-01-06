@@ -1,4 +1,4 @@
-create or replace package %package_owner_lc%.%table_name_lc%_tapi
+create or replace package %package_owner_lc%.%tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%
 authid definer
 as
 --------------------------------------------------------------------------------
