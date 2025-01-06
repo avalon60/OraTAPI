@@ -1,6 +1,3 @@
---liquibase formatted sql
- 
---changeset %tapi_author_lc%:%table_name_lc%_biu_create stripComments:false endDelimiter:/ runOnChange:true
 create or replace trigger %trigger_owner_lc%.%table_name_lc%_biu
 before insert or update on %table_owner_lc%.%table_name_lc%
 for each row
@@ -17,4 +14,3 @@ begin
 end;
 /
 
---rollback drop trigger %trigger_owner_lc%.%table_name_lc%_biu;
