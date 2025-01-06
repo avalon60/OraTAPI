@@ -9,8 +9,6 @@ import argparse
 import shutil
 from configparser import ConfigParser
 
-from setuptools.command.setopt import config_file
-
 from lib.file_system_utils import project_home
 from pathlib import Path
 
