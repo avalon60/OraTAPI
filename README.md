@@ -503,11 +503,18 @@ The majority of command line options have defaults which can be set via the OraT
 
 ---
 
-These are just a few of the controls. Read on for 
+These are just a few of the controls. Read on for further detail.
 
 ### Configuration Settings for OraTAPI.ini
 
-This document explains the different sections and parameters of the configuration file used by **OraTAPI**.
+This section explains the different sections and parameters of the `OraTAPI.ini` configuration file used by **OraTAPI**.  
+
+The `OraTAPI.ini` governs majority of the runtime behaviours of OraTAPI.  
+
+As a reminder, the file is located as `<raTAPI_HOME/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
+initialises settings, based upon the contents of this file.  
+
+The file is divided into sections, and the sections have names which are enclosed within square brackets.
 
 ---
 
