@@ -977,13 +977,10 @@ class ApiGenerator:
 
         processed_columns = 0
 
-        for col_position, column_name in enumerate(self.table.columns_list, start = 1):
+        for col_position, column_name in enumerate(self.table.pk_columns_list, start = 1):
             if column_name.lower() in self.auto_maintained_cols:
                 continue
-            if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
-                continue
             processed_columns += 1
-            is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
             column_name_lc = column_name.lower()
             default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
             leader = f', ' if processed_columns > 1 else f'  '
@@ -991,6 +988,9 @@ class ApiGenerator:
             in_out = f'{STAB}in    '
             param += in_out
             param += f"{STAB}{table_name_lc}.{column_name_lc}%type"
+            if self.include_defaults and default_value:
+                param = f"{param:<99}"
+                param += f'{STAB} := {default_value}'
 
 
             signature += param + '\n'
