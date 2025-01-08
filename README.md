@@ -86,8 +86,9 @@ OraTAPI is a versatile tool that offers the following configurable options:
 ---
 
 ### Documentation
-Please note that if you are working with the latest minor version of OraTAPI, it's always worth selecting the `develop` branch from the GitHub OraTAPI Code tab page. This will 
-ensure that you are looking at the latest version of the README.md. 
+Please note that if you are working with the latest minor version of OraTAPI, it's always worth selecting the 
+`develop` branch from the GitHub OraTAPI page Code tab. This will ensure that you are looking at the latest 
+version of the README.md. 
 
 ## Preinstallation
 ### Preparing the Environment
