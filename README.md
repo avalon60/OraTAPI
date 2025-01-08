@@ -899,6 +899,20 @@ colour_console = true
 ### Sample Generated API:
 
 Here we see an example TAPI package, based on the `jobs` table, and using the `logger` templates:
+The `jobs` table:
+```
+Name        Null?    Type                        
+----------- -------- --------------------------- 
+JOB_ID      NOT NULL VARCHAR2(10)                
+JOB_TITLE   NOT NULL VARCHAR2(35)                
+MIN_SALARY           NUMBER(6)                   
+MAX_SALARY           NUMBER(6)                   
+CREATED_BY           VARCHAR2(60)                
+CREATED_ON           TIMESTAMP(6) WITH TIME ZONE 
+ROW_VERSION          NUMBER          
+```
+
+Generated package body:
 ```sql
 create or replace package body aut.jobs_tapi
 as
