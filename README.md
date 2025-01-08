@@ -48,7 +48,7 @@ Version 1.3.2
       - [Maintained by Column Expression](#maintained-by-column-expression)
     - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
     - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
-  - [Fine Grained File Controls](#fine-grained-file-controls)
+  - [Fine-Grained File Controls](#fine-grained-file-controls)
     - [Controlling File Updates](#controlling-file-updates)
     - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Template Substitution Strings](#template-substitution-strings)
@@ -1204,9 +1204,9 @@ This list should not include the column included to the `row_version_column_name
 ### The row_version_column_name Property
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
 
-## Fine Grained File Controls
+## Fine-Grained File Controls
 ### Controlling File Updates
-Fine grain control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
+Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
 location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
