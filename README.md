@@ -20,7 +20,10 @@ Version 1.3.1
       - [Windows:](#windows)
       - [macOS / Linux:](#macos--linux)
   - [Usage](#usage)
-    - [Basic Example:](#basic-example)
+    - [Examples](#examples)
+      - [Basic Example](#basic-example)
+      - [More Advanced Example](#more-advanced-example)
+      - [Explicitly Specifying Credentials](#explicitly-specifying-credentials)
     - [Full Command-Line Arguments:](#full-command-line-arguments)
   - [Output Structure](#output-structure)
     - [Configuration Settings for OraTAPI.ini](#configuration-settings-for-oratapiini)
@@ -158,7 +161,7 @@ would clutter the display. These are implemented as subdirectories within the va
 `resources/config` subdirectories. For example the `resources/templates/packages/body` and 
 `resources/templates/packages/spec` directories, each have a `samples` subdirectory.
 
-The key take-away from the above is the config directory which is where the OraTAPI.ini is located, as well as a couple 
+The key take-away from the above (no, not Quattro) is the config directory which is where the OraTAPI.ini is located, as well as a couple 
 of CSV files which are all used to influence the behaviour of OraTAPI. The various template files `.tpt` also influence 
 the behaviour, in as much as they shape the code and content of the generated files.
 
@@ -194,7 +197,7 @@ the behaviour, in as much as they shape the code and content of the generated fi
    Windows PowerShell:
    ```ps1
    cd <path-to-installation-folder>
-   ./setup.ps1
+   .\setup.ps1
    ```
     The Windows command must be run from a Windows PowerShell terminal.  
 
@@ -223,7 +226,7 @@ Here we are configuring for Liquibase.
    Windows PowerShell:
    ```ps1
    cd <path-to-installation-folder>
-   ./bin/quick_config.ps1 -t liquibase
+   .\bin\quick_config.ps1 -t liquibase
    ```
 
 Assuming we were to configure for "Liquibase with Logger", the output should look similar to this:
