@@ -31,3 +31,5 @@ src/__pycache__/
 
 dist/
 
+
+src/controller/quick_config (copy).py
