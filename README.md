@@ -207,17 +207,17 @@ the behaviour, in as much as they shape the code and content of the generated fi
     The Windows command must be run from a Windows PowerShell terminal.  
 
 ## Post Installation
-The next step is to configure the OraTAP.ini file and your template files. Samples of these are provided, and you could
-traverse the various directories, to instantiate all of your files manually, by copying the samples to the requisite file
-names. However, a `quick_config` tool is provided to help get you set up more quickly. There are several options to 
-choose from:
+The next step is to configure the `OraTAP.ini` file and your template files. Samples of these files are provided, and 
+you could navigate through the various directories to manually instantiate all your files by copying the samples to the 
+required file names and directories. However, a `quick_config` tool is available to help you set up more quickly. Several 
+options are available to choose from:
 
 - Basic
 - Liquibase
 - Logger
 - Liquibase & Logger
 
-The parameters passed need to be in lowercase (`basic`, `liquibase`, `logger` `llogger`).  
+The respective parameters passed need to be in lowercase (`basic`, `liquibase`, `logger` `llogger`).
 
 If you opt for the `llogger` templates, you will need to install the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).  
 
