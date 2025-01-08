@@ -481,7 +481,7 @@ schema, and the triggers in the core schema.
 
 Remember that when these flags are not provided, the defaults are retrieved from the `resources/config/OraTAPI.ini` file.
 
-#### Example with Credentials
+#### Explicitly Specifying Credentials
 In the previous examples, we relied on the `OraTAPI` connection manager, in as much as we were using the `--conn_name` 
 argument to specify a connection. This took advantage of a stored, named connection, called dev_db.  
 
