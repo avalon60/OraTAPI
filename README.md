@@ -912,6 +912,12 @@ CREATED_ON           TIMESTAMP(6) WITH TIME ZONE
 ROW_VERSION          NUMBER          
 ```
 
+The command:
+```
+bin/ora_tapi.sh --package_owner aut --conn_name TAPI  --tapi_author cbostock
+```
+Here the connection name `TAPI` has been configured using the OraTAPI `conn_mgr` command.
+
 Generated package body:
 ```sql
 create or replace package body aut.jobs_tapi
