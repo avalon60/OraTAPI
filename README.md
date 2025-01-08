@@ -463,7 +463,7 @@ Run OraTAPI from the command line with the desired options.
 
 ### Basic Example:
 ```bash
-ora_tapi.sh --schema_name HR -t employees,departments -conn_name dev_db --tapi_author cbostock
+ora_tapi.sh --table_owner HR --table_names employees,departments -conn_name dev_db --tapi_author cbostock
 ```
 
 ### Full Command-Line Arguments:
