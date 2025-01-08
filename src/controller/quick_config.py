@@ -97,7 +97,7 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
     Copies `.sample` files from a `samples` subdirectory to target locations, based on the
     template_category, and specific copying rules. Ensures OraTAPI.ini version consistency.
 
-    :param template_category: The template category ("basic", "liquibase" or "llogger").
+    :param template_category: The template category ("basic", "liquibase", "logger" or "llogger").
     :type template_category: str
     :param force: Whether to overwrite existing files.
     :type force: bool
@@ -172,7 +172,7 @@ def main() -> None:
                                      epilog=" This also instantiates the control files: OraTAPI.ini, pi_columns.csv")
     parser.add_argument(
         "-t", "--template_category",
-        choices=["liquibase", "basic", "llogger"],
+        choices=["liquibase", "basic", "logger", "llogger"],
         required=True,
         help="Specify the template category ('liquibase' or 'basic')."
     )

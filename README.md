@@ -206,9 +206,10 @@ choose from:
 
 - Basic
 - Liquibase
-- LLogger (Liquibase with logger)
+- Logger
+- Liquibase & Logger
 
-The parameters passed need to be in lowercase (`basic`, `liquibase`, `llogger`).  
+The parameters passed need to be in lowercase (`basic`, `liquibase`, `logger` `llogger`).  
 
 If you opt for the `llogger` templates, you will need to install the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).  
 
