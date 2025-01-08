@@ -493,8 +493,9 @@ Taking the basic example, we can modify this to:
 ```bash
 ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -u cbostock -p <my_password> -d dev-db
 ```
-In this example, we assume that the dev-db is a TNS Names entry. However, it is recommended that you use the 
-connection manager approach.
+In this example, we assume that the dev-db is a TNS Names entry.  
+
+**It is recommended that you use the connection manager approach.**
 
 ### Full Command-Line Arguments:
 | Argument                   | Description                                                                | Default                  |
