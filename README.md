@@ -53,7 +53,7 @@ Version 1.3.4
     - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
-  - [Sample Generated API:](#sample-generated-api)
+  - [Sample Generated Table API Packages:](#sample-generated-table-api-packages)
   - [License](#license)
 
 
@@ -1116,7 +1116,7 @@ Connection credentials are stored with 256-bit AES encryption, to a local store,
 <b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
 
 
-## Sample Generated API Packages:
+## Sample Generated Table API Packages:
 
 Here we see examples og TAPI packages, based on the `jobs` table, and using the `basic` and `logger` 
 templates.
