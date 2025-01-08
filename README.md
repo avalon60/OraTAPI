@@ -85,6 +85,10 @@ OraTAPI is a versatile tool that offers the following configurable options:
 - As of this release, database connections are basic - cloud wallets are not supported.
 ---
 
+### Documentation
+Please note that if you are working with the latest minor version of OraTAPI, it's always worth selecting the `develop` branch from the GitHub OraTAPI Code tab page. This will 
+ensure that you are looking at the latest version of the README.md. 
+
 ## Preinstallation
 ### Preparing the Environment
 
