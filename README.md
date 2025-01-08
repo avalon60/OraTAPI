@@ -1116,9 +1116,11 @@ Connection credentials are stored with 256-bit AES encryption, to a local store,
 <b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
 
 
-## Sample Generated API:
+## Sample Generated API Packages:
 
-Here we see an example TAPI package, based on the `jobs` table, and using the `logger` templates:
+Here we see examples og TAPI packages, based on the `jobs` table, and using the `basic` and `logger` 
+templates.
+
 The `jobs` table:
 ```
 Name        Null?    Type                        
@@ -1138,7 +1140,275 @@ bin/ora_tapi.sh --package_owner aut --conn_name TAPI  --tapi_author cbostock
 ```
 In the above command, the connection name, `TAPI`, has been configured using the OraTAPI `conn_mgr` command.
 
-Generated package body:
+Generated package body using the `basic` templates:
+```
+create or replace package body aut.jobs_tapi
+as
+--------------------------------------------------------------------------------
+--
+-- Copyright(C) 2025, Clive`s Software Emporium
+-- All Rights Reserved
+--
+--------------------------------------------------------------------------------
+-- Application      :   Human Resources
+-- Domain           :   undefined
+-- Package          :   jobs_tapi
+-- Source file name :   jobs_tapi.sql
+-- Purpose          :   Table API (TAPI) for table jobs
+--
+-- Notes            :   Generated using OraTAPI, by cbostock on 08-Jan-2025.
+--                  :   From basic sample
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--< PRIVATE TYPES AND GLOBALS >-------------------------------------------------
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--< PRIVATE METHODS >-----------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--< PUBLIC METHODS >------------------------------------------------------------
+
+
+   -----------------------------------------------------------------------------
+   -- Insert TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure ins
+   (
+        p_job_id           in       jobs.job_id%type
+      , p_row              in out   jobs%rowtype
+   )
+   is
+   begin
+
+      insert into jobs
+         (
+              job_id
+            , job_title
+            , min_salary
+            , max_salary
+         )
+      values
+         (
+              p_row.job_id
+            , p_row.job_title
+            , p_row.min_salary
+            , p_row.max_salary
+         )
+      returning
+              job_id
+            , row_version
+            into
+              p_row.job_id
+            , p_row.row_version;
+
+   end ins;
+
+   -----------------------------------------------------------------------------
+   -- Insert TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure ins
+   (
+        p_job_id           in out   jobs.job_id%type
+      , p_job_title        in       jobs.job_title%type
+      , p_min_salary       in       jobs.min_salary%type
+      , p_max_salary       in       jobs.max_salary%type
+      , p_row_version         out   jobs.row_version%type
+   )
+   is
+   begin
+
+      insert into jobs
+         (
+              job_id
+            , job_title
+            , min_salary
+            , max_salary
+         )
+      values
+         (
+              p_job_id
+            , p_job_title
+            , p_min_salary
+            , p_max_salary
+         )
+      returning
+              job_id
+            , row_version
+            into
+              p_job_id
+            , p_row_version;
+
+   end ins;
+
+   -----------------------------------------------------------------------------
+   -- Select TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure get
+   (
+        p_job_id           in       jobs.job_id%type
+      , p_row                 out   jobs%rowtype
+   )
+   is
+   begin
+
+      select
+           job_id
+         , job_title
+         , min_salary
+         , max_salary
+         , created_by
+         , created_on
+         , row_version
+        into
+           p_row.job_id
+         , p_row.job_title
+         , p_row.min_salary
+         , p_row.max_salary
+         , p_row.created_by
+         , p_row.created_on
+         , p_row.row_version
+       from jobs
+      where
+            job_id = p_job_id;
+
+   end get;
+
+   -----------------------------------------------------------------------------
+   -- Select TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure get
+   (
+        p_job_id           in out   jobs.job_id%type
+      , p_job_title           out   jobs.job_title%type
+      , p_min_salary          out   jobs.min_salary%type
+      , p_max_salary          out   jobs.max_salary%type
+      , p_created_by          out   jobs.created_by%type
+      , p_created_on          out   jobs.created_on%type
+      , p_row_version         out   jobs.row_version%type
+   )
+   is
+   begin
+
+      select
+           job_id
+         , job_title
+         , min_salary
+         , max_salary
+         , created_by
+         , created_on
+         , row_version
+        into
+           p_job_id
+         , p_job_title
+         , p_min_salary
+         , p_max_salary
+         , p_created_by
+         , p_created_on
+         , p_row_version
+       from jobs
+      where
+            job_id = p_job_id;
+
+   end get;
+
+   -----------------------------------------------------------------------------
+   -- Update TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure upd
+   (
+        p_job_id           in       jobs.job_id%type
+      , p_row              in out   jobs%rowtype
+   )
+   is
+   begin
+
+      update jobs
+      set
+           job_title                      = p_row.job_title
+         , min_salary                     = p_row.min_salary
+         , max_salary                     = p_row.max_salary
+         , created_by                     = p_row.created_by
+         , created_on                     = p_row.created_on
+      where
+            job_id = p_job_id
+      returning
+              job_id
+            , row_version
+            into
+              p_row.job_id
+            , p_row.row_version;
+
+   end upd;
+
+
+   -----------------------------------------------------------------------------
+   -- Update TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure upd
+   (
+        p_job_id           in out   jobs.job_id%type
+      , p_job_title        in       jobs.job_title%type
+      , p_min_salary       in       jobs.min_salary%type
+      , p_max_salary       in       jobs.max_salary%type
+      , p_row_version         out   jobs.row_version%type
+   )
+   is
+   begin
+
+      update jobs
+      set
+           job_title                      = p_job_title
+         , min_salary                     = p_min_salary
+         , max_salary                     = p_max_salary
+      where
+            job_id = p_job_id
+      returning
+              job_id
+            , row_version
+            into
+              p_job_id
+            , p_row_version;
+
+   end upd;
+
+
+   -----------------------------------------------------------------------------
+   -- Delete TAPI for: aut.jobs
+   -----------------------------------------------------------------------------
+   procedure del
+   (
+        p_job_id           in out   jobs.job_id%type
+      , p_row_version         out   jobs.row_version%type
+   )
+   is
+
+   begin
+
+        delete
+          from jobs
+         where
+               job_id = p_job_id
+      returning
+              job_id
+            , row_version
+            into
+              p_job_id
+            , p_row_version;
+
+--          if sql%rowcount = 0
+--          then
+--             raise NO_DATA_FOUND;
+--          end if;
+
+   end del;
+end jobs_tapi;
+/
+```
+
+Generated package body using the `logger` templates:
 ```sql
 create or replace package body aut.jobs_tapi
 as
