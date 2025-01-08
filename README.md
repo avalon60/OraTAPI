@@ -479,6 +479,23 @@ schema, and the triggers in the core schema.
 
 Remember that when these flags are not provided, the defaults are retrieved from the `resources/config/OraTAPI.ini` file.
 
+### Example with Credentials
+In the previous examples, we relied on the `OraTAPI` connection manager, in as much as we were using the `--conn_name` 
+argument to specify a connection. This took advantage of a stored, named connection, called dev_db.  
+
+If we don't want to use a named connection, the alternative is to specify:  
+
+- db_username
+- db_password
+- dsn/TNS connect string
+
+Taking the basic example, we can modify this to:
+```bash
+ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -u cbostock -p <my_password> -d dev-db
+```
+In this example, we assume that the dev-db is a TNS Names entry. However, it is recommended that you use the 
+connection manager approach.
+
 ### Full Command-Line Arguments:
 | Argument                   | Description                                                                | Default                  |
 |----------------------------|----------------------------------------------------------------------------|--------------------------|
