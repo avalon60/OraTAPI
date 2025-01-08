@@ -65,16 +65,17 @@ OraTAPI connects to an Oracle database, retrieves table and column metadata, and
 OraTAPI is a versatile tool that offers the following configurable options:
 
 - **Metadata-Driven**: Automatically generates PL/SQL APIs based on Oracle database metadata.  
-- **Customisable APIs**: Allows you to define API names, signatures, and behaviors through a configuration file.  
+- **Customisable APIs**: Allows you to define API names, signatures, and behaviours through a configuration file.  
 - **Table Triggers**: Generates customisable table-level trigger code.  
 - **View Generation**: Automatically generates view DDL scripts.  
-- **Template-Based Customisation**: Code generation is largely template-driven, with example templates provided, offering extensive customization capabilities.  
+- **Template-Based Customisation**: Code generation is largely template-driven, with example templates provided, offering extensive customisation capabilities.  
 - **Optimistic Locking Support**: Supports concurrency control with "row version" columns for implementing optimistic locking.  
-- **PL/SQL Logger Integration**: Easily integrates with the PL/SQL Logger utility, including mechanisms to blocklist specific columns from being logged.  
+- **PL/SQL Logger Integration**: Easily integrates with the [PLSQL logging utility](https://github.com/OraOpenSource/Logger), including mechanisms to blocklist specific columns from being logged.  
+- **Liquibase** Liquibase templates are provided as an option.
 - **Fine-Grained Control**: Provides detailed control over which components are generated for specific tables.  
 - **Auto-Maintained Column Support**: Offers a flexible solution for managing auto-maintained columns, either through generated triggers or configurable column expressions.  
 - **Organised Output**: Output files are neatly arranged in staging directories for streamlined deployment.  
-- **Error Handling**: Configurable behavior for handling missing tables, with options to skip or halt processing.  
+- **Error Handling**: Configurable behaviour for handling missing tables, with options to skip or halt processing.  
 - **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be securely stored and used transparently.  
 
 ### Limitations
@@ -152,7 +153,7 @@ ora_tapi.1.1.19
 
 ```
 For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's 
-worth mentioning that sample configuration files are provided and leveraged during setup. They are not shown, as they 
+worth mentioning that sample (template) configuration files are provided and leveraged during setup. They are not shown, as they 
 would clutter the display. These are implemented as subdirectories within the various `resources/templates` and 
 `resources/config` subdirectories. For example the `resources/templates/packages/body` and 
 `resources/templates/packages/spec` directories, each have a `samples` subdirectory.
@@ -207,7 +208,7 @@ choose from:
 - Liquibase
 - LLogger (Liquibase with logger)
 
-The parameters passed need to be in lowercase.  
+The parameters passed need to be in lowercase (`basic`, `liquibase`, `llogger`).  
 
 If you opt for the `llogger` templates, you will need to install the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).  
 
