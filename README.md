@@ -54,6 +54,8 @@ Version 1.3.4
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
   - [Sample Generated Table API Packages:](#sample-generated-table-api-packages)
+    - [Basic Templates Example](#basic-templates-example)
+    - [Logger Templates Example](#logger-templates-example)
   - [License](#license)
 
 
@@ -1140,6 +1142,7 @@ bin/ora_tapi.sh --package_owner aut --conn_name TAPI  --tapi_author cbostock
 ```
 In the above command, the connection name, `TAPI`, has been configured using the OraTAPI `conn_mgr` command.
 
+### Basic Templates Example
 Generated package body using the `basic` templates:
 ```
 create or replace package body aut.jobs_tapi
@@ -1407,7 +1410,7 @@ as
 end jobs_tapi;
 /
 ```
-
+### Logger Templates Example
 Generated package body using the `logger` templates:
 ```sql
 create or replace package body aut.jobs_tapi
