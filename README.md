@@ -916,7 +916,7 @@ The command:
 ```
 bin/ora_tapi.sh --package_owner aut --conn_name TAPI  --tapi_author cbostock
 ```
-Here the connection name `TAPI` has been configured using the OraTAPI `conn_mgr` command.
+In the above command, the connection name, `TAPI`, has been configured using the OraTAPI `conn_mgr` command.
 
 Generated package body:
 ```sql
