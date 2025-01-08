@@ -469,6 +469,12 @@ Using the terse flags, this is equivalent to:
 ```bash
 ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock
 ```
+Here we want to override the default target schemas for the packages, views and triggers:
+```bash
+ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -po logic -to core -vo logic
+```
+Based on this last example, the DDL statements in the generated scripts will place the packages and views in the logic 
+schema, and the triggers in the core schema.
 
 ### Full Command-Line Arguments:
 | Argument                   | Description                                                                | Default                  |
