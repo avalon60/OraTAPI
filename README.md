@@ -461,7 +461,9 @@ options:
 
 Run OraTAPI from the command line with the desired options.
 
-### Basic Example
+### Examples
+
+#### Basic Example
 ```bash
 ora_tapi.sh --table_owner HR --table_names employees,departments --conn_name dev_db --tapi_author cbostock
 ```
@@ -469,7 +471,7 @@ Using the terse flags, this is equivalent to:
 ```bash
 ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock
 ```
-### More Advanced Example
+#### More Advanced Example
 Here we want to override the default target schemas for the packages, views and triggers:
 ```bash
 ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -po logic -to core -vo logic
@@ -479,7 +481,7 @@ schema, and the triggers in the core schema.
 
 Remember that when these flags are not provided, the defaults are retrieved from the `resources/config/OraTAPI.ini` file.
 
-### Example with Credentials
+#### Example with Credentials
 In the previous examples, we relied on the `OraTAPI` connection manager, in as much as we were using the `--conn_name` 
 argument to specify a connection. This took advantage of a stored, named connection, called dev_db.  
 
