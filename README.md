@@ -9,6 +9,7 @@ Version 1.3.4
   - [Features \& Limitations](#features--limitations)
     - [Features](#features)
     - [Limitations](#limitations)
+    - [Documentation](#documentation)
   - [Preinstallation](#preinstallation)
     - [Preparing the Environment](#preparing-the-environment)
     - [Familiarisation with the Layout](#familiarisation-with-the-layout)
@@ -39,7 +40,6 @@ Version 1.3.4
       - [\[misc\]](#misc)
       - [\[console\]](#console)
       - [Example configuration file:](#example-configuration-file)
-    - [Sample Generated API:](#sample-generated-api)
   - [Auto Column Management](#auto-column-management)
     - [What are Auto-managed Columns?](#what-are-auto-managed-columns)
     - [Configuring the Column Management Method](#configuring-the-column-management-method)
@@ -53,6 +53,7 @@ Version 1.3.4
     - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
+  - [Sample Generated API:](#sample-generated-api)
   - [License](#license)
 
 
@@ -895,8 +896,227 @@ HIGH_COLOUR = bold blue
 colour_console = true
 ```
 
+---
 
-### Sample Generated API:
+## Auto Column Management
+### What are Auto-managed Columns?
+In this context, the term auto-managed columns, refers to columns whose data are not managed directly via the application. 
+Rather, they are populated/updated by table triggers, default values or expressions which are effectively virtualised by the API.  
+
+
+### Configuring the Column Management Method
+Under the `api_controls` section of `OraTAPI.ini`, there are two entries pertaining to auto managed columns. These allow 
+you to configure how you manage your auto-managed columns. Because the management is made almost transparent to the 
+developer, there are no input parameters to populate them via the API. For example, you may have columns which are used 
+to track who created, or last updated a row. The entries that control the bahaviour are:
+
+- col_auto_maintain_method
+- auto_maintained_cols
+- row_vers_column_name
+
+### The col_auto_maintain_method Property
+If you are using columns which you want to be automatically updated during DML operations, you should set this property value to one of: 
+
+- trigger
+- expression
+
+#### Maintained by Trigger 
+If you set the `col_auto_maintain_method` property to <i>trigger</i>, you should ensure that your trigger template(s) 
+are designed to make appropriate updates to the columns that are listed vis this property.
+```
+create or replace trigger %trigger_owner_lc%.%table_name_lc%_biu
+before insert or update on %table_owner_lc%.%table_name_lc%
+for each row
+begin
+
+   if inserting then
+      :new.row_version := 1;
+   elsif updating then
+      :new.updated_on := current_timestamp;
+      :new.updated_by := coalesce(sys_context('APEX$SESSION','APP_USER'), sys_context('USERENV', 'PROXY_USER'), sys_context('USERENV','SESSION_USER'), user);
+      :new.row_version := :old.row_version + 1;
+   end if;
+
+end;
+/
+```
+#### Maintained by Column Expression
+Column expressions are configured using special templates located in the resources/templates/column_expressions 
+directory. This directory contains two subdirectories, allowing you to differentiate column expressions for 
+inserts and updates. The subdirectories are listed here:
+
+- inserts
+- updates
+
+If the col_auto_maintain_method property is set to expression, then for each column listed in the auto_maintained_cols 
+and row_vers_column_name properties, a corresponding template entry is required in both the inserts and updates 
+directories. These expressions are injected into assignment statements for the generated API procedures.
+
+For example, assume we have a column called row_version. We would expect to find a row_version.tpt file in both the inserts and updates directories. The contents of these files might look like this:
+
+inserts/row_version.tpt:
+```
+1
+```
+updates/row_version.tpt:
+```
+row_version + 1
+```
+When it comes to the "who" columns, we have to be slightly creative. For example, take the `created_by` column; we might have something like this:
+
+inserts/created_by.tpt:
+```
+current_user
+```
+updates/created_by.tpt:
+```
+created_by
+```
+Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column to its current value.
+
+### The auto_maintained_cols Property
+This is a comma separated list of column names which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
+
+This list should not include the column included to the `row_version_column_name` property (if one is set).
+
+### The row_version_column_name Property
+The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
+
+## Fine-Grained File Controls
+### Controlling File Updates
+Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
+this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
+`OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
+location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
+sets ths location to `resources/config`.  
+
+The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
+on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
+ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
+
+Each row represents a schema / table. The following 
+columns are represented:
+
+- Schema Name
+- Table Name
+- Domain
+- Packages Enabled
+- Views Enabled
+- Triggers Enabled
+
+The file is auto-populated when you generate scripts. If a schema/table combination is missing, a row is automatically 
+added. Once rows are added, you can maintain the last 3 columns. Setting these to `True`, `1`, or `On` instructs OraTAPI 
+that the respective files can be created/overwritten. Setting these to `False`, `0` or `Off` will instruct OraTAPI to not 
+create/overwrite the file.  
+
+Note that OraTAPI updates the file after each run and all settings are normalised to either 
+`True` or `False`.
+
+The `Domain` column is provided so that table domain mappings can be recorded. These are then automatically substituted 
+to the %table_domain_lc% substitution string in the templates.
+
+### PI (Personal Information) Columns & Logging
+If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
+This is only pertinent, if you are working with the `llogger` based templates (or similar).  
+
+The file contains the following columns:
+
+- Schema Name
+- Table Name
+- Column Name
+- Description
+
+This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` 
+and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always 
+enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to 
+the list.  
+
+When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
+
+```
+logger_user.logger.append_param(l_params, '* p_row.employee_id', p_row.employee_id);
+logger_user.logger.append_param(l_params, '  p_row.first_name', p_row.first_name);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.last_name', p_row.last_name);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.email', p_row.email);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.phone_number', p_row.phone_number);
+logger_user.logger.append_param(l_params, '  p_row.hire_date', p_row.hire_date);
+logger_user.logger.append_param(l_params, '  p_row.job_id', p_row.job_id);
+logger_user.logger.append_param(l_params, '  p_row.salary', p_row.salary);
+```
+The pi_columns.csv file contents should be maintained as a spreadsheet, but ensure that it is saved as a CSV file when 
+exporting it from the spreadsheet application.
+
+
+## Template Substitution Strings
+Any properties from the OraTAPI.ini file may be interpolated into the templates.  
+
+**When embedding into the templates, the substitution strings must be delimited by a pair of % characters**.  
+
+In addition, the following may be used.
+
+| Substitition String      | Description                                                                                      |
+|--------------------------|--------------------------------------------------------------------------------------------------|
+| STAB                     | Indent Tab-space (%STAB% is converted to [OraTAPI.ini specified] indent_spaces number of spaces) |
+| package_owner_lc         | The (lowercase) target schema in which the generated package(s) will be placed                   |
+| table_domain_lc          | The table domain mapping (maintained in OraTAPI.csv)     
+| table_name_lc            | Table name (in lowercase)                                                                        |
+| table_owner_lc           | Table schema (in lowercase)                                                                      |
+| tapi_author_lc           | TAPI author (in lowercase)                                                                       |
+| tapi_pkg_name_prefix_lc  | Package name prefix (in lowercase)                                                               |
+| tapi_pkg_name_postfix_lc | Package name postfix (in lowercase)                                                              |
+| trigger_owner_lc         | Target trigger schema (in lowercase)                                                             |
+| view_name_suffix_lc      | View name postfix (in lowercase)                                                                 |
+| view_owner_lc            | Target Table schema (in lowercase)                                                               |
+
+
+## Connection Manager
+
+The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DNS (TNS) strings can be stored and retrieved locally, by use of a conventient name. Credentials are transparrently encrypted/decrypted from a locally maintained store. The `conn_mgr` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
+
+- -p / --db_password
+- -u / --db_username
+- -d / --dsn
+- -s / --save_connection
+
+However, for more complete control, you need to use the `conn_mgr` command. This allows you to:
+
+- List your connections
+- Add new connections
+- Update connections
+- Delete connections
+
+The Add and Update options cause the `conn_mgr` to enter an interactive dialog mode.
+
+Synopsis:
+
+```
+cd <OraTAPI-home>
+./bin/conn_mgr.sh -h
+
+usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-n NAME]
+
+Database connection manager.
+
+options:
+  -h, --help            show this help message and exit
+  -c, --create          Create a new connection.
+  -e, --edit            Edit an existing connection.
+  -d, --delete          Delete an existing connection.
+  -l, --list            List all connections.
+  -n NAME, --name NAME  Name of the connection.
+
+Used to create/edit/delete or store named database connections.Database connections are stored, encrypted, in a local store.
+
+```
+Here’s a revised version of your sentence with improved grammar and clarity:
+
+The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive.
+Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
+
+<b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
+
+
+## Sample Generated API:
 
 Here we see an example TAPI package, based on the `jobs` table, and using the `logger` templates:
 The `jobs` table:
@@ -1311,225 +1531,6 @@ as
 end jobs_tapi;
 /
 ```
-
----
-
-## Auto Column Management
-### What are Auto-managed Columns?
-In this context, the term auto-managed columns, refers to columns whose data are not managed directly via the application. 
-Rather, they are populated/updated by table triggers, default values or expressions which are effectively virtualised by the API.  
-
-
-### Configuring the Column Management Method
-Under the `api_controls` section of `OraTAPI.ini`, there are two entries pertaining to auto managed columns. These allow 
-you to configure how you manage your auto-managed columns. Because the management is made almost transparent to the 
-developer, there are no input parameters to populate them via the API. For example, you may have columns which are used 
-to track who created, or last updated a row. The entries that control the bahaviour are:
-
-- col_auto_maintain_method
-- auto_maintained_cols
-- row_vers_column_name
-
-### The col_auto_maintain_method Property
-If you are using columns which you want to be automatically updated during DML operations, you should set this property value to one of: 
-
-- trigger
-- expression
-
-#### Maintained by Trigger 
-If you set the `col_auto_maintain_method` property to <i>trigger</i>, you should ensure that your trigger template(s) 
-are designed to make appropriate updates to the columns that are listed vis this property.
-```
-create or replace trigger %trigger_owner_lc%.%table_name_lc%_biu
-before insert or update on %table_owner_lc%.%table_name_lc%
-for each row
-begin
-
-   if inserting then
-      :new.row_version := 1;
-   elsif updating then
-      :new.updated_on := current_timestamp;
-      :new.updated_by := coalesce(sys_context('APEX$SESSION','APP_USER'), sys_context('USERENV', 'PROXY_USER'), sys_context('USERENV','SESSION_USER'), user);
-      :new.row_version := :old.row_version + 1;
-   end if;
-
-end;
-/
-```
-#### Maintained by Column Expression
-Column expressions are configured using special templates located in the resources/templates/column_expressions 
-directory. This directory contains two subdirectories, allowing you to differentiate column expressions for 
-inserts and updates. The subdirectories are listed here:
-
-- inserts
-- updates
-
-If the col_auto_maintain_method property is set to expression, then for each column listed in the auto_maintained_cols 
-and row_vers_column_name properties, a corresponding template entry is required in both the inserts and updates 
-directories. These expressions are injected into assignment statements for the generated API procedures.
-
-For example, assume we have a column called row_version. We would expect to find a row_version.tpt file in both the inserts and updates directories. The contents of these files might look like this:
-
-inserts/row_version.tpt:
-```
-1
-```
-updates/row_version.tpt:
-```
-row_version + 1
-```
-When it comes to the "who" columns, we have to be slightly creative. For example, take the `created_by` column; we might have something like this:
-
-inserts/created_by.tpt:
-```
-current_user
-```
-updates/created_by.tpt:
-```
-created_by
-```
-Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column to its current value.
-
-### The auto_maintained_cols Property
-This is a comma separated list of column names which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
-
-This list should not include the column included to the `row_version_column_name` property (if one is set).
-
-### The row_version_column_name Property
-The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
-
-## Fine-Grained File Controls
-### Controlling File Updates
-Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
-this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
-`OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
-location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
-sets ths location to `resources/config`.  
-
-The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
-on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
-ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
-
-Each row represents a schema / table. The following 
-columns are represented:
-
-- Schema Name
-- Table Name
-- Domain
-- Packages Enabled
-- Views Enabled
-- Triggers Enabled
-
-The file is auto-populated when you generate scripts. If a schema/table combination is missing, a row is automatically 
-added. Once rows are added, you can maintain the last 3 columns. Setting these to `True`, `1`, or `On` instructs OraTAPI 
-that the respective files can be created/overwritten. Setting these to `False`, `0` or `Off` will instruct OraTAPI to not 
-create/overwrite the file.  
-
-Note that OraTAPI updates the file after each run and all settings are normalised to either 
-`True` or `False`.
-
-The `Domain` column is provided so that table domain mappings can be recorded. These are then automatically substituted 
-to the %table_domain_lc% substitution string in the templates.
-
-### PI (Personal Information) Columns & Logging
-If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
-This is only pertinent, if you are working with the `llogger` based templates (or similar).  
-
-The file contains the following columns:
-
-- Schema Name
-- Table Name
-- Column Name
-- Description
-
-This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` 
-and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always 
-enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to 
-the list.  
-
-When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
-
-```
-logger_user.logger.append_param(l_params, '* p_row.employee_id', p_row.employee_id);
-logger_user.logger.append_param(l_params, '  p_row.first_name', p_row.first_name);
--- PI column: logger_user.logger.append_param(l_params, '  p_row.last_name', p_row.last_name);
--- PI column: logger_user.logger.append_param(l_params, '  p_row.email', p_row.email);
--- PI column: logger_user.logger.append_param(l_params, '  p_row.phone_number', p_row.phone_number);
-logger_user.logger.append_param(l_params, '  p_row.hire_date', p_row.hire_date);
-logger_user.logger.append_param(l_params, '  p_row.job_id', p_row.job_id);
-logger_user.logger.append_param(l_params, '  p_row.salary', p_row.salary);
-```
-The pi_columns.csv file contents should be maintained as a spreadsheet, but ensure that it is saved as a CSV file when 
-exporting it from the spreadsheet application.
-
-
-## Template Substitution Strings
-Any properties from the OraTAPI.ini file may be interpolated into the templates.  
-
-**When embedding into the templates, the substitution strings must be delimited by a pair of % characters**.  
-
-In addition, the following may be used.
-
-| Substitition String      | Description                                                                                      |
-|--------------------------|--------------------------------------------------------------------------------------------------|
-| STAB                     | Indent Tab-space (%STAB% is converted to [OraTAPI.ini specified] indent_spaces number of spaces) |
-| package_owner_lc         | The (lowercase) target schema in which the generated package(s) will be placed                   |
-| table_domain_lc          | The table domain mapping (maintained in OraTAPI.csv)     
-| table_name_lc            | Table name (in lowercase)                                                                        |
-| table_owner_lc           | Table schema (in lowercase)                                                                      |
-| tapi_author_lc           | TAPI author (in lowercase)                                                                       |
-| tapi_pkg_name_prefix_lc  | Package name prefix (in lowercase)                                                               |
-| tapi_pkg_name_postfix_lc | Package name postfix (in lowercase)                                                              |
-| trigger_owner_lc         | Target trigger schema (in lowercase)                                                             |
-| view_name_suffix_lc      | View name postfix (in lowercase)                                                                 |
-| view_owner_lc            | Target Table schema (in lowercase)                                                               |
-
-
-## Connection Manager
-
-The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DNS (TNS) strings can be stored and retrieved locally, by use of a conventient name. Credentials are transparrently encrypted/decrypted from a locally maintained store. The `conn_mgr` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
-
-- -p / --db_password
-- -u / --db_username
-- -d / --dsn
-- -s / --save_connection
-
-However, for more complete control, you need to use the `conn_mgr` command. This allows you to:
-
-- List your connections
-- Add new connections
-- Update connections
-- Delete connections
-
-The Add and Update options cause the `conn_mgr` to enter an interactive dialog mode.
-
-Synopsis:
-
-```
-cd <OraTAPI-home>
-./bin/conn_mgr.sh -h
-
-usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-n NAME]
-
-Database connection manager.
-
-options:
-  -h, --help            show this help message and exit
-  -c, --create          Create a new connection.
-  -e, --edit            Edit an existing connection.
-  -d, --delete          Delete an existing connection.
-  -l, --list            List all connections.
-  -n NAME, --name NAME  Name of the connection.
-
-Used to create/edit/delete or store named database connections.Database connections are stored, encrypted, in a local store.
-
-```
-Here’s a revised version of your sentence with improved grammar and clarity:
-
-The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive.
-Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
-
-<b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
 
 
 ## License
