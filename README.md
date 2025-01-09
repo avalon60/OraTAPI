@@ -1019,7 +1019,7 @@ to the %table_domain_lc% substitution string in the templates.
 
 ### PI (Personal Information) Columns & Logging
 If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
-This is only pertinent, if you are working with the `llogger` based templates (or similar).  
+This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
 
 The file contains the following columns:
 
