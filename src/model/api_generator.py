@@ -398,14 +398,26 @@ class ApiGenerator:
                     column_name_lc in chain(self.auto_maintained_cols, [self.row_vers_column_name])):
                 assignment = self.column_insert_expressions[column_name]
             if not assignment:
-                assignment = f'p_{column_name_lc}'if signature_type == "coltype" else f'p_row.{column_name_lc}'
+                if signature_type == "coltype":
+                    assignment = f'p_{column_name_lc}'
+                else:
+                    if column_name_lc in self.table.pk_columns_list_lc:
+                        assignment = f'p_{column_name_lc}'
+                    else:
+                        assignment = f'p_row.{column_name_lc}'
         elif operation_type == 'modify':
             assignment = ''
             if (self.col_auto_maintain_method == "expression" and
                     column_name_lc in chain(self.auto_maintained_cols, [self.row_vers_column_name])):
                 assignment = self.column_update_expressions[column_name]
             if not assignment:
-                assignment = f'p_{column_name_lc}'if signature_type == "coltype" else f'p_row.{column_name_lc}'
+                if signature_type == "coltype":
+                    assignment = f'p_{column_name_lc}'
+                else:
+                    if column_name_lc in self.table.pk_columns_list_lc:
+                        assignment = f'p_{column_name_lc}'
+                    else:
+                        assignment = f'p_row.{column_name_lc}'
 
         elif operation_type == "merge_create":
             assignment = ''
@@ -528,7 +540,10 @@ class ApiGenerator:
                 if column_name_lc in skip_list:
                     continue
                 # The first column has it's indent defined in the template
-                params_out += f"  p_row.{column_name_lc:<30} as {column_name_lc}" if column_id == 1 else  f"\n{tabs}, p_row.{column_name_lc:<30} as {column_name_lc}"
+                if column_name_lc in self.table.pk_columns_list_lc:
+                    params_out += f"  p_{column_name_lc:<34} as {column_name_lc}" if column_id == 1 else f"\n{tabs}, p_{column_name_lc:<34} as {column_name_lc}"
+                else:
+                    params_out += f"  p_row.{column_name_lc:<30} as {column_name_lc}" if column_id == 1 else  f"\n{tabs}, p_row.{column_name_lc:<30} as {column_name_lc}"
                 column_id += 1
         else:
             message = f'Expected signature_type to be either, "coltype" or "rowtype", but got "{signature_type}".'
@@ -857,12 +872,15 @@ class ApiGenerator:
             param = ''
 
         if self.include_commit:
-            leader = f', '
+            leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             in_out = f'{STAB}in    '
             param += in_out
             param += f'{STAB}boolean'
+            param = f"{param:<99}"
+            param += f'{STAB} := false'
             signature += param + '\n'
+
 
         if package_spec:
             signature += f'{STAB})'
@@ -1449,10 +1467,6 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        if self.include_commit:
-            leader = f', ' if self.table.col_count > 1 else f'  '
-            param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
-            in_out = f'{STAB}in    '
         if self.include_commit:
             leader = f', ' if self.table.col_count > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{"commit".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
