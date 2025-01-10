@@ -17,7 +17,7 @@ Version 1.3.6
   - [Post Installation](#post-installation)
   - [Performing Upgrades](#performing-upgrades)
   - [The Primary Components](#the-primary-components)
-    - [Command Line Tools](#command-line-tools)
+    - [Command-line Tools](#command-line-tools)
       - [Windows:](#windows)
       - [macOS / Linux:](#macos--linux)
   - [Usage](#usage)
@@ -406,10 +406,13 @@ sections, which are used to categorise their purpose. Section names are enclosed
 (<i>e.g. [<api_controls]</i>). For the purposes of the OraTAPI, each property name in the file must be globally unique, 
 irrespective of which section it belongs to.
 
-### Command Line Tools
+### Command-line Tools
 Launching the command line tools, varies slightly depending on your target operating system. There are two tools that you will need to work with, `conn_mgr` and `ora_tapi`. The latter of these will be used more frequently.
 
-In respect of the `conn_mgr` tool (see [Connection Manager](#connection-manager)), this is used to securely store database connections (credentials and DSNs).
+In respect of the `conn_mgr` tool (see [Connection Manager](#connection-manager)), this is used to securely store 
+database connections (credentials and DSNs). Such connections are named and can be used in conjunction with the 
+`-c/--conn_name` option of the `ora_tapi` command. This is a secure alternative to specifying the `-u/--db_username`, 
+`-p/--db_password` and `-d/--dsn` options.
 
 The following launcher commands are provided:
 
