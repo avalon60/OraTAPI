@@ -560,10 +560,13 @@ The majority of command line options have defaults which can be set via the OraT
 These are just a few of the controls. Read on for further detail.
 
 ## Configuration Settings
+### Control Files
 As well as tailoring the templates to your requirements, the behaviour of OraTAPI, is governed by 3 files:
 - OraTAPI.ini
 - OraTAPI.csv
 - pi_columns.csv
+
+These last two are used for fine-grained controls, and are covered in the next section.
 
 Here we cover the first of these file, the OraTAPI.ini file.
 
@@ -915,12 +918,83 @@ HIGH_COLOUR = bold blue
 colour_console = true
 ```
 
+### Fine-Grained File Controls
+
+Here we look at the CSV controls, which are implemented via these file:
+
+- OraTAPI.csv
+- pi_columns.csv
+
+#### Controlling File Writes / Updates
+Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
+this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
+`OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
+location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
+sets ths location to `resources/config`.  
+
+The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
+on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
+ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
+
+Each row represents a schema / table. The following 
+columns are represented:
+
+- Schema Name
+- Table Name
+- Domain
+- Packages Enabled
+- Views Enabled
+- Triggers Enabled
+
+The file is auto-populated when you generate scripts. If a schema/table combination is missing, a row is automatically 
+added. Once rows are added, you can maintain the last 3 columns. Setting these to `True`, `1`, or `On` instructs OraTAPI 
+that the respective files can be created/overwritten. Setting these to `False`, `0` or `Off` will instruct OraTAPI to not 
+create/overwrite the file.  
+
+Note that OraTAPI updates the file after each run and all settings are normalised to either 
+`True` or `False`.
+
+The `Domain` column is provided so that table domain mappings can be recorded. These are then automatically substituted 
+to the %table_domain_lc% substitution string in the templates.
+
+#### PI (Personal Information) Columns & Logging
+If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
+This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
+
+The file contains the following columns:
+
+- Schema Name
+- Table Name
+- Column Name
+- Description
+
+This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` 
+and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always 
+enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to 
+the list.  
+
+When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
+
+```
+logger_user.logger.append_param(l_params, '* p_row.employee_id', p_row.employee_id);
+logger_user.logger.append_param(l_params, '  p_row.first_name', p_row.first_name);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.last_name', p_row.last_name);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.email', p_row.email);
+-- PI column: logger_user.logger.append_param(l_params, '  p_row.phone_number', p_row.phone_number);
+logger_user.logger.append_param(l_params, '  p_row.hire_date', p_row.hire_date);
+logger_user.logger.append_param(l_params, '  p_row.job_id', p_row.job_id);
+logger_user.logger.append_param(l_params, '  p_row.salary', p_row.salary);
+```
+The pi_columns.csv file contents should be maintained as a spreadsheet, but ensure that it is saved as a CSV file when 
+exporting it from the spreadsheet application.
+
 ---
 
 ## Auto Column Management
 ### What are Auto-managed Columns?
 In this context, the term auto-managed columns, refers to columns whose data are not managed directly via the application. 
-Rather, they are populated/updated by table triggers, default values or expressions which are effectively virtualised by the API.  
+Rather, they are populated/updated by table triggers, default values or expressions which are effectively virtualised 
+by the API.  
 
 
 ### Configuring the Column Management Method
@@ -934,7 +1008,8 @@ to track who created, or last updated a row. The entries that control the bahavi
 - row_vers_column_name
 
 ### The col_auto_maintain_method Property
-If you are using columns which you want to be automatically updated during DML operations, you should set this property value to one of: 
+If you are using columns which you want to be automatically updated during DML operations, you should set this property 
+value to one of: 
 
 - trigger
 - expression
@@ -971,7 +1046,8 @@ If the col_auto_maintain_method property is set to expression, then for each col
 and row_vers_column_name properties, a corresponding template entry is required in both the inserts and updates 
 directories. These expressions are injected into assignment statements for the generated API procedures.
 
-For example, assume we have a column called row_version. We would expect to find a row_version.tpt file in both the inserts and updates directories. The contents of these files might look like this:
+For example, assume we have a column called row_version. We would expect to find a row_version.tpt file in both the 
+inserts and updates directories. The contents of these files might look like this:
 
 inserts/row_version.tpt:
 ```
@@ -981,7 +1057,8 @@ updates/row_version.tpt:
 ```
 row_version + 1
 ```
-When it comes to the "who" columns, we have to be slightly creative. For example, take the `created_by` column; we might have something like this:
+When it comes to the "who" columns, we have to be slightly creative. For example, take the `created_by` column; we 
+might have something like this:
 
 inserts/created_by.tpt:
 ```
@@ -991,86 +1068,19 @@ updates/created_by.tpt:
 ```
 created_by
 ```
-Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column to its current value.
+Because we must satisfy the requirement to include an `updates\created_by.tpt` entry, we just have it set the column to 
+its current value.
 
 ### The auto_maintained_cols Property
-This is a comma separated list of column names which are maintained either by table triggers or by use of column expressions, configured to appear within the generated TAPIs (more on these a little later).
+This is a comma separated list of column names which are maintained either by table triggers or by use of column 
+expressions, configured to appear within the generated TAPIs (more on these a little later).
 
 This list should not include the column included to the `row_version_column_name` property (if one is set).
 
 ### The row_version_column_name Property
-The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
-
-## Fine-Grained File Controls
-### Control Files
-As well as tailoring the templates to your requirements, the behaviour of OraTAPI, is governed by 3 files:
-- OraTAPI.ini
-- OraTAPI.csv
-- pi_columns.csv
-
-The OraTAPI.ini file has been covered in earlier sections. Here we look at the CSV controls.
-### Controlling File Updates
-Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
-this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
-`OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
-location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
-sets ths location to `resources/config`.  
-
-The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
-on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
-ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
-
-Each row represents a schema / table. The following 
-columns are represented:
-
-- Schema Name
-- Table Name
-- Domain
-- Packages Enabled
-- Views Enabled
-- Triggers Enabled
-
-The file is auto-populated when you generate scripts. If a schema/table combination is missing, a row is automatically 
-added. Once rows are added, you can maintain the last 3 columns. Setting these to `True`, `1`, or `On` instructs OraTAPI 
-that the respective files can be created/overwritten. Setting these to `False`, `0` or `Off` will instruct OraTAPI to not 
-create/overwrite the file.  
-
-Note that OraTAPI updates the file after each run and all settings are normalised to either 
-`True` or `False`.
-
-The `Domain` column is provided so that table domain mappings can be recorded. These are then automatically substituted 
-to the %table_domain_lc% substitution string in the templates.
-
-### PI (Personal Information) Columns & Logging
-If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
-This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
-
-The file contains the following columns:
-
-- Schema Name
-- Table Name
-- Column Name
-- Description
-
-This allows you to map out the columns that should be omitted from logging. You can set exact matches for `Schema Name` 
-and / or `Table Name`, or you can wild-card the entries with any of the following: `%`, `*` or `all`. You must always 
-enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to 
-the list.  
-
-When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
-
-```
-logger_user.logger.append_param(l_params, '* p_row.employee_id', p_row.employee_id);
-logger_user.logger.append_param(l_params, '  p_row.first_name', p_row.first_name);
--- PI column: logger_user.logger.append_param(l_params, '  p_row.last_name', p_row.last_name);
--- PI column: logger_user.logger.append_param(l_params, '  p_row.email', p_row.email);
--- PI column: logger_user.logger.append_param(l_params, '  p_row.phone_number', p_row.phone_number);
-logger_user.logger.append_param(l_params, '  p_row.hire_date', p_row.hire_date);
-logger_user.logger.append_param(l_params, '  p_row.job_id', p_row.job_id);
-logger_user.logger.append_param(l_params, '  p_row.salary', p_row.salary);
-```
-The pi_columns.csv file contents should be maintained as a spreadsheet, but ensure that it is saved as a CSV file when 
-exporting it from the spreadsheet application.
+The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI 
+generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the 
+`auto_maintained_cols` list of columns</b>.
 
 
 ## Template Substitution Strings
