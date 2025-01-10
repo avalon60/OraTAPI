@@ -432,11 +432,8 @@ To get command line help, you can simply type something like:
 cd <OraTAPI-home>
 ./bin/ora_tapi.sh -h
 
-usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME]
-                       [-d DSN] [-g STAGING_AREA_DIR] [-p DB_PASSWORD] [-s]
-                       [-To TABLE_OWNER] [-po PACKAGE_OWNER]
-                       [-to TRIGGER_OWNER] [-vo VIEW_OWNER] [-t TABLE_NAMES]
-                       [-u DB_USERNAME] [-T API_TYPES]
+usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN] [-g STAGING_AREA_DIR] [-p DB_PASSWORD] [-To TABLE_OWNER] [-po PACKAGE_OWNER] [-to TRIGGER_OWNER] [-vo VIEW_OWNER] [-t TABLE_NAMES]
+                   [-u DB_USERNAME] [-T API_TYPES]
 
 Oracle Table API Generator
 
@@ -450,13 +447,11 @@ options:
                         Connection name for saved configuration
   -d DSN, --dsn DSN     Database data source name (TNS name)
   -g STAGING_AREA_DIR, --staging_area_dir STAGING_AREA_DIR
-                        Directory for staging area (default:
-                        <APP_HOME>/staging)
+                        Directory for staging area (default: <APP_HOME>/staging)
   -p DB_PASSWORD, --db_password DB_PASSWORD
                         Database password
   -To TABLE_OWNER, --table_owner TABLE_OWNER
-                        Database schema name of the tables from which to
-                        generate the code.
+                        Database schema name of the tables from which to generate the code.
   -po PACKAGE_OWNER, --package_owner PACKAGE_OWNER
                         Database schema in which to place the TAPI packages.
   -to TRIGGER_OWNER, --trigger_owner TRIGGER_OWNER
@@ -468,9 +463,7 @@ options:
   -u DB_USERNAME, --db_username DB_USERNAME
                         Database username
   -T API_TYPES, --api_types API_TYPES
-                        Comma-separated list of API types (e.g., create,read).
-                        Must be one or more of: create, read, update,
-                        upsert,delete, merge.
+                        Comma-separated list of API types (e.g., insert,select). Must be one or more of: insert, select, update, upsert, delete, merge.
 
 ```
 
@@ -524,22 +517,22 @@ In this example, we assume that the dev-db is a TNS Names entry.
 **It is recommended that you use the connection manager approach.**
 
 ### Full Command-Line Arguments:
-| Argument                   | Description                                                                | Default                  |
-|----------------------------|----------------------------------------------------------------------------|--------------------------|
-| `-A`, `--app_name`         | Application name included in the package header.                           | `Undefined`              |
-| `-a`, `--tapi_author`      | Author name for the package header.                                        | `OraTAPI generator`      |
-| `-c`, `--conn_name`        | Connection name for saved configuration.                                   |                          |
-| `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                     |                          |
-| `-g`, `--staging_area_dir` | Directory for the staging area.                                            | `./staging`              |
-| `-p`, `--db_password`      | Database password.                                                         |                          |
-| `-P`, `--package_owner`    | Schema to own the generated TAPI packages (required).                      |                          |
-| `-S`, `--schema_name`      | Schema containing the target tables (required).                            |                          |
-| `-t`, `--table_names`      | Comma-separated list of tables (use `%` for all tables).                   | `%`                      |
-| `-To`, `--table_owner`     | The table owner/schema on whose tables the generated APIs are to be based. |                          |
-| `-to`, `--trigger_owner`   | The schema in which the generated scripts should create the triggers.      |                          |
-| `-vo`, `--view_owner`      | The schema in which the generated scripts should create the views.         |                          |
-| `-u`, `--db_username`      | Database username.                                                         |                          |
-| `-T`, `--api_types`        | Comma-separated list of API types (e.g., `create, read`).                  | Configured default types |
+| Argument                   | Description                                                                                | Default                  |
+|----------------------------|--------------------------------------------------------------------------------------------|--------------------------|
+| `-A`, `--app_name`         | Application name included in the package header.                                           | `Undefined`              |
+| `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
+| `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
+| `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
+| `-g`, `--staging_area_dir` | Directory for the staging area.                                                            | `./staging`              |
+| `-p`, `--db_password`      | Database password.                                                                         |                          |
+| `-P`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
+| `-S`, `--schema_name`      | Schema containing the target tables (required).                                            |                          |
+| `-t`, `--table_names`      | Comma-separated list of tables (use `%` for all tables).                                   | `%`                      |
+| `-To`, `--table_owner`     | The table owner/schema on whose tables the generated APIs are to be based.                 |                          |
+| `-to`, `--trigger_owner`   | The schema in which the generated scripts should create the triggers.                      |                          |
+| `-vo`, `--view_owner`      | The schema in which the generated scripts should create the views.                         |                          |
+| `-u`, `--db_username`      | Database username.                                                                         |                          |
+| `-T`, `--api_types`        | Comma-separated list of API types (e.g., `insert, select, update, delete, upsert, merge`). | Configured default types |
 
 ---
 
