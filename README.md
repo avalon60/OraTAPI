@@ -301,7 +301,8 @@ Note that the `-T/--templates_only` can be used in conjunction with the `-f/--fo
 This may be useful if you have started configuring your control files, but wish to switch to a different template set 
 to that originally chosen, assuming that you don't wish to reset your bespoke config.
 
-4. Ensure access to an Oracle database and configure your `TNS` entries or connection settings. You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
+Finally, ensure that you have access to an Oracle database and configure your `TNS` entries or connection settings. 
+You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
 
 
 NOTES:   
