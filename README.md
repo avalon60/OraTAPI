@@ -557,16 +557,25 @@ The majority of command line options have defaults which can be set via the OraT
 
 These are just a few of the controls. Read on for further detail.
 
-### Configuration Settings for OraTAPI.ini
+## Configuration Settings
+As well as tailoring the templates to your requirements, the behaviour of OraTAPI, is governed by 3 files:
+- OraTAPI.ini
+- OraTAPI.csv
+- pi_columns.csv
 
-This section explains the different sections and parameters of the `OraTAPI.ini` configuration file used by **OraTAPI**.  
+Here we cover the first of these file, the OraTAPI.ini file.
 
-The `OraTAPI.ini` governs majority of the runtime behaviours of OraTAPI.  
+### The OraTAPI.ini File
+The OraTAPI.ini provides the main controls for governing the OraTAPI behaviour.  
+
+The OraTAPI.ini file is made up of named sections. The sections are denoted by square brackets in which the 
+section name is enclosed. Within each section is one or more properties, used to control the behaviour in one way or 
+another, of the `ora_tapi` command.  
 
 As a reminder, the file is located as `<raTAPI_HOME/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
 initialises settings, based upon the contents of this file.  
 
-The file is divided into sections, and the sections have names which are enclosed within square brackets.
+Here we cover the various sections and properties.
 
 ---
 
@@ -991,6 +1000,13 @@ This list should not include the column included to the `row_version_column_name
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the `auto_maintained_cols` list of columns</b>. 
 
 ## Fine-Grained File Controls
+### Control Files
+As well as tailoring the templates to your requirements, the behaviour of OraTAPI, is governed by 3 files:
+- OraTAPI.ini
+- OraTAPI.csv
+- pi_columns.csv
+
+The OraTAPI.ini file has been covered in earlier sections. Here we look at the CSV controls.
 ### Controlling File Updates
 Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
