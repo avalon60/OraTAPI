@@ -270,7 +270,7 @@ OraTAPI quick config complete.
 ```
 Note that in this example, we are opting for the "Liquibase with Logger" templates.  
 
-To underscore the point, you should either specify `-t basic`, `-t liquibase` or `-t llogger`. Optionally, specify `--template_category` 
+To underscore the point, you should either specify `-t basic`, `-t liquibase`,  `-t logger` or `-t llogger`. Optionally, specify `--template_category` 
 instead of `-t`.  
 
 If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
