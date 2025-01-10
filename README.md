@@ -479,22 +479,29 @@ options:
 Run OraTAPI from the command line with the desired options.
 
 ### Examples
+In the following examples we are assuming that we are running with a MacOS/Linux type environment. For Windows 
+PowerShell, you need to assume the commands have a `.ps1` extension, instead of `.sh`.  
+
+The examples also assume that you have navigated to the root install directory of OraTAPI.
 
 #### Basic Example
 ```bash
-ora_tapi.sh --table_owner HR --table_names employees,departments --conn_name dev_db --tapi_author cbostock
+bin/ora_tapi.sh --table_owner HR --table_names employees,departments --conn_name dev_db --tapi_author cbostock
 ```
 Using the terse flags, this is equivalent to:
 ```bash
-ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock
+bin/ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock
 ```
 #### More Advanced Example
 Here we want to override the default target schemas for the packages, views and triggers:
 ```bash
-ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -po logic -to core -vo logic
+bin/ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -po logic -to core -vo logic
 ```
+
 Based on this last example, the DDL statements in the generated scripts will place the packages and views in the logic 
 schema, and the triggers in the core schema.  
+
+
 
 Remember that when these flags are not provided, the defaults are retrieved from the `resources/config/OraTAPI.ini` file.
 
