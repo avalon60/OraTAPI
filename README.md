@@ -28,6 +28,7 @@ Version 1.3.8
     - [Full Command-Line Arguments:](#full-command-line-arguments)
   - [Output Structure](#output-structure)
   - [Configuration Settings](#configuration-settings)
+    - [Control Files](#control-files)
     - [The OraTAPI.ini File](#the-oratapiini-file)
       - [\[OraTAPI\]](#oratapi)
       - [\[project\]](#project)
@@ -41,6 +42,9 @@ Version 1.3.8
       - [\[misc\]](#misc)
       - [\[console\]](#console)
       - [Example configuration file:](#example-configuration-file)
+    - [Fine-Grained File Controls](#fine-grained-file-controls)
+      - [Controlling File Updates](#controlling-file-updates)
+      - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Auto Column Management](#auto-column-management)
     - [What are Auto-managed Columns?](#what-are-auto-managed-columns)
     - [Configuring the Column Management Method](#configuring-the-column-management-method)
@@ -49,10 +53,6 @@ Version 1.3.8
       - [Maintained by Column Expression](#maintained-by-column-expression)
     - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
     - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
-  - [Fine-Grained File Controls](#fine-grained-file-controls)
-    - [Control Files](#control-files)
-    - [Controlling File Updates](#controlling-file-updates)
-    - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
   - [Sample Generated Table API Packages:](#sample-generated-table-api-packages)
@@ -566,7 +566,6 @@ As well as tailoring the templates to your requirements, the behaviour of OraTAP
 - OraTAPI.csv
 - pi_columns.csv
 
-These last two are used for fine-grained controls, and are covered in the next section.
 
 Here we cover the first of these file, the OraTAPI.ini file.
 
@@ -920,12 +919,9 @@ colour_console = true
 
 ### Fine-Grained File Controls
 
-Here we look at the CSV controls, which are implemented via these file:
+The OraTAPI.ini file has been covered in the previous sections. Here we look at the CSV controls.
 
-- OraTAPI.csv
-- pi_columns.csv
-
-#### Controlling File Writes / Updates
+#### Controlling File Updates
 Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
