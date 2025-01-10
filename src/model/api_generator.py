@@ -152,6 +152,13 @@ class ApiGenerator:
                                                                      config_key="col_auto_maintain_method",
                                                                      default='trigger')
 
+        auto_maintained_cols = self.config_manager.config_value(config_section="api_controls",
+                                                                config_key="auto_maintained_cols",
+                                                                default='')
+        # Split the string and strip whitespace
+        self.auto_maintained_cols = [col.strip() for col in auto_maintained_cols.split(",")]
+        self.auto_maintained_cols_lc = [col.lower() for col in self.auto_maintained_cols]
+
         # API naming properties follow. Set these to the preferred procedure names, of the APIs
         self.delete_procname = self.config_manager.config_value(config_section="api_controls",
                                                                 config_key="delete_procname",
@@ -283,7 +290,6 @@ class ApiGenerator:
                 expression = ce.read()
 
             expression_file = Path(expression_path).name
-            messages.append(f"Loading column expression template file: inserts/{expression_file}")
             self.column_insert_expressions[expression_file.replace('.tpt', '')] = expression
 
         # Filter out any files that might accidentally have uppercase characters
@@ -298,7 +304,6 @@ class ApiGenerator:
                 expression = ce.read()
 
             expression_file = Path(expression_path).name
-            messages.append(f"Loading column expression template file: updates/{expression_file}")
             self.column_update_expressions[expression_file.replace('.tpt', '')] = expression
 
         # Cross-check expression column template entries, with the auto maintained column list.
@@ -333,6 +338,9 @@ class ApiGenerator:
         tabs = "%STAB%" * soft_tabs
         col_id = 0
         for column_name in self.table.columns_list:
+            column_name_lc = column_name.lower()
+            if column_name_lc in self.auto_maintained_cols_lc or column_name_lc == self.row_vers_column_name.lower():
+                continue
             column_name_lc = column_name.lower()
             parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype' else 'p_row.' + column_name_lc
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
