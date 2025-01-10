@@ -432,8 +432,9 @@ To get command line help, you can simply type something like:
 cd <OraTAPI-home>
 ./bin/ora_tapi.sh -h
 
-usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN] [-g STAGING_AREA_DIR] [-p DB_PASSWORD] [-To TABLE_OWNER] [-po PACKAGE_OWNER] [-to TRIGGER_OWNER] [-vo VIEW_OWNER] [-t TABLE_NAMES]
-                   [-u DB_USERNAME] [-T API_TYPES]
+usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN] [-g STAGING_AREA_DIR]  
+                   [-p DB_PASSWORD] [-To TABLE_OWNER] [-po PACKAGE_OWNER] [-to TRIGGER_OWNER] [-vo VIEW_OWNER]  
+                   [-t TABLE_NAMES] [-u DB_USERNAME] [-T API_TYPES]
 
 Oracle Table API Generator
 
@@ -463,7 +464,8 @@ options:
   -u DB_USERNAME, --db_username DB_USERNAME
                         Database username
   -T API_TYPES, --api_types API_TYPES
-                        Comma-separated list of API types (e.g., insert,select). Must be one or more of: insert, select, update, upsert, delete, merge.
+                        Comma-separated list of API types (e.g., insert,select).  
+                        Must be one or more of: insert, select, update, upsert, delete, merge.
 
 ```
 
