@@ -6,13 +6,22 @@ import argparse
 
 from lib.config_manager import ConfigManager
 from pathlib import Path
+
+from model.framework_errors import InvalidParameter
 from view.console_display import MsgLvl, ConsoleMgr
 from lib.file_system_utils import project_home
+
+VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
 class MissingParameterError(Exception):
     """Exception raised for missing parameters."""
     def __init__(self, parameter_name: str):
         super().__init__(f"Missing required parameter: {parameter_name}")
+
+class InvalidParameterError(Exception):
+    """Exception raised for missing parameters."""
+    def __init__(self, message: str):
+        super().__init__(f"invalid parameter: {message}")
 
 class Interactions:
     def __init__(self, controller, config_file_path: Path):
@@ -105,13 +114,17 @@ class Interactions:
 
         parser.add_argument('-u', '--db_username', type=str, help="Database username")
         parser.add_argument('-T', '--api_types', type=str, default=default_api_types,
-                            help="Comma-separated list of API types (e.g., create,read). Must be one or more of: create, read, update, upsert,delete, merge.")
+                            help="Comma-separated list of API types (e.g., insert,select). Must be one or more of: insert, select, update, upsert, delete, merge.")
 
         args = parser.parse_args()
 
         # Convert api_types to a list
         if args.api_types:
-            args.api_types = [api_type.strip() for api_type in args.api_types.split(',')]
+            args.api_types = [api_type.strip().lower() for api_type in args.api_types.split(',')]
+
+        for api_type in args.api_types:
+            if api_type not in VALID_API_TYPES:
+                raise InvalidParameter(f'Invalid option "{api_type} specified with ""-T/--api_types')
 
         # Extract parameters for validation
         conn_name = args.conn_name
