@@ -567,7 +567,7 @@ As well as tailoring the templates to your requirements, the behaviour of OraTAP
 - pi_columns.csv
 
 
-Here we cover the first of these file, the OraTAPI.ini file.
+The last 2 of these are covered in subsequent sections, under [Fine-Grained File Controls](#fine-grained-file-controls). Here we cover the first of these files, the OraTAPI.ini file.
 
 ### The OraTAPI.ini File
 The OraTAPI.ini provides the main controls for governing the OraTAPI behaviour.  
