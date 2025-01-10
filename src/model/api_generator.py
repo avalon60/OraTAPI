@@ -722,7 +722,7 @@ class ApiGenerator:
                     continue
                 column_id += 1
                 noop_assignment = ""
-                if self.noop_column_string and operation_type == 'update':
+                if self.noop_column_string and operation_type == 'update' and column_name_lc not in self.auto_maintained_cols_lc:
                     noop_assignment = self._noop_assignment(column_name=column_name_lc, soft_tabs=14)
                 if not noop_assignment:
                     assignment = self._column_expression(signature_type=signature_type, operation_type=_operation_type,
