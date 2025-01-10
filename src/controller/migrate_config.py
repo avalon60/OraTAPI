@@ -145,12 +145,14 @@ def migrate_files(previous_install_dir: Path) -> None:
     config_target = config_dir / "OraTAPI.ini"
 
     shutil.copyfile(previous_install_config_file, config_target)
+    print(f"Migrated: {previous_install_config_file.absolute()} -> {config_target.absolute()}")
     files_migrated += 1
 
     ora_tapi_csv_previous = previous_config_dir / "OraTAPI.csv"
     ora_tapi_csv_new = config_dir / "OraTAPI.csv"
     if ora_tapi_csv_previous.exists():
         shutil.copyfile(ora_tapi_csv_previous, ora_tapi_csv_new)
+        print(f"Migrated: {ora_tapi_csv_previous.absolute()} -> {ora_tapi_csv_new.absolute()}")
         files_migrated += 1
 
     pi_columns_csv_previous = previous_config_dir /  "pi_columns.csv"
