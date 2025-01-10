@@ -302,7 +302,7 @@ This may be useful if you have started configuring your control files, but wish 
 to that originally chosen, assuming that you don't wish to reset your bespoke config.
 
 Finally, ensure that you have access to an Oracle database and configure your `TNS` entries or connection settings. 
-You should test your connection to the database via SQLcl or SQL Developer, before attempting with OraTAPI.
+You should test your connection to the database, via SQLcl or SQL Developer, before attempting with OraTAPI.
 
 
 NOTES:   
