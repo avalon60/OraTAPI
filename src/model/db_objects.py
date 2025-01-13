@@ -9,6 +9,25 @@ from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 
 
+def get_constraint_description(constraint_type:str) -> str:
+    """
+    Returns a description for a given Oracle constraint type code.
+
+    :param constraint_type: A single-character string representing the constraint type.
+    :type constraint_type: str
+    :return: A description of the constraint type.
+    :rtype: str
+    """
+    _constraint_type = constraint_type.upper()
+    constraint_descriptions = {
+        'P': 'Primary Key constraint',
+        'U': 'Unique Key constraint',
+        'R': 'Referential (Foreign Key) constraint',
+        'C': 'Check constraint'
+    }
+
+    return constraint_descriptions.get(_constraint_type, 'Unsupported constraint type')
+
 
 class Table:
     def __init__(self, database_session: DBSession, table_owner: str, table_name: str, config_manager: ConfigManager, trace: bool = False):
@@ -67,17 +86,17 @@ class Table:
         :rtype: dict
         """
         query = """
-            SELECT 
-                COLUMN_NAME,
-                DATA_TYPE,
-                DATA_DEFAULT,
-                NULLABLE
-            FROM 
-                ALL_TAB_COLUMNS
-            WHERE 
-                OWNER = :schema_name
-                AND TABLE_NAME = :table_name
-            ORDER BY column_id
+                select 
+                    column_name,
+                    data_type,
+                    data_default,
+                    nullable
+                from 
+                    all_tab_columns
+                where 
+                    owner = :schema_name
+                    and table_name = :table_name
+                order by column_id
         """
         column_metadata_dict = {}
         column_list = []
@@ -161,15 +180,15 @@ class Table:
         :rtype: bool
         """
         query = """
-            SELECT 1
-            FROM ALL_CONS_COLUMNS acc
-            JOIN ALL_CONSTRAINTS ac
-                ON acc.OWNER = ac.OWNER
-                AND acc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
-            WHERE acc.OWNER = :schema_name
-                AND acc.TABLE_NAME = :table_name
-                AND acc.COLUMN_NAME = :column_name
-                AND ac.CONSTRAINT_TYPE IN ('P', 'U')
+                select 1
+                from all_cons_columns acc
+                join all_constraints ac
+                    on acc.owner = ac.owner
+                    and acc.constraint_name = ac.constraint_name
+                where acc.owner = :schema_name
+                    and acc.table_name = :table_name
+                    and acc.column_name = :column_name
+                    and ac.constraint_type in ('P', 'U')
         """
         try:
             with self.db_session.cursor() as cursor:
@@ -199,15 +218,15 @@ class Table:
         :rtype: bool
         """
         query = """
-            SELECT 1
-            FROM ALL_CONS_COLUMNS acc
-            JOIN ALL_CONSTRAINTS ac
-                ON acc.OWNER = ac.OWNER
-                AND acc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
-            WHERE acc.OWNER = :schema_name
-                AND acc.TABLE_NAME = :table_name
-                AND acc.COLUMN_NAME = :column_name
-                AND ac.CONSTRAINT_TYPE IN ('U')
+                select 1
+                from all_cons_columns acc
+                join all_constraints ac
+                    on acc.owner = ac.owner
+                    and acc.constraint_name = ac.constraint_name
+                where acc.owner = :schema_name
+                    and acc.table_name = :table_name
+                    and acc.column_name = :column_name
+                    and ac.constraint_type in ('U');
         """
         try:
             with self.db_session.cursor() as cursor:
@@ -237,15 +256,15 @@ class Table:
         :rtype: bool
         """
         query = """
-            SELECT 1
-            FROM ALL_CONS_COLUMNS acc
-            JOIN ALL_CONSTRAINTS ac
-                ON acc.OWNER = ac.OWNER
-                AND acc.CONSTRAINT_NAME = ac.CONSTRAINT_NAME
-            WHERE acc.OWNER = :schema_name
-                AND acc.TABLE_NAME = :table_name
-                AND acc.COLUMN_NAME = :column_name
-                AND ac.CONSTRAINT_TYPE = 'P'
+                select 1
+                from all_cons_columns acc
+                join all_constraints ac
+                    on acc.owner = ac.owner
+                    and acc.constraint_name = ac.constraint_name
+                where acc.owner = :schema_name
+                    and acc.table_name = :table_name
+                    and acc.column_name = :column_name
+                    and ac.constraint_type = 'P'
         """
         try:
             with self.db_session.cursor() as cursor:
@@ -265,16 +284,105 @@ class Table:
                 print(f"Error checking if column is keyed: {e}")
             raise
 
-    def __repr__(self):
+class TableConstraints:
+    def __init__(self, database_session: DBSession, table_owner: str, table_name: str,
+                 config_manager: ConfigManager, trace: bool = False):
         """
-        Returns a string representation of the Table object, showing its schema and table names,
-        along with a summary of the table's column metadata.
+        Initialize the Table object.
 
-        :return: A string representing the Table object.
-        :rtype: str
+        :param database_session: A database session object connected to Oracle.
+        :type database_session: DBSession
+        :param table_owner: The schema name of the table.
+        :type table_owner: str
+        :param table_name: The name of the table.
+        :type table_name: str
+        :param trace: Enables tracing/debugging if True.
+        :type trace: bool
         """
-        return (f"Table(schema_name={self.schema_name!r}, table_name={self.table_name!r}, "
-                f"columns_count={len(self.columns_dict)}, trace={self.trace})")
+        self.db_session = database_session
+        self.schema_name = table_owner
+        self.schema_name_desc = table_owner.replace('_', ' ').title()
+        self.table_name = table_name
+        self.table_name_desc = table_name.replace('_', ' ').title()
+        self.config_manager = config_manager
+        self.trace = trace
+
+        # Initialize the metadata dictionary as an instance attribute
+        self.constraint_metadata_dict = {}
+        self.constraint_list = []
+
+    def table_constraints(self) -> None:
+        """
+        Queries the Oracle data dictionary for column metadata and returns a nested dictionary.
+
+        :return: A dictionary of dictionaries containing constraint metadata.
+                 Outer key: constraint_name
+                 Inner dictionary keys:
+                     'search_condition', 'columns', 'columns_lc', 'constraint_type', 'status'
+        :rtype: dict
+        """
+        query = """
+                select 
+                    ac.constraint_name,
+                    ac.search_condition_vc,
+                    listagg(acc.column_name, ', ') within group (order by acc.position) as cons_columns,
+                    listagg(lower(acc.column_name), ', ') within group (order by acc.position) as cons_columns_lc,
+                    ac.constraint_type,
+                    ac.status
+                from 
+                    all_constraints ac
+                join 
+                    user_cons_columns acc
+                on 
+                    ac.constraint_name = acc.constraint_name 
+                    and ac.owner       = acc.owner
+                where 
+                    ac.table_name      = :table_name 
+                    and ac.owner       = :schema_name
+                    and ac.constraint_type in ('P', 'U', 'R', 'C')
+                group by 
+                    ac.owner, ac.table_name, ac.search_condition_vc, ac.constraint_name,    ac.constraint_type, ac.status, ac.deferrable, ac.deferred
+                order by 
+                    case 
+                        when ac.constraint_type = 'P' then 1
+                        when ac.constraint_type = 'U' then 2
+                        when ac.constraint_type = 'R' then 3
+                        when ac.constraint_type = 'C' then 4
+                        else 5
+                    end, 
+                    ac.constraint_name
+        """
+        try:
+            with self.db_session.cursor() as cursor:
+                if self.trace:
+                    print(f"Executing query: {query}")
+                    print(f"Parameters: schema_name={self.schema_name}, table_name={self.table_name}")
+                cursor.execute(query, schema_name=self.schema_name, table_name=self.table_name)
+
+                # Process the query result to populate the nested dictionary
+                for row in cursor:
+                    constraint_name, search_condition, cons_columns, cons_columns_lc, constraint_type, status = row
+                    constraint_name_desc = constraint_name.replace('_', ' ').title()
+                    constraint_name_lc = constraint_name.lower()
+                    self.constraint_list.append(constraint_name)
+                    # Store the data in the dictionary with constraint_name as the outer key
+                    self.constraint_metadata_dict[constraint_name] = {
+                        'constraint_name_lc': constraint_name_lc,
+                        'constraint_name_desc': constraint_name_desc,
+                        'search_condition': search_condition,
+                        'cons_columns': cons_columns,
+                        'cons_columns_lc': cons_columns_lc,
+                        'constraint_type': constraint_type,
+                        'constraint_type_desc': get_constraint_description(constraint_type=constraint_type),
+                        'status': status
+                    }
+
+        except Exception as e:
+            if self.trace:
+                print(f"Error fetching constraint metadata: {e}")
+            raise
+
+
 
 if __name__ == "__main__":
     # Connection parameters
