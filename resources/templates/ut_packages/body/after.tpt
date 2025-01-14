@@ -5,7 +5,7 @@
 %STAB%%STAB%null;
 %STAB%end teardown_each;
 
-
+%STAB%-- Foreign key referenced tables: %fk_tables_lc%
 %STAB%procedure teardown_all
 %STAB%is
 %STAB%begin

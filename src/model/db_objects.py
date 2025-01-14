@@ -311,7 +311,8 @@ class TableConstraints:
         # Initialize the metadata dictionary as an instance attribute
         self.constraint_metadata_dict = {}
         self.constraint_list = []
-
+        self.fk_tables_list = []
+        self.fk_tables = ''
         self._table_constraints()
 
     def _table_constraints(self) -> None:
@@ -405,6 +406,45 @@ class TableConstraints:
             raise
 
 
+        query = """
+                select distinct
+                    t2.table_name,
+                    d2.owner
+                from
+                    all_constraints c1,
+                    all_constraints c2,
+                    all_tables t1,
+                    all_tables t2,
+                    dba_tables d2
+                where
+                    c1.table_name            = t1.table_name
+                    and c2.table_name        = t2.table_name
+                    and c1.constraint_type   = 'R'
+                    and c2.constraint_type   = 'P'
+                    and c1.r_constraint_name = c2.constraint_name
+                    and t1.table_name        = :table_name
+                    and t1.owner             = :schema_name
+                    and t2.table_name        = d2.table_name
+        """
+        try:
+            with self.db_session.cursor() as cursor:
+                if self.trace:
+                    print(f"Executing query: {query}")
+                    print(f"Parameters: schema_name={self.schema_name}, table_name={self.table_name}")
+                cursor.execute(query, schema_name=self.schema_name, table_name=self.table_name)
+
+                # Process the query result to populate the nested dictionary
+                for row in cursor:
+                    fk_table_name, fk_table_owner = row
+                    fk_table_ref = fk_table_owner + '.' + fk_table_name
+                    self.fk_tables_list.append(fk_table_ref)
+
+        except Exception as e:
+            if self.trace:
+                print(f"Error fetching foreign key metadata: {e}")
+            raise
+
+        self.fk_tables = ', '.join(self.fk_tables_list)
 
 if __name__ == "__main__":
     # Connection parameters

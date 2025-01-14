@@ -1,3 +1,5 @@
+
+%STAB%-- Parent tables: %fk_tables_lc%
 %STAB%procedure setup_all
 %STAB%is
 %STAB%begin

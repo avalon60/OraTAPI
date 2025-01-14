@@ -249,6 +249,18 @@ class UtPLSQLGenerator:
             template_name="package_footer"
         )
 
+        before_template = self._package_api_template(
+            template_category="ut_packages",
+            template_type='body',
+            template_name="before"
+        )
+
+        after_template = self._package_api_template(
+            template_category="ut_packages",
+            template_type='body',
+            template_name="after"
+        )
+
         # Merge global and options dictionary substitutions
         merged_dict = self.merged_dict
 
@@ -264,10 +276,13 @@ class UtPLSQLGenerator:
             stab_spaces=self.indent_spaces
         )
 
-        # Start building the package bodyification
-        package_body = package_header_template
 
-        # Generate API fragments for each bodyified API in the options
+
+        # Start building the package body
+        package_body = package_header_template
+        package_body += before_template
+
+        # Generate API fragments for each body API in the options
         ut_api_types = self.options_dict.get("ut_api_types", [])
         _package_procedure = ''
         table_desc_title = self.table.table_name.replace('_', ' ').title()
@@ -285,6 +300,8 @@ class UtPLSQLGenerator:
             merged_dict["api_type_desc"] = api_type_desc
             merged_dict["api_type_lc"] = str(_api_type).lower()
             merged_dict["procedure_name_lc"] = _procedure_name.lower()
+            merged_dict["fk_tables"] = self.table_constraints.fk_tables
+            merged_dict["fk_tables_lc"] = self.table_constraints.fk_tables.lower()
 
             package_body += "\n" + _package_procedure
             package_body = inject_values(
@@ -313,6 +330,7 @@ class UtPLSQLGenerator:
             )
 
         # Append the package footer
+        package_body += after_template
         package_body += package_footer_template
         package_body = inject_values(
             substitutions=self.global_substitutions,
