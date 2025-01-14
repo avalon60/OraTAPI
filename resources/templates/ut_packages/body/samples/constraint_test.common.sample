@@ -1,0 +1,5 @@
+-- Test the %table_name_lc% insert API
+%STAB%--%test
+%STAB%--%throws(%throws_code%)
+%STAB%--%displayname(Verify %constraint_type_desc% for %table_desc_title% %api_type% functionality [%table_owner_lc%.%table_name_lc%%tapi_pkg_name_postfix%.%constraint_name_lc%])
+%STAB%procedure test_%constraint_name%;

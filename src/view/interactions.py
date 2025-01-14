@@ -10,6 +10,7 @@ from pathlib import Path
 from model.framework_errors import InvalidParameter
 from view.console_display import MsgLvl, ConsoleMgr
 from lib.file_system_utils import project_home
+proj_home = project_home()
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
@@ -85,36 +86,59 @@ class Interactions:
                                                       config_key="default_view_owner",
                                                       default=None)
 
+        default_staging_dir = self.config_manager.config_value(config_section="file_controls",
+                                                                    config_key="default_staging_dir",
+                                                                    default=None)
+
+        default_ut_staging_dir = self.config_manager.config_value(config_section="file_controls",
+                                                                  config_key="default_ut_staging_dir",
+                                                                  default=None)
+
         # Argument parser setup
-        parser = argparse.ArgumentParser(description="Oracle Table API Generator")
+        parser = argparse.ArgumentParser(description="Oracle Table API Generator",
+                                         epilog="The majority of defaults can be changed via the OraTAPI.ini file.")
 
-        parser.add_argument('-A', '--app_name', type=str, help="Application name - included to the package header.",
-                            default=default_app_name)
+        help_text = f"Application name - included to the package header. Default: {default_app_name}"
+        parser.add_argument('-A', '--app_name', type=str, help=help_text, default=default_app_name)
+
         parser.add_argument('-a', '--tapi_author', type=str, help="TAPI author", default='OraTAPI generator')
-        parser.add_argument('-c', '--conn_name', type=str, help="Connection name for saved configuration")
-        parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name)")
-        parser.add_argument('-g', '--staging_area_dir', type=Path, default="staging",
-                            help="Directory for staging area (default: <APP_HOME>/staging)")
-        parser.add_argument('-p', '--db_password', type=str, help="Database password")
 
-        parser.add_argument('-To', '--table_owner', type=str, help="Database schema name of the tables from which to generate the code.",
-                            default=table_owner)
+        parser.add_argument('-c', '--conn_name', type=str, help="Database connection name (created via OraTAPI connection manager).")
 
-        parser.add_argument('-po', '--package_owner', type=str, default=package_owner,
-                            help="Database schema in which to place the TAPI packages.")
+        parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name).")
 
-        parser.add_argument('-to', '--trigger_owner', type=str, help="The schema in which to place the generated triggers.",
-                            default=trigger_owner)
+        help_text = f"Directory for staging area. Default: {proj_home}/{default_ut_staging_dir}"
+        parser.add_argument('-g', '--staging_dir', type=Path, default=default_staging_dir,
+                            help=help_text)
 
-        parser.add_argument('-vo', '--view_owner', type=str, help="The schema in which to place the generated views.",
-                            default=view_owner)
+        help_text = f"Directory for unit tests staging area. Default: {proj_home}/{default_ut_staging_dir}"
+        parser.add_argument('-G', '--ut_staging_dir', type=Path, default=default_ut_staging_dir,
+                            help=help_text)
 
-        parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names (default: all)",
+        parser.add_argument('-u', '--db_username', type=str, help="Database connection username.")
+
+        parser.add_argument('-p', '--db_password', type=str, help="Database connection password.")
+
+        help_text = f"Database schema name of the tables from which to generate the code. Default: {table_owner}"
+        parser.add_argument('-To', '--table_owner', type=str, help=help_text, default=table_owner)
+
+        help_text = f"Database schema in which to place the TAPI packages. Default: {package_owner}"
+        parser.add_argument('-po', '--package_owner', type=str, default=package_owner, help=help_text)
+
+        help_text = f"The schema in which to place the generated triggers. Default: {trigger_owner}"
+        parser.add_argument('-to', '--trigger_owner', type=str, help=help_text, default=trigger_owner)
+
+        help_text = f"The schema in which to place the generated views. Default: {view_owner}"
+        parser.add_argument('-vo', '--view_owner', type=str, help=help_text, default=view_owner)
+
+        parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names. Default: all",
                             default='%')
 
-        parser.add_argument('-u', '--db_username', type=str, help="Database username")
-        parser.add_argument('-T', '--api_types', type=str, default=default_api_types,
-                            help="Comma-separated list of API types (e.g., insert,select). Must be one or more of: insert, select, update, upsert, delete, merge.")
+        help_text = f"Comma-separated list of API types. Valid options: insert, select, update, upsert, delete, merge.\n (Default setting: {default_api_types})"
+        parser.add_argument('-T', '--api_types', type=str, default=default_api_types, help=help_text)
+
+        help_text = f"Comma-separated list of unit test API types. Valid options: insert, select, update, upsert, delete, merge.\n (Default setting: {default_api_types})"
+        parser.add_argument('-U', '--ut_api_types', type=str, default=default_api_types, help=help_text)
 
         args = parser.parse_args()
 
@@ -122,9 +146,17 @@ class Interactions:
         if args.api_types:
             args.api_types = [api_type.strip().lower() for api_type in args.api_types.split(',')]
 
+
         for api_type in args.api_types:
             if api_type not in VALID_API_TYPES:
                 raise InvalidParameter(f'Invalid option "{api_type} specified with ""-T/--api_types')
+
+        if args.ut_api_types:
+            args.ut_api_types = [api_type.strip().lower() for api_type in args.ut_api_types.split(',')]
+
+        for api_type in args.ut_api_types:
+            if api_type not in VALID_API_TYPES:
+                raise InvalidParameter(f'Invalid option "{api_type} specified with ""-U/--ut_api_types')
 
         # Extract parameters for validation
         conn_name = args.conn_name

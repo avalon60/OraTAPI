@@ -2392,5 +2392,5 @@ class ApiGenerator:
 
 if __name__ == "__main__":
     # Connection parameters
-    print('INFO: No tests setup for api_generator.py')
+    print('INFO: No tests setup for tapi_generator.py')
     pass

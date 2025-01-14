@@ -1,0 +1,5 @@
+%STAB%--%beforeall
+%STAB%procedure setup_all;  -- Setup before all tests
+
+%STAB%--%beforeeach
+%STAB%procedure setup_each;  -- Setup before each test

@@ -434,9 +434,11 @@ To get command line help, you can simply type something like:
 cd <OraTAPI-home>
 ./bin/ora_tapi.sh -h
 
-usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN] [-g STAGING_AREA_DIR]  
-                   [-p DB_PASSWORD] [-To TABLE_OWNER] [-po PACKAGE_OWNER] [-to TRIGGER_OWNER] [-vo VIEW_OWNER]  
-                   [-t TABLE_NAMES] [-u DB_USERNAME] [-T API_TYPES]
+usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN]
+                   [-g STAGING_DIR] [-G UT_STAGING_DIR] [-u DB_USERNAME]
+                   [-p DB_PASSWORD] [-To TABLE_OWNER] [-po PACKAGE_OWNER]
+                   [-to TRIGGER_OWNER] [-vo VIEW_OWNER] [-t TABLE_NAMES]
+                   [-T API_TYPES] [-U UT_API_TYPES]
 
 Oracle Table API Generator
 
@@ -444,32 +446,51 @@ options:
   -h, --help            show this help message and exit
   -A APP_NAME, --app_name APP_NAME
                         Application name - included to the package header.
+                        Default: Human Resources
   -a TAPI_AUTHOR, --tapi_author TAPI_AUTHOR
                         TAPI author
   -c CONN_NAME, --conn_name CONN_NAME
-                        Connection name for saved configuration
-  -d DSN, --dsn DSN     Database data source name (TNS name)
-  -g STAGING_AREA_DIR, --staging_area_dir STAGING_AREA_DIR
-                        Directory for staging area (default: <APP_HOME>/staging)
+                        Database connection name (created via OraTAPI
+                        connection manager).
+  -d DSN, --dsn DSN     Database data source name (TNS name).
+  -g STAGING_DIR, --staging_dir STAGING_DIR
+                        Directory for staging area. Default:
+                        /home/clive/PycharmProjects/OraTAPI/ut_staging
+  -G UT_STAGING_DIR, --ut_staging_dir UT_STAGING_DIR
+                        Directory for unit tests staging area. Default:
+                        /home/clive/PycharmProjects/OraTAPI/ut_staging
+  -u DB_USERNAME, --db_username DB_USERNAME
+                        Database connection username.
   -p DB_PASSWORD, --db_password DB_PASSWORD
-                        Database password
+                        Database connection password.
   -To TABLE_OWNER, --table_owner TABLE_OWNER
-                        Database schema name of the tables from which to generate the code.
+                        Database schema name of the tables from which to
+                        generate the code. Default: aut
   -po PACKAGE_OWNER, --package_owner PACKAGE_OWNER
                         Database schema in which to place the TAPI packages.
+                        Default: aut
   -to TRIGGER_OWNER, --trigger_owner TRIGGER_OWNER
                         The schema in which to place the generated triggers.
+                        Default: aut
   -vo VIEW_OWNER, --view_owner VIEW_OWNER
                         The schema in which to place the generated views.
+                        Default: aut
   -t TABLE_NAMES, --table_names TABLE_NAMES
-                        Comma separated list of table names (default: all)
-  -u DB_USERNAME, --db_username DB_USERNAME
-                        Database username
+                        Comma separated list of table names. Default: all
   -T API_TYPES, --api_types API_TYPES
-                        Comma-separated list of API types (e.g., insert,select).  
-                        Must be one or more of: insert, select, update, upsert, delete, merge.
+                        Comma-separated list of API types. Valid options:
+                        insert, select, update, upsert, delete, merge.
+                        (Default setting: insert, select, update, delete)
+  -U UT_API_TYPES, --ut_api_types UT_API_TYPES
+                        Comma-separated list of unit test API types. Valid
+                        options: insert, select, update, upsert, delete,
+                        merge. (Default setting: insert, select, update,
+                        delete)
 
+The majority of defaults can be changed via the OraTAPI.ini file.
 ```
+The DB_USERNAME database user, must have sufficient privileges to view the TABLE_OWNER's database objects via the 
+Oracle `ALL_` data dictionary views.
 
 ## Usage
 
@@ -527,7 +548,7 @@ In this example, we assume that the dev-db is a TNS Names entry.
 | `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
 | `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
 | `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
-| `-g`, `--staging_area_dir` | Directory for the staging area.                                                            | `./staging`              |
+| `-g`, `--staging_dir` | Directory for the staging area.                                                            | `./staging`              |
 | `-p`, `--db_password`      | Database password.                                                                         |                          |
 | `-P`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
 | `-S`, `--schema_name`      | Schema containing the target tables (required).                                            |                          |
@@ -630,7 +651,7 @@ Here we cover the various sections and properties.
 #### [file_controls]
 - **default_staging_dir**: Specifies the root directory where the generated files will be written.
   - Example: `default_staging_dir = /u02/projects/demo/staging`
-  - **Purpose**: Defines the folder where all generated files will be placed. The default location is `staging` and is located directly below the OraTAPI installation root folder. You can specify a pathname relative to the OraTAPI installation root folder, or a full pathname. This can be overridden at runtime, using the `-g/--staging_area_dir` argument.
+  - **Purpose**: Defines the folder where all generated files will be placed. The default location is `staging` and is located directly below the OraTAPI installation root folder. You can specify a pathname relative to the OraTAPI installation root folder, or a full pathname. This can be overridden at runtime, using the `-g/--staging_dir` argument.
   
   Sub-directories are created at run-time, as required, to host the generated code. The names of the sub-directories are configurable (read on).
   

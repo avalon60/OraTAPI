@@ -1,0 +1,14 @@
+
+%STAB%procedure teardown_each
+%STAB%is
+%STAB%begin
+%STAB%%STAB%null;
+%STAB%end teardown_each;
+
+
+%STAB%procedure teardown_all
+%STAB%is
+%STAB%begin
+%STAB%%STAB%null;
+%STAB%end teardown_all;
+
