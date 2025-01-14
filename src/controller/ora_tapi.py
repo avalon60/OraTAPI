@@ -138,6 +138,11 @@ class CodeManager:
         self.enable_ut_code_generation = self.config_manager.bool_config_value(config_section='ut_controls',
                                                                                config_key='enable_ut_code_generation',
                                                                                default=False)
+        if self.col_auto_maintain_method == 'expression':
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column expressions.")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Loading with auto-maintained column expressions")
+        elif self.col_auto_maintain_method == 'trigger':
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column trigger.")
 
         if self.staging_dir == DEFAULT_STAGING:
             self.staging_dir = app_home / self.staging_dir
@@ -225,6 +230,7 @@ class CodeManager:
         elapsed_time = format_elapsed_time(start_ts=epoc_start_ts, end_ts=epoc_end_ts)
         self.view.print_console(text=f'Elapsed time: {elapsed_time}',
                                 msg_level=MsgLvl.highlight)
+
 
     @staticmethod
     def validate_api_types(api_types: list[str]) -> list[str]:
@@ -376,19 +382,17 @@ class CodeManager:
         )
 
         if self.col_auto_maintain_method == 'expression':
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column expressions.")
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Loading with auto-maintained column expressions")
             expressions_messages = api_controller.load_column_expressions()
             for message in expressions_messages:
                 self.view.print_console(msg_level=MsgLvl.warning, text=message)
 
         elif self.col_auto_maintain_method == 'trigger':
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column trigger.")
+            pass
         else:
             error_text = f"Invalid auto_maintain_method: {self.col_auto_maintain_method}"
             raise UnsupportedOption(message=error_text)
 
-        self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package for table: {table_name_lc.upper()}")
+        self.view.print_console(msg_level=MsgLvl.info, text=f"    Generating TAPI package for table: {table_name_lc.upper()}")
         staging_realpath = self.staging_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
@@ -417,7 +421,7 @@ class CodeManager:
             trace=self.trace
         )
 
-        self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package for table: {table_name_lc.upper()}")
+        self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating UT package for table: {table_name_lc.upper()}")
         staging_realpath = self.ut_staging_dir.resolve()
 
         package_spec_code = ut_controller.gen_package_spec()
@@ -462,7 +466,7 @@ class CodeManager:
         views_dict = api_controller.gen_views()
 
         for view_file_name, code in views_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating view script for view: {view_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating view script for view: {view_file_name.upper().replace('.SQL', '')}")
             self.view.write_file(staging_dir=staging_realpath, directory=self.view_dir, file_name=view_file_name,
                                  code=code)
 
