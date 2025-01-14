@@ -6,3 +6,4 @@ aut,job_history,Undefined,True,False,False
 aut,locations,Undefined,True,True,False
 aut,regions,Undefined,True,True,False
 aut,countries,Undefined,True,True,False
+aut,employees2,Undefined,True,True,True

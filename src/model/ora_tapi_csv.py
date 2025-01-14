@@ -138,7 +138,7 @@ class CSVManager:
 
     def _cleanup(self):
         """If instantiated with cleanup = True, we perform a cleanup on exit. There are cases where we don't want to
-        performa a cleanup. For example, we instantiate a CSVManager, from the api_generator.py, just for reading
+        performa a cleanup. For example, we instantiate a CSVManager, from the tapi_generator.py, just for reading
         the table domain mappings. We don't want to update the  CSV file after every table is processed."""
         if not self.cleanup:
             return

@@ -1,0 +1,8 @@
+%STAB%-- Test the %table_name_lc% %api_type_lc%
+%STAB%procedure test_%procedure_name_lc%
+%STAB%is
+%STAB%begin
+%STAB%%STAB%null;
+%STAB%end test_%procedure_name_lc%;
+
+

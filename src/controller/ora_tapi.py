@@ -5,7 +5,8 @@ __version__ = "1.3.10"
 import copy
 import time
 
-from model.api_generator import ApiGenerator
+from model.tapi_generator import ApiGenerator
+from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
@@ -15,6 +16,7 @@ from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir
 from model.ora_tapi_csv import CSVManager
+from model.framework_errors import UnsupportedOption
 
 CONFIG_LOCATION = project_home()/ 'resources' / 'config'
 
@@ -28,8 +30,8 @@ prog_name = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
-class TAPIGenerator:
-    """Table API generator class"""
+class CodeManager:
+    """PLSQL code generation manager class"""
     def __init__(self, trace: bool = False):
         proj_home = project_home()  # project_home returns a Path object
         chdir(proj_home)
@@ -76,7 +78,8 @@ class TAPIGenerator:
         self.table_owner_lc = self.table_owner.lower()
         self.table_names = str(options_dict['table_names']).upper()
         self.conn_name = options_dict['conn_name']
-        self.staging_area_dir = Path(options_dict['staging_area_dir'])
+        self.staging_dir = Path(options_dict['staging_dir'])
+        self.ut_staging_dir = Path(options_dict['ut_staging_dir'])
 
         self.trace = trace
         self.proj_home = project_home()
@@ -117,22 +120,45 @@ class TAPIGenerator:
                                                               config_key='spec_file_ext')
 
         self.tapi_pkg_name_prefix = self.config_manager.config_value(config_section='api_controls',
-                                                              config_key='tapi_pkg_name_prefix',
-                                                              default='')
+                                                                     config_key='tapi_pkg_name_prefix',
+                                                                     default='')
 
-        self.tapi_pkg_name_postfix = self.config_manager.config_value(config_section='api_controls',
-                                                              config_key='tapi_pkg_name_postfix',
-                                                              default='_tapi')
+        self.tapi_pkg_name_postfix = self.config_manager.config_value(config_section='ut_controls',
+                                                                      config_key='tapi_pkg_name_postfix',
+                                                                      default='_tapi')
 
-        if self.staging_area_dir == DEFAULT_STAGING:
-            self.staging_area_dir = app_home / self.staging_area_dir
+        self.ut_pkg_name_prefix = self.config_manager.config_value(config_section='ut_controls',
+                                                                   config_key='ut_pkg_name_prefix',
+                                                                   default='')
 
-        if not self.staging_area_dir.exists():
-            self.view.print_console(msg_level=MsgLvl.error, text=f'Staging directory, "{self.staging_area_dir}", does not exist - bailing out!')
+        self.ut_pkg_name_postfix = self.config_manager.config_value(config_section='api_controls',
+                                                                    config_key='ut_pkg_name_postfix',
+                                                                    default='_tapi')
+
+        self.enable_ut_code_generation = self.config_manager.bool_config_value(config_section='ut_controls',
+                                                                               config_key='enable_ut_code_generation',
+                                                                               default=False)
+
+        if self.staging_dir == DEFAULT_STAGING:
+            self.staging_dir = app_home / self.staging_dir
+
+        if self.ut_staging_dir == DEFAULT_STAGING:
+            self.ut_staging_dir = app_home / self.staging_dir
+
+        if not self.staging_dir.exists():
+            self.view.print_console(msg_level=MsgLvl.error, text=f'TAPI staging directory, "{self.staging_dir}", does not exist - bailing out!')
             exit(0)
 
-        if not self.staging_area_dir.is_dir():
-            self.view.print_console(msg_level=MsgLvl.error, text=f'Staging pathname provide, "{self.staging_area_dir}", is not a directory - bailing out!')
+        if not self.ut_staging_dir.exists() and self.enable_ut_code_generation:
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Unit test staging directory, "{self.ut_staging_dir}", does not exist - bailing out!')
+            exit(0)
+
+        if not self.staging_dir.is_dir():
+            self.view.print_console(msg_level=MsgLvl.error, text=f'TAPI staging pathname provide, "{self.staging_dir}", is not a directory - bailing out!')
+            exit(0)
+
+        if not self.ut_staging_dir.is_dir() and self.enable_ut_code_generation:
+            self.view.print_console(msg_level=MsgLvl.error, text=f'Unit test staging pathname provide, "{self.staging_dir}", is not a directory - bailing out!')
             exit(0)
 
         if self.spec_dir == self.body_dir and self.spec_file_ext == self.body_file_ext:
@@ -140,10 +166,17 @@ class TAPIGenerator:
             exit(0)
 
         for directory in (self.spec_dir, self.body_dir, self.trigger_dir, self.view_dir):
-            dir_path = self.staging_area_dir / directory
+            dir_path = self.staging_dir / directory
             if directory and not dir_path.exists():
                 self.view.print_console(msg_level=MsgLvl.info, text=f"Creating staging sub directory: {dir_path}")
                 dir_path.mkdir(parents=False, exist_ok=True)
+
+        if self.enable_ut_code_generation:
+            for directory in (self.spec_dir, self.body_dir):
+                dir_path = self.ut_staging_dir / directory
+                if directory and not dir_path.exists():
+                    self.view.print_console(msg_level=MsgLvl.info, text=f"Creating ut staging sub directory: {dir_path}")
+                    dir_path.mkdir(parents=False, exist_ok=True)
 
         # Process table names as a list
         self.table_names_list = [name.strip() for name in self.table_names.split(',')]
@@ -234,6 +267,7 @@ class TAPIGenerator:
         packages_generated = 0
         views_generated = 0
         triggers_generated = 0
+        ut_packages_generated = 0
 
         schemas = {"Package Owner": self.package_owner,
                    "View Owner": self.view_owner,
@@ -278,6 +312,11 @@ class TAPIGenerator:
                     triggers_generated += 1
                 else:
                     triggers_skipped += 1
+
+                if self.enable_ut_code_generation:
+                    self.generate_ut_for_table(table_name)
+                    ut_packages_generated += 1
+
 
         result = {
             "packages_generated": packages_generated,
@@ -324,7 +363,7 @@ class TAPIGenerator:
         """
         Generate APIs for a specified table.
 
-        :param table_name: str, The table name to generate APIs for
+        :param table_name: str, The table name to generate APIs for.
         """
         table_name_lc = table_name.lower()
         api_controller = ApiGenerator(
@@ -337,12 +376,20 @@ class TAPIGenerator:
         )
 
         if self.col_auto_maintain_method == 'expression':
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column expressions.")
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Loading with auto-maintained column expressions")
             expressions_messages = api_controller.load_column_expressions()
             for message in expressions_messages:
                 self.view.print_console(msg_level=MsgLvl.warning, text=message)
 
+        elif self.col_auto_maintain_method == 'trigger':
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column trigger.")
+        else:
+            error_text = f"Invalid auto_maintain_method: {self.col_auto_maintain_method}"
+            raise UnsupportedOption(message=error_text)
+
         self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package for table: {table_name_lc.upper()}")
-        staging_realpath = self.staging_area_dir.resolve()
+        staging_realpath = self.staging_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
         spec_file_name = f"{self.tapi_pkg_name_prefix}{table_name_lc}{self.tapi_pkg_name_postfix }{self.spec_file_ext}"
@@ -354,9 +401,38 @@ class TAPIGenerator:
         self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
                              code=package_body_code)
 
+    def generate_ut_for_table(self, table_name: str):
+        """
+        Generate ut package for a specified table.
+
+        :param table_name: str, The table name to generate unit test package for.
+        """
+        table_name_lc = table_name.lower()
+        ut_controller = UtPLSQLGenerator(
+            database_session=self.db_session,
+            table_owner=self.table_owner,
+            table_name=table_name,
+            config_manager=self.config_manager,
+            options_dict=self.options_dict,
+            trace=self.trace
+        )
+
+        self.view.print_console(msg_level=MsgLvl.info, text=f"Generating TAPI package for table: {table_name_lc.upper()}")
+        staging_realpath = self.ut_staging_dir.resolve()
+
+        package_spec_code = ut_controller.gen_package_spec()
+        spec_file_name = f"{self.ut_pkg_name_prefix}{table_name_lc}{self.ut_pkg_name_postfix }{self.spec_file_ext}"
+        self.view.write_file(staging_dir=staging_realpath, directory=self.spec_dir, file_name=spec_file_name,
+                             code=package_spec_code)
+
+        package_body_code = ut_controller.gen_package_body()
+        body_file_name = f"{self.ut_pkg_name_prefix}{table_name_lc}{self.ut_pkg_name_postfix}{self.body_file_ext}"
+        self.view.write_file(staging_dir=staging_realpath, directory=self.body_dir, file_name=body_file_name,
+                             code=package_body_code)
+
 
     def generate_triggers_for_table(self, table_name: str):
-        staging_realpath = self.staging_area_dir.resolve()
+        staging_realpath = self.staging_dir.resolve()
         api_controller = ApiGenerator(
             database_session=self.db_session,
             table_owner=self.table_owner,
@@ -373,7 +449,7 @@ class TAPIGenerator:
 
 
     def generate_views_for_table(self, table_name: str):
-        staging_realpath = self.staging_area_dir.resolve()
+        staging_realpath = self.staging_dir.resolve()
         api_controller = ApiGenerator(
             database_session=self.db_session,
             table_owner=self.table_owner,
@@ -409,7 +485,7 @@ class TAPIGenerator:
             return result[0] > 0
 
 def main():
-    TAPIGenerator()
+    CodeManager()
 
 if __name__ == "__main__":
     main()

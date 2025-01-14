@@ -23,7 +23,8 @@ def get_constraint_description(constraint_type:str) -> str:
         'P': 'Primary Key constraint',
         'U': 'Unique Key constraint',
         'R': 'Referential (Foreign Key) constraint',
-        'C': 'Check constraint'
+        'C': 'Check constraint',
+        'N': 'Not Null constraint'
     }
 
     return constraint_descriptions.get(_constraint_type, 'Unsupported constraint type')
@@ -311,7 +312,9 @@ class TableConstraints:
         self.constraint_metadata_dict = {}
         self.constraint_list = []
 
-    def table_constraints(self) -> None:
+        self._table_constraints()
+
+    def _table_constraints(self) -> None:
         """
         Queries the Oracle data dictionary for column metadata and returns a nested dictionary.
 
@@ -323,34 +326,47 @@ class TableConstraints:
         """
         query = """
                 select 
-                    ac.constraint_name,
-                    ac.search_condition_vc,
-                    listagg(acc.column_name, ', ') within group (order by acc.position) as cons_columns,
-                    listagg(lower(acc.column_name), ', ') within group (order by acc.position) as cons_columns_lc,
-                    ac.constraint_type,
-                    ac.status
-                from 
-                    all_constraints ac
-                join 
-                    user_cons_columns acc
-                on 
-                    ac.constraint_name = acc.constraint_name 
-                    and ac.owner       = acc.owner
-                where 
-                    ac.table_name      = :table_name 
-                    and ac.owner       = :schema_name
-                    and ac.constraint_type in ('P', 'U', 'R', 'C')
-                group by 
-                    ac.owner, ac.table_name, ac.search_condition_vc, ac.constraint_name,    ac.constraint_type, ac.status, ac.deferrable, ac.deferred
+                    constraint_name,
+                    search_condition_vc,
+                    columns,
+                    columns_lc,
+                    constraint_type,
+                    status
+                from (
+                    select 
+                        ac.constraint_name,
+                        ac.search_condition_vc,
+                        listagg(acc.column_name, ', ') within group (order by acc.position) as columns,
+                        listagg(lower(acc.column_name), ', ') within group (order by acc.position) as columns_lc,
+                        case 
+                            when ac.constraint_type = 'C' and ac.search_condition_vc like '%NOT NULL%' then 'N'
+                            else ac.constraint_type
+                        end as constraint_type,
+                        ac.status
+                    from 
+                        all_constraints ac
+                    join 
+                        user_cons_columns acc
+                    on 
+                        ac.constraint_name = acc.constraint_name 
+                        and ac.owner       = acc.owner
+                    where 
+                        ac.table_name      = :table_name 
+                        and ac.owner       = :schema_name
+                        and ac.constraint_type in ('P', 'U', 'R', 'C')
+                    group by 
+                        ac.owner, ac.table_name, ac.search_condition_vc, ac.constraint_name, ac.constraint_type, ac.status, ac.deferrable, ac.deferred
+                )
                 order by 
                     case 
-                        when ac.constraint_type = 'P' then 1
-                        when ac.constraint_type = 'U' then 2
-                        when ac.constraint_type = 'R' then 3
-                        when ac.constraint_type = 'C' then 4
-                        else 5
-                    end, 
-                    ac.constraint_name
+                        when constraint_type = 'P' then 1  -- Primary key
+                        when constraint_type = 'U' then 2  -- Unique key
+                        when constraint_type = 'R' then 3  -- Foreign key
+                        when constraint_type = 'C' then 4  -- Regular check constraints
+                        when constraint_type = 'N' then 5  -- Not null constraints
+                        else 6
+                    end,
+                    constraint_name
         """
         try:
             with self.db_session.cursor() as cursor:
@@ -364,9 +380,15 @@ class TableConstraints:
                     constraint_name, search_condition, cons_columns, cons_columns_lc, constraint_type, status = row
                     constraint_name_desc = constraint_name.replace('_', ' ').title()
                     constraint_name_lc = constraint_name.lower()
+                    if search_condition:
+                        search_condition = search_condition.replace('"', '')
+                        search_condition = f"(condition = '{str(search_condition)}')"
+                    else:
+                        search_condition = ''
                     self.constraint_list.append(constraint_name)
                     # Store the data in the dictionary with constraint_name as the outer key
                     self.constraint_metadata_dict[constraint_name] = {
+                        'constraint_name': constraint_name,
                         'constraint_name_lc': constraint_name_lc,
                         'constraint_name_desc': constraint_name_desc,
                         'search_condition': search_condition,

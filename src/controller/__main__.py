@@ -1,7 +1,7 @@
-from ora_tapi import TAPIGenerator
+from ora_tapi import CodeManager
 
 def main():
-    TAPIGenerator()
+    CodeManager()
 
 if __name__ == "__main__":
     main()

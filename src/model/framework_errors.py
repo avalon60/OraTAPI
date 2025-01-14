@@ -56,5 +56,11 @@ class InvalidParameter(Exception):
         self.message = message
         super().__init__(message)
 
+class InconsistentRequest(Exception):
+    """This exception is raised when a contextually incorrect call or object instantiation is attempted We should never
+    see this, as it is deemed a bug."""
 
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
 

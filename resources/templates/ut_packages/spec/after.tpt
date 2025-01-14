@@ -1,0 +1,5 @@
+   --%aftereach
+   procedure teardown_each;  -- Teardown after each test
+
+   --%afterall
+   procedure teardown_all;  -- Teardown after all tests

@@ -1,0 +1,4 @@
+
+end %ut_pkg_name_prefix_lc%%table_name_lc%%ut_pkg_name_postfix_lc%;
+/
+--rollback drop package %package_owner_lc%.%ut_pkg_name_prefix_lc%%table_name_lc%%ut_pkg_name_postfix_lc%

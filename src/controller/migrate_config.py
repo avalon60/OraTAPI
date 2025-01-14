@@ -173,7 +173,9 @@ def migrate_files(previous_install_dir: Path) -> None:
         templates_dir / "packages" / "spec",
         templates_dir / "packages" / "procedures",
         templates_dir / "column_expressions" / "inserts",
-        templates_dir / "column_expressions" / "updates"
+        templates_dir / "column_expressions" / "updates",
+        templates_dir / "ut_packages" / "body",
+        templates_dir / "ut_packages" / "spec"
     ]
 
     # Loop through the templates directories to copy all .tpt files

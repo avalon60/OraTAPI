@@ -11,6 +11,7 @@ from configparser import ConfigParser
 
 from lib.file_system_utils import project_home
 from pathlib import Path
+from itertools import chain
 
 CONFIG_LOCATION = project_home() / 'resources' / 'config'
 TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
@@ -138,6 +139,8 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
         templates_dir / "packages" / "body",
         templates_dir / "packages" / "spec",
         templates_dir / "packages" / "procedures",
+        templates_dir / "ut_packages" / "body",
+        templates_dir / "ut_packages" / "spec"
     ]
 
     # Handle special directories
@@ -155,7 +158,12 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
     for regular_dir in regular_dirs:
         samples_dir = regular_dir / "samples"
         if samples_dir.exists():
-            for sample_file in samples_dir.glob(f"*.{template_category}.sample"):
+            for sample_file in chain(samples_dir.glob(f"*.{template_category}.sample"),
+                                     samples_dir.glob("*.common.sample")):
+                # Your code here
+
+                # Your code here
+
                 target_file = regular_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
