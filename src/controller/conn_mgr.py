@@ -1,7 +1,7 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-12-10"
 __description__ = "Command-line tool for managing database connection entries in a configuration file."
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 import argparse
 import configparser
 from pathlib import Path
