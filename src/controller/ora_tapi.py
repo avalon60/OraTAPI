@@ -137,6 +137,15 @@ class CodeManager:
         self.enable_ut_code_generation = self.config_manager.bool_config_value(config_section='ut_controls',
                                                                                config_key='enable_ut_code_generation',
                                                                                default=False)
+
+        enable_tapis_when_ut_enabled = self.config_manager.bool_config_value(config_section='behaviour',
+                                                                              config_key='enable_tapis_when_ut_enabled',
+                                                                              default=False)
+        if self.enable_ut_code_generation and  enable_tapis_when_ut_enabled:
+            self.enable_tapi_generation = True
+        else:
+            self.enable_tapi_generation = False
+
         if self.col_auto_maintain_method == 'expression':
             self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column expressions.")
             self.view.print_console(msg_level=MsgLvl.info, text=f"Loading with auto-maintained column expressions")
@@ -302,26 +311,28 @@ class CodeManager:
                                         msg_level=MsgLvl.error)
                 exit(1)
             else:
-                if package_enabled:
+                if package_enabled and self.enable_tapi_generation:
                     self.generate_api_for_table(table_name)
                     packages_generated += 1
                 else:
                     packages_skipped += 1
-                if view_enabled:
+                if view_enabled and self.enable_tapi_generation:
                     self.generate_views_for_table(table_name)
                     views_generated += 1
                 else:
                     views_skipped += 1
-                if trigger_enabled:
+                if trigger_enabled and self.enable_tapi_generation:
                     self.generate_triggers_for_table(table_name)
                     triggers_generated += 1
                 else:
                     triggers_skipped += 1
 
-                if self.enable_ut_code_generation:
+                if self.enable_ut_code_generation and package_enabled:
                     self.generate_ut_for_table(table_name)
                     packages_generated += 1
                     ut_packages_generated += 1
+                else:
+                    packages_skipped += 1
 
 
         result = {

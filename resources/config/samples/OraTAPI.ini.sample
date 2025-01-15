@@ -13,6 +13,10 @@ copyright_year = current
 # when using the -t/--table_names argument.
 skip_on_missing_table = true
 
+# Set enable_tapis_when_ut_enabled False, to disable generation of TAPI, View and Trigger code when
+# enable_ut_code_generation, in the ut_controls section, is set to true.
+enable_tapis_when_ut_enabled = true
+
 [formatting]
 indent_spaces = 3
 
