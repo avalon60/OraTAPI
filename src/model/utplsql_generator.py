@@ -132,8 +132,6 @@ class UtPLSQLGenerator:
         self.global_substitutions["STAB"] = ' ' * int(self.global_substitutions["indent_spaces"])
         self.global_substitutions["package_owner_lc"] = package_owner_lc
 
-
-        self.merged_dict = self.global_substitutions | self.options_dict
         # Check to see if the copyright date is expected to be set to today's date.
         # If not set as "current_date", we assume it's a static date.
         if self.global_substitutions["copyright_year"] == "current":
@@ -188,9 +186,38 @@ class UtPLSQLGenerator:
                                                                   config_key='ut_cc_test_throws',
                                                                   default='0')
 
+        self.ut_suite = self.config_manager.config_value(config_section='ut_suite',
+                                                         config_key='ut_prod_sub_domain_code',
+                                                         default='UPDATE_THIS')
+
+        self.ut_prod_code = self.config_manager.config_value(config_section='ut_controls',
+                                                                  config_key='ut_prod_code',
+                                                                  default='UPDATE_THIS')
+
+        ut_prod_sub_domain_code = self.config_manager.config_value(config_section='ut_controls',
+                                                                  config_key='ut_prod_sub_domain_code',
+                                                                  default='UPDATE_THIS')
+
+
+
+
         self.constraint_exceptions_map = {'P': self.ut_uk_test_throws, 'U': self.ut_uk_test_throws,
                                           'C': self.ut_cc_test_throws, 'N': self.ut_nn_test_throws,
                                           'R': self.ut_parent_fk_test_throws}
+
+        self.global_substitutions["ut_suite"] = self.ut_suite
+        self.global_substitutions["ut_suite_lc"] = self.ut_suite.lower()
+        self.global_substitutions["ut_prod_code"] = self.ut_prod_code
+        self.global_substitutions["ut_prod_code_lc"] = self.ut_prod_code.lower()
+
+        if ut_prod_sub_domain_code.lower() == 'auto_schema':
+            self.global_substitutions["ut_prod_sub_domain_code"]  = table_owner[:table_owner.find("_")]
+        elif ut_prod_sub_domain_code.lower() == 'auto_table':
+            self.global_substitutions["ut_prod_sub_domain_code"] = table_name[:table_name.find("_")]
+        else:
+            self.global_substitutions["ut_prod_sub_domain_code"] = ut_prod_sub_domain_code
+
+        self.global_substitutions["ut_prod_sub_domain_code_lc"] = self.global_substitutions["ut_prod_sub_domain_code"].lower()
 
         self.global_substitutions["sig_file_ext"] = self.sig_file_ext
         self.global_substitutions["body_file_ext"] = self.body_file_ext
@@ -208,6 +235,8 @@ class UtPLSQLGenerator:
 
         self.global_substitutions["ut_pkg_name_postfix_lc"] = str(self.global_substitutions["ut_pkg_name_postfix"]).lower()
         self.global_substitutions["ut_pkg_name_prefix_lc"] = str(self.global_substitutions["ut_pkg_name_prefix"]).lower()
+
+        self.merged_dict = self.global_substitutions | self.options_dict
 
         self.table = Table(database_session=database_session,
                            table_owner=table_owner,
