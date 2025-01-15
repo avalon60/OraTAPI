@@ -347,7 +347,7 @@ class TableConstraints:
                     from 
                         all_constraints ac
                     join 
-                        user_cons_columns acc
+                        all_cons_columns acc
                     on 
                         ac.constraint_name = acc.constraint_name 
                         and ac.owner       = acc.owner
