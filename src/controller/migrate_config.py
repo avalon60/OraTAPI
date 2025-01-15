@@ -2,8 +2,12 @@
 """
 Author: Clive Bostock
 Date: 2024-12-31
-Description: Script to initialise, export, or import configuration and template files for OraTAPI.
+Description: Script to migrate, export, or import configuration and template files for OraTAPI.
 """
+__author__ = "Clive Bostock"
+__date__ = "2024-12-31"
+__description__ = "Script to migrate, export, or import configuration and template files for OraTAPI."
+__version__ = "1.4.1"
 
 import argparse
 import shutil
@@ -41,10 +45,8 @@ def import_resources(import_path: Path) -> None:
         zipf.extractall(resources_dir)
     print(f"Imported resources from {import_path}")
 
-    # Call update_version_from_sample after import
     config_sample = resources_dir / "config" / "samples" / "OraTAPI.ini.sample"
     config_target = resources_dir / "config" / "OraTAPI.ini"
-    update_version_from_sample(config_sample, config_target)
     compare_config_files(config_sample_file=config_sample, config_file_path=config_target)
 
 
@@ -97,35 +99,6 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
     print('\nOraTAPI.ini checks complete.\n')
 
 
-def update_version_from_sample(sample_file: Path, target_file: Path) -> None:
-    """
-    Update the version in the configuration file from the sample file.
-
-    :param sample_file: Path to the sample configuration file.
-    :param target_file: Path to the target configuration file.
-    """
-    sample_config = ConfigParser()
-    sample_config.read(sample_file)
-
-    if "OraTAPI" in sample_config and "version" in sample_config["OraTAPI"]:
-        version = sample_config["OraTAPI"]["version"]
-
-        target_config = ConfigParser()
-        if target_file.exists():
-            target_config.read(target_file)
-        else:
-            target_config.add_section("OraTAPI")
-
-        target_config["OraTAPI"]["version"] = version
-
-        with target_file.open("w", encoding="utf-8") as f:
-            target_config.write(f)
-
-        print(f"Updated version in {target_file.relative_to(project_home())} to {version}.")
-    else:
-        print(f"Version not found in {sample_file.relative_to(project_home())}.")
-
-
 def migrate_files(previous_install_dir: Path) -> None:
     """
     Migrate files from the previous installation.
@@ -159,7 +132,7 @@ def migrate_files(previous_install_dir: Path) -> None:
     pi_columns_csv_new = config_dir / "pi_columns.csv"
     shutil.copyfile(pi_columns_csv_previous, pi_columns_csv_new)
     files_migrated += 1
-    update_version_from_sample(config_sample, config_target)
+
     print(f"Migrated: {pi_columns_csv_previous.absolute()} -> {pi_columns_csv_new.absolute()}")
 
 
@@ -202,6 +175,7 @@ def main() -> None:
     """
     Main function to parse arguments and perform actions.
     """
+    print(f'OraTAPI migrate_config {__version__}')
     print('OraTAPI config migration started...')
     parser = argparse.ArgumentParser(
         description="Migrate, export, or import OraTAPI configuration and template files."

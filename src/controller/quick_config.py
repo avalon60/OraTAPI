@@ -2,8 +2,12 @@
 """
 Author: Clive Bostock
 Date: 2024-12-31
-Description: Script to initialise config and template files from resources/templates.
+Description: Bootstrap utility to initialise config and template files from resources/templates.
 """
+__author__ = "Clive Bostock"
+__date__ = "2024-12-31"
+__description__ = "Configuration bootstrap utility for OraTAPI"
+__version__ = "1.4.1"
 
 import argparse
 import shutil
@@ -65,33 +69,6 @@ def compare_config_files(config_file_path: Path, config_sample_file: Path) -> No
 
     print('\nOraTAPI.ini checks complete.\n')
 
-def update_version_from_sample(sample_file, target_file):
-    """
-    Reads the version from the OraTAPI.ini.sample file and updates it in the target OraTAPI.ini file.
-
-    :param sample_file: Path to the sample configuration file.
-    :param target_file: Path to the target configuration file.
-    """
-    sample_config = ConfigParser()
-    sample_config.read(sample_file)
-
-    if "OraTAPI" in sample_config and "version" in sample_config["OraTAPI"]:
-        version = sample_config["OraTAPI"]["version"]
-
-        target_config = ConfigParser()
-        if target_file.exists():
-            target_config.read(target_file)
-        else:
-            target_config.add_section("OraTAPI")
-
-        target_config["OraTAPI"]["version"] = version
-
-        with target_file.open("w", encoding="utf-8") as f:
-            target_config.write(f)
-
-        print(f"Updated version in {target_file.relative_to(project_home())} to {version}.")
-    else:
-        print(f"Version not found in {sample_file.relative_to(project_home())}.")
 
 def copy_files(template_category: str, force: bool, templates_only: bool=False) -> None:
     """
@@ -116,8 +93,6 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
         shutil.copyfile(config_sample, config_target)
         files_copied += 1
         print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
-    else:
-        update_version_from_sample(config_sample, config_target)
 
     csv_sample = config_dir / "samples" / "pi_columns.csv.sample"
     csv_target = config_dir / "pi_columns.csv"
@@ -202,6 +177,7 @@ def main() -> None:
         print("ERROR: The -T/--templates_only argument must accompany -f/--force (Doesn't overwrite config files)")
         exit(1)
 
+    print(f'OraTAPI quick config utility {__version__}')
     print('OraTAPI quick config started...')
     copy_files(args.template_category, args.force, templates_only=args.templates_only)
     print('OraTAPI quick config complete.')

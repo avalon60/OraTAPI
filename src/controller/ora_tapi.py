@@ -92,8 +92,7 @@ class CodeManager:
 
         self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv', config_file_path=config_file_path)
 
-        self.ora_tapi_version = self.config_manager.config_value(config_section='OraTAPI',
-                                                                 config_key='version')
+        self.ora_tapi_version = __version__
 
         self.skip_on_missing_table = self.config_manager.bool_config_value(config_section='behaviour',
                                                                            config_key='skip_on_missing_table')
