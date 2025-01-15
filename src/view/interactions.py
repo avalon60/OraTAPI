@@ -10,9 +10,13 @@ from pathlib import Path
 from model.framework_errors import InvalidParameter
 from view.console_display import MsgLvl, ConsoleMgr
 from lib.file_system_utils import project_home
+import os
+
 proj_home = project_home()
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
+
+default_tapi_author = os.getlogin().lower()
 
 class MissingParameterError(Exception):
     """Exception raised for missing parameters."""
@@ -20,6 +24,7 @@ class MissingParameterError(Exception):
         super().__init__(f"Missing required parameter: {parameter_name}")
 
 class InvalidParameterError(Exception):
+    """Exception raised for missing parameters."""
     """Exception raised for missing parameters."""
     def __init__(self, message: str):
         super().__init__(f"invalid parameter: {message}")
@@ -101,7 +106,7 @@ class Interactions:
         help_text = f"Application name - included to the package header. Default: {default_app_name}"
         parser.add_argument('-A', '--app_name', type=str, help=help_text, default=default_app_name)
 
-        parser.add_argument('-a', '--tapi_author', type=str, help="TAPI author", default='OraTAPI generator')
+        parser.add_argument('-a', '--tapi_author', type=str, help="TAPI author", default=default_tapi_author)
 
         parser.add_argument('-c', '--conn_name', type=str, help="Database connection name (created via OraTAPI connection manager).")
 
