@@ -11,12 +11,13 @@ from model.framework_errors import InvalidParameter
 from view.console_display import MsgLvl, ConsoleMgr
 from lib.file_system_utils import project_home
 import os
+import getpass
 
 proj_home = project_home()
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
-default_tapi_author = os.getlogin().lower()
+default_tapi_author =  getpass.getuser()
 
 class MissingParameterError(Exception):
     """Exception raised for missing parameters."""

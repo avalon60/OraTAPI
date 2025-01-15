@@ -186,9 +186,9 @@ class UtPLSQLGenerator:
                                                                   config_key='ut_cc_test_throws',
                                                                   default='0')
 
-        self.ut_suite = self.config_manager.config_value(config_section='ut_suite',
-                                                         config_key='ut_prod_sub_domain_code',
-                                                         default='UPDATE_THIS')
+        self.ut_suite = self.config_manager.config_value(config_section='ut_controls',
+                                                         config_key='ut_suite',
+                                                         default='')
 
         self.ut_prod_code = self.config_manager.config_value(config_section='ut_controls',
                                                                   config_key='ut_prod_code',
