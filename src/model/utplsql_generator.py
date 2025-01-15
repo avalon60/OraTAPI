@@ -84,12 +84,15 @@ class UtPLSQLGenerator:
         self.body_file_ext = self.config_manager.config_value(config_section="file_controls", config_key="body_file_ext")
 
 
-        self.row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
+        row_vers_column_name = self.config_manager.config_value(config_section="api_controls",
                                                                      config_key="row_vers_column_name",
                                                                      default=None)
+
         self.col_auto_maintain_method = self.config_manager.config_value(config_section="api_controls",
-                                                                     config_key="col_auto_maintain_method",
-                                                                     default='trigger')
+                                                                         config_key="col_auto_maintain_method",
+                                                                         default='trigger')
+
+        self.row_vers_column_name = row_vers_column_name.upper()
 
         auto_maintained_cols = self.config_manager.config_value(config_section="api_controls",
                                                                 config_key="auto_maintained_cols",
@@ -139,6 +142,18 @@ class UtPLSQLGenerator:
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                             config_key='ora_tapi_csv_dir',
                                                             default=str(APP_HOME / 'OraTAPI.csv'))
+
+        auto_maintained_cols = self.config_manager.config_value(config_section='api_controls',
+                                                            config_key='auto_maintained_cols',
+                                                            default=str(APP_HOME / 'OraTAPI.csv'))
+        self.auto_maintained_cols = auto_maintained_cols.replace(' ','').upper().split(',')
+
+        row_vers_column_name = self.config_manager.config_value(config_section='api_controls',
+                                                            config_key='row_vers_column_name',
+                                                            default=str(APP_HOME / 'OraTAPI.csv'))
+
+
+
         ora_tapi_csv_dir = Path(ora_tapi_csv_dir)
         self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv',
                                       config_file_path=self.config_manager.config_file_path,
@@ -313,9 +328,16 @@ class UtPLSQLGenerator:
 
         for constraint in self.table_constraints.constraint_list:
             constraint_dict = self.table_constraints.constraint_metadata_dict[constraint]
+
+            column_name = constraint_dict["column_name"]
+            if column_name in self.auto_maintained_cols or column_name == self.row_vers_column_name:
+                continue
+
             _procedure_name = constraint_dict["constraint_name_lc"]
             constraint_type = constraint_dict["constraint_type"]
             merged_dict["throws_code"] = self.constraint_exceptions_map[constraint_type]
+
+
 
             _package_procedure = self._construct_constraint_test(procedure_basename=constraint,
                                                                  procedure_name=_procedure_name,
@@ -413,8 +435,14 @@ class UtPLSQLGenerator:
 
         for constraint in self.table_constraints.constraint_list:
             constraint_dict = self.table_constraints.constraint_metadata_dict[constraint]
+
+            column_name = constraint_dict["column_name"]
+            if column_name in self.auto_maintained_cols or column_name == self.row_vers_column_name:
+                continue
+
             _procedure_name = constraint_dict["constraint_name_lc"]
             constraint_type = constraint_dict["constraint_type"]
+
             merged_dict["throws_code"] = self.constraint_exceptions_map[constraint_type]
 
             _package_procedure = self._construct_constraint_test(procedure_basename=constraint,
