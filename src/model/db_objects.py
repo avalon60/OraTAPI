@@ -301,9 +301,9 @@ class TableConstraints:
         :type trace: bool
         """
         self.db_session = database_session
-        self.schema_name = table_owner
+        self.schema_name = table_owner.upper()
         self.schema_name_desc = table_owner.replace('_', ' ').title()
-        self.table_name = table_name
+        self.table_name = table_name.upper()
         self.table_name_desc = table_name.replace('_', ' ').title()
         self.config_manager = config_manager
         self.trace = trace
