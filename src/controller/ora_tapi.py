@@ -26,7 +26,7 @@ DEFAULT_STAGING = "staging"
 prog_bin = Path(__file__).resolve().parent
 app_home = project_home()
 
-prog_name = Path(__file__).name
+PROG_NAME = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
@@ -44,12 +44,12 @@ class CodeManager:
         options_dict = copy.deepcopy(args_dict)
 
         exec_start_timestamp = current_timestamp()
-        self.view.print_console(text=f'{prog_name}: Version: {__version__}',
+        self.view.print_console(text=f'{PROG_NAME}: Version: {__version__}',
                                 msg_level=MsgLvl.highlight)
-        self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} started at: {exec_start_timestamp}',
+        self.view.print_console(text=f'{PROG_NAME}: Run Id: {RUN_ID} started at: {exec_start_timestamp}',
                                 msg_level=MsgLvl.highlight)
         epoc_start_ts = int(time.time())
-        self.view.print_console(text=f'{prog_name}: Command line parameters:-',
+        self.view.print_console(text=f'{PROG_NAME}: Command line parameters:-',
                                 msg_level=MsgLvl.highlight)
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
         for key in sorted(options_dict.keys()):  # Sort the keys
@@ -224,7 +224,7 @@ class CodeManager:
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
         exec_end_timestamp = current_timestamp()
         epoc_end_ts = int(time.time())
-        self.view.print_console(text=f'{prog_name}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
+        self.view.print_console(text=f'{PROG_NAME}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
                                 msg_level=MsgLvl.highlight)
         elapsed_time = format_elapsed_time(start_ts=epoc_start_ts, end_ts=epoc_end_ts)
         self.view.print_console(text=f'Elapsed time: {elapsed_time}',
@@ -320,6 +320,7 @@ class CodeManager:
 
                 if self.enable_ut_code_generation:
                     self.generate_ut_for_table(table_name)
+                    packages_generated += 1
                     ut_packages_generated += 1
 
 

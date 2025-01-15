@@ -131,28 +131,21 @@ class Interactions:
         help_text = f"The schema in which to place the generated views. Default: {view_owner}"
         parser.add_argument('-vo', '--view_owner', type=str, help=help_text, default=view_owner)
 
-        parser.add_argument('-t', '--table_names', type=str, help="Comma separated list of table names. Default: all",
-                            default='%')
+        parser.add_argument('-t', '--table_names', type=str, help="A space separated list of table names. Default: all",
+                            nargs="+", default='%')
 
-        help_text = f"Comma-separated list of API types. Valid options: insert, select, update, upsert, delete, merge.\n (Default setting: {default_api_types})"
-        parser.add_argument('-T', '--api_types', type=str, default=default_api_types, help=help_text)
+        api_types = default_api_types.replace(' ','').split(',')
+        help_text = f"Space-separated list of API types. Valid options: insert, select, update, upsert, delete or merge.\n (Default setting: {default_api_types})"
+        parser.add_argument('-T', '--api_types', type=str, default=api_types, help=help_text, nargs="+")
 
-        help_text = f"Comma-separated list of unit test API types. Valid options: insert, select, update, upsert, delete, merge.\n (Default setting: {default_api_types})"
-        parser.add_argument('-U', '--ut_api_types', type=str, default=default_api_types, help=help_text)
+        help_text = f"Space-separated list of unit test API types. Valid options: insert, select, update, upsert, delete or merge.\n (Default setting: {default_api_types})"
+        parser.add_argument('-U', '--ut_api_types', type=str, default=api_types, help=help_text, nargs="+")
 
         args = parser.parse_args()
-
-        # Convert api_types to a list
-        if args.api_types:
-            args.api_types = [api_type.strip().lower() for api_type in args.api_types.split(',')]
-
 
         for api_type in args.api_types:
             if api_type not in VALID_API_TYPES:
                 raise InvalidParameter(f'Invalid option "{api_type} specified with ""-T/--api_types')
-
-        if args.ut_api_types:
-            args.ut_api_types = [api_type.strip().lower() for api_type in args.ut_api_types.split(',')]
 
         for api_type in args.ut_api_types:
             if api_type not in VALID_API_TYPES:

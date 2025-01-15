@@ -20,6 +20,7 @@ from itertools import chain
 CONFIG_LOCATION = project_home() / 'resources' / 'config'
 TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
 CONFIG_FILE_PATH = CONFIG_LOCATION / 'OraTAPI.ini'
+PROG_NAME = Path(__file__).name
 
 def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
     """
@@ -177,7 +178,7 @@ def main() -> None:
         print("ERROR: The -T/--templates_only argument must accompany -f/--force (Doesn't overwrite config files)")
         exit(1)
 
-    print(f'OraTAPI quick config utility {__version__}')
+    print(f"{PROG_NAME}: OraTAPI config utility version: {__version__}")
     print('OraTAPI quick config started...')
     copy_files(args.template_category, args.force, templates_only=args.templates_only)
     print('OraTAPI quick config complete.')

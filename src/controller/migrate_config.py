@@ -17,6 +17,7 @@ from pathlib import Path
 
 from lib.file_system_utils import project_home
 
+PROG_NAME = Path(__file__).name
 
 def export_resources(export_path: Path) -> None:
     """
@@ -175,7 +176,7 @@ def main() -> None:
     """
     Main function to parse arguments and perform actions.
     """
-    print(f'OraTAPI migrate_config {__version__}')
+    print(f"{PROG_NAME}: OraTAPI migration/export/import utility version: {__version__}")
     print('OraTAPI config migration started...')
     parser = argparse.ArgumentParser(
         description="Migrate, export, or import OraTAPI configuration and template files."

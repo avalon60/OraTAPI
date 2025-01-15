@@ -8,6 +8,7 @@ from pathlib import Path
 import getpass
 from model.user_security import UserSecurity
 
+PROG_NAME = Path(__file__).name
 CONFIG_PATH = Path.home() / ".OraTAPI/dsn_credentials.ini"
 
 user_security = UserSecurity(project_identifier="OraTAPI")
@@ -132,7 +133,7 @@ def save_config(config):
 
 
 def main():
-    print(f'OraTAPI connection manager {__version__}')
+    print(f"{PROG_NAME}: OraTAPI connection manager utility version: {__version__}")
     ensure_config_file()
     parser = argparse.ArgumentParser(description="Database connection manager.",
                                      epilog="Used to create/edit/delete or store named database connections. "
