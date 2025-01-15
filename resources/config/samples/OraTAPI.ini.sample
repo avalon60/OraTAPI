@@ -107,8 +107,11 @@ include_commit = false
 # Set enable_ut_code_generation = true, to generate starter code for utPLSQL testing packages.
 enable_ut_code_generation = false
 
+# The %suite annotation substitutions string
+ut_suite =
+
 # Update ut_product_code, to effect the suitepath first component (before the dot).
-ut_prod_code = prod_code
+ut_prod_code = ProductCode
 
 # If ut_prod_sub_domain_code is set to auto_table, then the first characters in the table name, before the first underscore
 # are assumed. When set to auto_schema, then the first characters in the schema name, before the first underscore
