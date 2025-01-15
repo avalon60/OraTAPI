@@ -329,8 +329,8 @@ class UtPLSQLGenerator:
         for constraint in self.table_constraints.constraint_list:
             constraint_dict = self.table_constraints.constraint_metadata_dict[constraint]
 
-            column_name = constraint_dict["column_name"]
-            if column_name in self.auto_maintained_cols or column_name == self.row_vers_column_name:
+            cons_columns = str(constraint_dict["cons_columns"]).replace(' ', '').upper().split(',')
+            if not set(cons_columns).isdisjoint(self.auto_maintained_cols) or self.row_vers_column_name in cons_columns:
                 continue
 
             _procedure_name = constraint_dict["constraint_name_lc"]
@@ -436,8 +436,8 @@ class UtPLSQLGenerator:
         for constraint in self.table_constraints.constraint_list:
             constraint_dict = self.table_constraints.constraint_metadata_dict[constraint]
 
-            column_name = constraint_dict["column_name"]
-            if column_name in self.auto_maintained_cols or column_name == self.row_vers_column_name:
+            cons_columns = str(constraint_dict["cons_columns"]).replace(' ', '').upper().split(',')
+            if not set(cons_columns).isdisjoint(self.auto_maintained_cols) or self.row_vers_column_name in cons_columns:
                 continue
 
             _procedure_name = constraint_dict["constraint_name_lc"]
