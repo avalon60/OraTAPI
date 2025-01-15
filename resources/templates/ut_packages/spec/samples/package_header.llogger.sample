@@ -29,7 +29,7 @@ as
 %STAB%--%suite(%ut_suite%)
 
 %STAB%/* Constructed as a namespace hierarchy, delimited by dot - affects the report layout)
-%STAB%--%suitepath(%ut_prod_code_lc%.%ut_prod_sub_domain_code%
+%STAB%--%suitepath(%ut_prod_code_lc%.%ut_prod_sub_domain_code%)
 
 %STAB%/* human readable form of what the suite covers */
 %STAB%-- %displayname(%table_name_lc% TAPIs)
