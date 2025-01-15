@@ -76,7 +76,7 @@ class CodeManager:
         self.dsn = options_dict['dsn']
         self.table_owner = str(options_dict['table_owner']).upper()
         self.table_owner_lc = self.table_owner.lower()
-        self.table_names = str(options_dict['table_names']).upper()
+        self.table_names = options_dict['table_names']
         self.conn_name = options_dict['conn_name']
         self.staging_dir = Path(options_dict['staging_dir'])
         self.ut_staging_dir = Path(options_dict['ut_staging_dir'])
@@ -183,7 +183,7 @@ class CodeManager:
                     dir_path.mkdir(parents=False, exist_ok=True)
 
         # Process table names as a list
-        self.table_names_list = [name.strip() for name in self.table_names.split(',')]
+        self.table_names_list = self.table_names
 
         user_security = UserSecurity(project_identifier="OraTAPI")
         if self.conn_name:
