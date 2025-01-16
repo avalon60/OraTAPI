@@ -1,3 +1,8 @@
+%STAB%--%aftereach
+%STAB%procedure teardown_each;  -- Teardown after each test
+
+%STAB%--%afterall
+%STAB%procedure teardown_all;  -- Teardown after all tests
 
 end %ut_pkg_name_prefix_lc%%table_name_lc%%ut_pkg_name_postfix_lc%;
 /

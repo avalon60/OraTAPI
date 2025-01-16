@@ -33,3 +33,9 @@ as
 
 %STAB%/* human readable form of what the suite covers */
 %STAB%-- %displayname(%table_name_lc% TAPIs)
+
+%STAB%--%beforeall
+%STAB%procedure setup_all;   -- Setup before all tests
+
+%STAB%--%beforeeach   
+%STAB%procedure setup_each;  -- Setup before each test
