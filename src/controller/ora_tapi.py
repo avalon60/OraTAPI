@@ -143,6 +143,10 @@ class CodeManager:
                                                                               default=False)
         if self.enable_ut_code_generation and  enable_tapis_when_ut_enabled:
             self.enable_tapi_generation = True
+        elif self.enable_ut_code_generation and not enable_tapis_when_ut_enabled:
+            self.enable_tapi_generation = False
+        elif not self.enable_ut_code_generation:
+            self.enable_tapi_generation = True
         else:
             self.enable_tapi_generation = False
 
