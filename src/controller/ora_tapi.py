@@ -62,6 +62,7 @@ class CodeManager:
 
         options_dict["config_file_path"] = config_file_path
         self.options_dict = options_dict
+        self.options_dict["version"] = __version__
         self.api_types = self.validate_api_types(options_dict.get('api_types'))
         self.config_file_path = options_dict["config_file_path"]
         self.tapi_author = options_dict['tapi_author']
