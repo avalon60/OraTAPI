@@ -7,7 +7,7 @@ Description: Bootstrap utility to initialise config and template files from reso
 __author__ = "Clive Bostock"
 __date__ = "2024-12-31"
 __description__ = "Configuration bootstrap utility for OraTAPI"
-__version__ = "1.4.17"
+__version__ = "1.4.18"
 
 import argparse
 import shutil
