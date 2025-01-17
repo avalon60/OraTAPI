@@ -1,7 +1,0 @@
--- Test the %table_name_lc%.constraint_name_lc constraint
-%STAB%procedure test_%constraint_name_lc%
-%STAB%is
-%STAB%begin
-%STAB%%STAB%null;
-%STAB%end test_%constraint_name_lc%;
-
