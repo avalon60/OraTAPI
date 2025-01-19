@@ -40,6 +40,7 @@ Version 1.4.19
       - [\[logger\]](#logger)
       - [\[schemas\]](#schemas)
       - [\[misc\]](#misc)
+      - [\[ut\_control\]](#ut_control)
       - [\[console\]](#console)
       - [Example configuration file:](#example-configuration-file)
     - [Fine-Grained File Controls](#fine-grained-file-controls)
@@ -53,6 +54,9 @@ Version 1.4.19
       - [Maintained by Column Expression](#maintained-by-column-expression)
     - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
     - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
+  - [utPLSQL Support](#utplsql-support)
+    - [Overview](#overview)
+    - [Controls](#controls)
   - [Template Substitution Strings](#template-substitution-strings)
   - [Connection Manager](#connection-manager)
   - [Sample Generated Table API Packages:](#sample-generated-table-api-packages)
@@ -76,6 +80,7 @@ OraTAPI is a versatile tool that offers the following configurable options:
 - **Customisable APIs**: Allows you to define API names, signatures, and behaviours through a configuration file.  
 - **Table Triggers**: Generates customisable table-level trigger code.  
 - **View Generation**: Automatically generates view DDL scripts.  
+- **utPLSQL Support**: Generate utPLSQL package spec and starter body for utPLSQL tests 
 - **Template-Based Customisation**: Code generation is largely template-driven, with example templates provided, offering extensive customisation capabilities.  
 - **Optimistic Locking Support**: Supports concurrency control with "row version" columns for implementing optimistic locking.  
 - **PL/SQL Logger Integration**: Easily integrates with the [PLSQL logging utility](https://github.com/OraOpenSource/Logger), including mechanisms to blocklist specific columns from being logged.  
@@ -275,8 +280,8 @@ Note that in this example, we are opting for the "Liquibase with Logger" templat
 To underscore the point, you should either specify `-t basic`, `-t liquibase`,  `-t logger` or `-t llogger`. Optionally, specify `--template_category` 
 instead of `-t`.  
 
-If you run the command more than once, it will have no effect. This is to prevent you from overwriting any subsequent 
-customisations to the configuration. However, you can force an overwrite, by adding the `-f/--force` flag. Example:
+If you run the command more than once, it will have no effect. This is to prevent you from overwriting any later 
+customisations to the configuration. However, you can force an overwriting, by adding the `-f/--force` flag. Example:
 
    ```bash
    cd <path-to-installation-folder>
@@ -309,7 +314,7 @@ You should test your connection to the database, via SQLcl or SQL Developer, bef
 
 NOTES:   
 If you are on Windows and have Git Bash installed, the Linux/macOS instructions should also work in a Git Bash terminal. 
-OraTAPI can be used via Powershell or Git Bash. 
+OraTAPI can be used via PowerShell or Git Bash. 
 
 ## Performing Upgrades
 It's worth noting that when you unzip the installation archive file, it creates a directory, whose name is of the form 
@@ -329,13 +334,13 @@ To complete the installation and migrate your previous settings, perform these s
    cd <path-to-installation-folder>
    ./bin/migrate_config.sh -o <path_to_old_install_dir>
 ```
-This will result in your old OraTAPI.ini file, CSV files and templates, being copied to the new installation.  
+This will result in your old OraTAPI.ini file, CSV files, and templates, being copied to the new installation.  
 
 Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
 
-If new config settings are introduced then you will get feedback from the migration tool. It will list any new 
-OraTAPI.ini sections which you have missing as well as any properties. In addition, it will inform you if there are 
-any obsoleted entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.  
+If new config settings are introduced, then you will get feedback from the migration tool. It will list any new 
+OraTAPI.ini sections that you have missing as well as any properties. In addition, it will inform you if there are 
+any obsolete entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.  
 
 Any previously configured named database connections (see [Connection Manager](#connection-manager)) are preserved since they are located under the directory 
 $HOME/.OraTAPI.  
@@ -357,7 +362,7 @@ options:
                         Import resources from a ZIP file.
 ```
 Hopefully you will have noticed that `migrate_config`, also has export / import options. 
-You can use this to back-up / restore or transport settings.These also constitute an alternative to 
+You can use this to back-up / restore or transport settings. These also constitute an alternative to 
 using the `-o / --old_install_dir` option, since you can take an export of your old configuration, 
 and import from the export file to your new installation.
 
@@ -388,7 +393,7 @@ OraTAPI operation complete.
 ---
 
 ## The Primary Components
-The OraTAPI tools consists of 3 major components:
+The OraTAPI tools consist of three major parts:
 
 - The ora_tapi command line tool.
 - Code templates.
@@ -396,8 +401,8 @@ The OraTAPI tools consists of 3 major components:
 
 The `ora_tapi` command line tool is used to launch the code generation process.
 
-The code templates form the basic shape of the generated source code files. There are various templates which are read 
-at runtime and constitute regions such as package file headers, footers and procedures. You can also implement view and 
+The code templates form the basic shape of the generated source code files. There are various templates that are read 
+at runtime and constitute regions such as package file headers, footers, and procedures. You can also implement view and 
 trigger templates, and sample templates are provided for you to copy and modify. You should not amend the original sample 
 files. These have a suffix of `.tpt.sample`. There are also `column expression` templates. These are discussed in 
 the [Maintained by Column Expression](#maintained-by-column-expression) section.
@@ -405,7 +410,7 @@ the [Maintained by Column Expression](#maintained-by-column-expression) section.
 Finally, much of the behaviour of OraTAPI is governed by the configuration of the `OraTAPI.ini` file, which is located 
 in the `config` directory. The OraTAPI.ini file consists of property/value pairs, which are located into various 
 sections, which are used to categorise their purpose. Section names are enclosed in square brackets 
-(<i>e.g. [<api_controls]</i>). For the purposes of the OraTAPI, each property name in the file must be globally unique, 
+(<i>e.g. [<api_controls]</i>). Specifically, for the OraTAPI framework, each property name in the file must be globally unique, 
 irrespective of which section it belongs to.
 
 ### Command-line Tools
@@ -497,7 +502,7 @@ Oracle `ALL_` data dictionary views.
 Run OraTAPI from the command line with the desired options.
 
 ### Examples
-In the following examples we are assuming that we are running with a MacOS/Linux type environment. For Windows 
+In the following examples, we are assuming that we are running with a macOS/Linux type environment. For Windows 
 PowerShell, you need to assume the commands have a `.ps1` extension, instead of `.sh`.  
 
 The examples also assume that you have navigated to the root install directory of OraTAPI.
@@ -511,7 +516,7 @@ Using the terse flags, this is equivalent to:
 bin/ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock
 ```
 #### More Advanced Example
-Here we want to override the default target schemas for the packages, views and triggers:
+Here we want to override the default target schemas for the packages, views, and triggers:
 ```bash
 bin/ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -po logic -to core -vo logic
 ```
@@ -696,19 +701,19 @@ z  - Example: `select_procname = get`
 
 - **insert_procname**: Specifies the procedure name to be used for insert API.
   - Example: `insert_procname = ins`
-  - **Purpose**: Customises the naming conventions for the insert procedure.
+  - **Purpose**: Customises the naming conventions for the insert API procedures.
 
-- **merge_procname**: Specifies the procedure name to be used formerge API.
+- **merge_procname**: Specifies the procedure name to be used for merge API procedures.
   - Example: `merge_procname = mrg`
-  - **Purpose**: Customises the naming conventions for the merge procedure.
+  - **Purpose**: Customises the naming conventions for the merge API procedures.
 
-- **update_procname**: Specifies the procedure name to be used for update API.
+- **update_procname**: Specifies the procedure name to be used for update API procedures.
   - Example: `update_procname = upd`
-  - **Purpose**: Customises the naming conventions for the update procedure.
+  - **Purpose**: Customises the naming conventions for the update API procedures.
 
-- **upsert_procname**: Specifies the procedure name to be used for upsert API.
+- **upsert_procname**: Specifies the procedure name to be used for upsert API procedures.
   - Example: `upsert_procname = ups`
-  - **Purpose**: Customises the naming conventions for the upsert procedure.
+  - **Purpose**: Customises the naming conventions for the upsert API procedures.
 
 - **auto_maintained_cols**: A comma-separated list of columns managed automatically by triggers or column expressions (e.g., timestamps, user fields).
   - Example: `auto_maintained_cols = created_by, created_on, updated_by, updated_on`
@@ -779,9 +784,58 @@ z  - Example: `select_procname = get`
 ---
 
 #### [misc]
-- **view_name_suffix**: Defines a suffix that is added to the derived view name.
+- **view_name_suffix**: Defines a suffix to be added to the derived view name.
   - Example: `view_name_suffix = _v`
   - **Purpose**: Customises the name of generated views by appending the suffix.
+
+---
+
+#### [ut_control]
+- **enable_ut_code_generation**: Enables / disables code generation of utPLSQL packages.
+  - Example: `enable_ut_code_generation = true`
+  - **Purpose**: When set to true / on, utPLSQL code generation is switched on. When set to false / off utPLSQL code generation is disabled.
+
+- **ut_suite**: Specify a string for the %suite annotation
+  - Example: `ut_suite = HR`
+  - **Purpose**: See utPLSQL documentation for more details on [annotations](https://www.utplsql.org/utPLSQL/v3.0.4/userguide/annotations.html).
+
+- **ut_prod_code**: Specify a string for the first (dot separated) component of the %suitepath annotation
+  - Example: `ut_prod_code = hr`
+  - **Purpose**: See utPLSQL documentation for more details on [annotations](https://www.utplsql.org/utPLSQL/v3.0.4/userguide/annotations.html).
+
+- **ut_prod_sub_domain_code**: Specify a string for the second (dot separated) component of the %suitepath annotation
+  - Example: `ut_prod_sub_domain_code = dept`
+  - **Purpose**: If set to the value `auto_table`, the first characters of the table name, leading up to the first underscore are assumed. Otherwise 
+    the value is taken as a literal. See utPLSQL documentation for more details on [annotations](https://www.utplsql.org/utPLSQL/v3.0.4/userguide/annotations.html).
+
+- **ut_pkg_name_prefix**: Specify a string to be used as a prefix in formulating the generated package name. 
+  - Example: `ut_pkg_name_prefix = ut_`
+  - **Purpose**: Allows you to define a character string with which to append when generating the utPLSQL package names (<prefix_string><table_name><postfix_string>).
+
+- **ut_pkg_name_postfix**: Specify a string to be used as a postfix when formulating the generated package name. 
+  - Example: `ut_pkg_name_postfix = _tapi`
+  - **Purpose**: Allows you to define a character string with which to append when generating the utPLSQL package names (<prefix_string><table_name><postfix_string>).
+
+- **ut_uk_test_throws**: Specify a throws code to be used with procedures used to test key constraints. 
+  - Example: `ut_uk_test_throws = dup_val_on_index`
+  - **Purpose**: This provides the means for you to define an Oracle exception/error code to associate with the \%throws() annotation, associated 
+                 with primary or unique key constraint test procedures.
+
+- **ut_parent_fk_test_throws**: Specify a throws code to be used with procedures used to test parent key constraints. 
+  - Example: `ut_parent_fk_test_throws = -02291`
+  - **Purpose**: This provides the means for you to define an Oracle exception/error code to associate with the \%throws() annotation, associated 
+                 with (parent) foreign key constraint test procedures.
+
+- **ut_cc_test_throws**: Specify a throws code to be used with procedures used to test check constraints. 
+  - Example: `ut_cc_test_throws = -02290`
+  - **Purpose**: This provides the means for you to define an Oracle exception/error code to associate with the \%throws() annotation, associated 
+                 with check constraint test procedures.
+
+- **ut_nn_test_throws**: Specify a throws code to be used with procedures used to testing not null constraints. 
+  - Example: `ut_nn_test_throws = -01400`
+  - **Purpose**: This provides the means for you to define an Oracle exception/error code to associate with the \%throws() annotation, associated 
+                 with not null, check constraint testing procedures.
+
 
 ---
 
@@ -1018,7 +1072,7 @@ by the API.
 Under the `api_controls` section of `OraTAPI.ini`, there are two entries pertaining to auto managed columns. These allow 
 you to configure how you manage your auto-managed columns. Because the management is made almost transparent to the 
 developer, there are no input parameters to populate them via the API. For example, you may have columns which are used 
-to track who created, or last updated a row. The entries that control the bahaviour are:
+to track who created, or last updated a row. The entries that control the behaviour are:
 
 - col_auto_maintain_method
 - auto_maintained_cols
@@ -1033,7 +1087,7 @@ value to one of:
 
 #### Maintained by Trigger 
 If you set the `col_auto_maintain_method` property to <i>trigger</i>, you should ensure that your trigger template(s) 
-are designed to make appropriate updates to the columns that are listed vis this property.
+are designed to make appropriate updates to the columns that are listed via this property.
 ```
 create or replace trigger %trigger_owner_lc%.%table_name_lc%_biu
 before insert or update on %table_owner_lc%.%table_name_lc%
@@ -1098,6 +1152,24 @@ This list should not include the column included to the `row_version_column_name
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI 
 generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the 
 `auto_maintained_cols` list of columns</b>.
+
+## utPLSQL Support
+### Overview
+OraTAPI provides some support for utPLSQL package generation, providing tests for generated table APIs. This support provides for 
+the generation of the package spec, which includes requisite utPLSQL annotations and configurable %throws codes for table column 
+constraints.  
+
+When generated, the generated package specs are more or less complete (depending on your specific requirements).
+The generated package body, includes a matching set of procedures with stubbed bodies.
+Hints, by the way of comments, are included to each, providing details such as columns associated with constraints,
+search conditions and parent tables (foreign key related) are listed.
+
+### Controls
+For the most part the utPLSQL code generation is controlled by properties in the `ut_controls` section of the `OraTAPI.ini` file.
+There is also a related property, `enable_tapis_when_ut_enabled` under the `behaviour` section. This should be set to false, if
+you wish to disable generation of TAPI, View and Trigger code whilst generating utPLSQL package code.
+The control properties associated with utPLSQL package generation are described under the [\[ut\_control\]](#ut_control) 
+subsection.
 
 
 ## Template Substitution Strings
@@ -1166,7 +1238,7 @@ Here’s a revised version of your sentence with improved grammar and clarity:
 The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive.
 Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
 
-<b>NOTE: The credentials store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
+<b>NOTE: The credential store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
 
 
 ## Sample Generated Table API Packages:
