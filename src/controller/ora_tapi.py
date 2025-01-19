@@ -5,7 +5,7 @@ __version__ = "1.4.18"
 import copy
 import time
 
-from model.tapi_generator import ApiGenerator
+from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
@@ -409,7 +409,15 @@ class CodeManager:
             raise UnsupportedOption(message=error_text)
 
         self.view.print_console(msg_level=MsgLvl.info, text=f"    Generating TAPI package for table: {table_name_lc.upper()}")
-        staging_realpath = self.staging_dir.resolve()
+
+        table_domain    = table_name[:table_name.find("_")]
+        table_domain_lc = table_name[:table_name.find("_")].lower()
+        path_dict = {"table_domain": table_domain, "table_domain_lc": table_domain_lc}
+
+        staging_dir = str(self.staging_dir)
+        staging_dir = Path(inject_values(substitutions=path_dict, target_string=staging_dir))
+
+        staging_realpath = staging_dir.resolve()
 
         package_spec_code = api_controller.gen_package_spec()
         spec_file_name = f"{self.tapi_pkg_name_prefix}{table_name_lc}{self.tapi_pkg_name_postfix }{self.spec_file_ext}"
@@ -437,8 +445,17 @@ class CodeManager:
             trace=self.trace
         )
 
+        table_domain = table_name[:table_name.find("_")]
+        table_domain_lc = table_name[:table_name.find("_")].lower()
+        path_dict = {"table_domain": table_domain, "table_domain_lc": table_domain_lc}
+
+        ut_staging_dir = str(self.ut_staging_dir)
+        ut_staging_dir = Path(inject_values(substitutions=path_dict, target_string=ut_staging_dir))
+
+        ut_staging_dir = ut_staging_dir.resolve()
+
         self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating UT package for table: {table_name_lc.upper()}")
-        staging_realpath = self.ut_staging_dir.resolve()
+        staging_realpath = ut_staging_dir.resolve()
 
         package_spec_code = ut_controller.gen_package_spec()
         spec_file_name = f"{self.ut_pkg_name_prefix}{table_name_lc}{self.ut_pkg_name_postfix }{self.spec_file_ext}"
@@ -452,6 +469,21 @@ class CodeManager:
 
 
     def generate_triggers_for_table(self, table_name: str):
+        table_name_lc = table_name.lower()
+
+        table_domain = table_name[:table_name.find("_")]
+        table_domain_lc = table_name[:table_name.find("_")].lower()
+        path_dict = {"table_domain": table_domain, "table_domain_lc": table_domain_lc}
+
+        staging_dir = str(self.staging_dir)
+        staging_dir = Path(inject_values(substitutions=path_dict, target_string=staging_dir))
+
+        staging_dir = staging_dir.resolve()
+
+        self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating UT package for table: {table_name_lc.upper()}")
+        staging_realpath = staging_dir.resolve()
+
+
         staging_realpath = self.staging_dir.resolve()
         api_controller = ApiGenerator(
             database_session=self.db_session,
@@ -469,7 +501,21 @@ class CodeManager:
 
 
     def generate_views_for_table(self, table_name: str):
-        staging_realpath = self.staging_dir.resolve()
+        table_name_lc = table_name.lower()
+
+        table_domain = table_name[:table_name.find("_")]
+        table_domain_lc = table_name[:table_name.find("_")].lower()
+
+        path_dict = {"table_domain": table_domain, "table_domain_lc": table_domain_lc}
+
+        staging_dir = str(self.staging_dir)
+        staging_dir = Path(inject_values(substitutions=path_dict, target_string=staging_dir))
+
+        staging_dir = staging_dir.resolve()
+
+        self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating UT package for table: {table_name_lc.upper()}")
+        staging_realpath = staging_dir.resolve()
+
         api_controller = ApiGenerator(
             database_session=self.db_session,
             table_owner=self.table_owner,

@@ -13,9 +13,9 @@ copyright_year = current
 # when using the -t/--table_names argument.
 skip_on_missing_table = true
 
-# Set enable_tapis_when_ut_enabled False, to disable generation of TAPI, View and Trigger code when
-# enable_ut_code_generation, in the ut_controls section, is set to true.
-enable_tapis_when_ut_enabled = true
+# Set enable_tapis_when_ut_enabled to true, to enable generation of TAPI, View and Trigger code when the
+# enable_ut_code_generation, in the ut_controls section, is also set to true.
+enable_tapis_when_ut_enabled = false
 
 [formatting]
 indent_spaces = 3
@@ -114,7 +114,7 @@ enable_ut_code_generation = false
 # The %suite annotation substitutions string
 ut_suite =
 
-# Update ut_product_code, to effect the suitepath first component (before the dot).
+# Update ut_product_code, to effect the %suitepath major component (before the dot).
 ut_prod_code = ProductCode
 
 # If ut_prod_sub_domain_code is set to auto_table, then the first characters in the table name, before the first underscore
@@ -142,6 +142,7 @@ ut_cc_test_throws = -02290
 # Expected --throws() code for not null check constraints tests
 ut_nn_test_throws = -01400
 
+# PL/SQL Logger settings
 [logger]
 # If you have not set up synonyms, we need prefix with the schema where logger is installed.
 # By default we assume logger_user. If you have run create_logger_synonyms.sql, you don't need to
