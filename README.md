@@ -103,7 +103,7 @@ version of the README.md.
 ## Preinstallation
 ### Preparing the Environment
 
-In order to make OraTAPI installable, you need to ensure that you have Python 3.10 or later installed.  
+In order to make OraTAPI installable, you need to ensure that you have Python 3.10 or 3.11 installed.  
 On macOS, you can install Python using:  
 
 `brew install python3` # Install the latest version
