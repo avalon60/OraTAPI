@@ -98,7 +98,8 @@ OraTAPI is a versatile tool that offers the following configurable options:
 ### Documentation
 Please note that if you are working with the latest minor version of OraTAPI, it's always worth selecting the 
 `develop` branch from the GitHub OraTAPI page Code tab. This will ensure that you are looking at the latest 
-version of the README.md. 
+version of the README.md. Alternatively, you should be able to navigate straight to the "develop" branch documentation, 
+from [here](https://github.com/avalon60/OraTAPI/tree/develop?tab=readme-ov-file#oratapi---oracle-table-api-generator).
 
 ## Preinstallation
 ### Preparing the Environment
