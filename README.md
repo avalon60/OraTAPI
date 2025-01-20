@@ -207,7 +207,7 @@ the behaviour, in as much as they shape the code and content of the generated fi
    ```bash
    cd <path-to-installation-folder>
    chmod 750 setup.sh
-   ./setup.sh -
+   ./setup.sh
    ```
    Windows PowerShell:
    ```ps1
