@@ -176,7 +176,7 @@ would clutter the display. These are implemented as subdirectories within the va
 `resources/config` subdirectories. For example the `resources/templates/packages/body` and 
 `resources/templates/packages/spec` directories, each have a `samples` subdirectory.
 
-The key take-away from the above (no, not Quattro) is the config directory which is where the OraTAPI.ini is located, as well as a couple 
+The key take-away from the above (no, not Quattro Formaggi;) is the config directory which is where the OraTAPI.ini is located, as well as a couple 
 of CSV files which are all used to influence the behaviour of OraTAPI. The various template files `.tpt` also influence 
 the behaviour, in as much as they shape the code and content of the generated files.
 
