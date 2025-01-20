@@ -606,17 +606,6 @@ As a reminder, the file is located as `<raTAPI_HOME/resources/config/OraTAPI.ini
 initialises settings, based upon the contents of this file.  
 
 Here we cover the various sections and properties.
-
----
-
-#### [OraTAPI]
-
-- **version**: Specifies the version of the OraTAPI being used.
-  - Example: `version = 1.0.6`
-  - **Purpose**: Tracks the version of the tool for compatibility and updates. 
-
-  THIS SETTING SHOULD NOT BE MODIFIED!
-
 ---
 
 #### [project]
