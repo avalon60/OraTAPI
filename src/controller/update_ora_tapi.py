@@ -29,10 +29,14 @@ def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
     """
     print(f"Extracting {tarball_path} to {extract_to}...")
     with tarfile.open(tarball_path, 'r:gz') as tar:
-        tar.extractall(path=extract_to)
-    unpacked_root = extract_to / tar.getnames()[0].split('/')[0]
+        # Get the root directory of the tarball before extraction
+        root_dir_name = tar.getnames()[0].split('/')[0]
+        tar.extractall(path=extract_to)  # Perform extraction
+
+    unpacked_root = extract_to / root_dir_name
     print(f"Extraction complete. Root unpacked directory: {unpacked_root}")
     return unpacked_root
+
 
 
 def upgrade_files(upgrade_dir: Path) -> None:
@@ -49,31 +53,45 @@ def upgrade_files(upgrade_dir: Path) -> None:
     config_samples_dir = upgrade_resources / "config" / "samples"
     if config_samples_dir.exists():
         for sample_file in config_samples_dir.rglob("*"):
-            target_file = current_resources / "config" / sample_file.relative_to(config_samples_dir)
-            target_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(sample_file, target_file)
-            files_upgraded += 1
-            print(f"Upgraded: {sample_file} -> {target_file}")
+            if sample_file.is_file():  # Ensure it is a file
+                target_file = current_resources / "config" / sample_file.relative_to(config_samples_dir)
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(sample_file, target_file)
+                files_upgraded += 1
+                print(f"Upgraded: {sample_file} -> {target_file}")
 
     # Upgrade templates
     templates_dir = upgrade_resources / "templates"
     if templates_dir.exists():
         for template_file in templates_dir.rglob("*"):
-            target_file = current_resources / "templates" / template_file.relative_to(templates_dir)
-            target_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(template_file, target_file)
-            files_upgraded += 1
-            print(f"Upgraded: {template_file} -> {target_file}")
+            if template_file.is_file():  # Ensure it is a file
+                target_file = current_resources / "templates" / template_file.relative_to(templates_dir)
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(template_file, target_file)
+                files_upgraded += 1
+                print(f"Upgraded: {template_file} -> {target_file}")
 
     # Upgrade src directory
-    src_dir = upgrade_resources / "src"
+    src_dir = upgrade_dir / "src"
     if src_dir.exists():
         for src_file in src_dir.rglob("*"):
-            target_file = project_home() / "src" / src_file.relative_to(src_dir)
-            target_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_file, target_file)
-            files_upgraded += 1
-            print(f"Upgraded: {src_file} -> {target_file}")
+            if src_file.is_file():  # Ensure it is a file
+                target_file = project_home() / "src" / src_file.relative_to(src_dir)
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_file, target_file)
+                files_upgraded += 1
+                print(f"Upgraded: {src_file} -> {target_file}")
+
+    # Upgrade bin directory
+    bin_dir = upgrade_dir / "bin"
+    if bin_dir.exists():
+        for bin_file in bin_dir.rglob("*"):
+            if bin_file.is_file():  # Ensure it is a file
+                target_file = project_home() / "bin" / bin_file.relative_to(bin_dir)
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(bin_file, target_file)
+                files_upgraded += 1
+                print(f"Upgraded: {bin_file} -> {target_file}")
 
     print(f"Total files upgraded: {files_upgraded}")
 
