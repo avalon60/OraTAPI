@@ -1,4 +1,4 @@
-%STAB%-- Test the %table_name_lc% %api_type_lc%
+%STAB%-- Test the %table_name_lc% %api_type_desc% (%tapi_pkg_name_prefix%%table_name_lc%%tapi_pkg_name_postfix%.%procedure_basename_lc% API)
 %STAB%procedure test_%procedure_name_lc%
 %STAB%is
 %STAB%begin

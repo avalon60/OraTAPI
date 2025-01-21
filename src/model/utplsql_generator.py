@@ -251,12 +251,16 @@ class UtPLSQLGenerator:
                                                   trace=trace)
 
         self.api_function_map = {
-            "insert": {"procedure_name": self.insert_procname},
-            "select": {"procedure_name": self.select_procname},
-            "update": {"procedure_name": self.update_procname},
-            "upsert": {"procedure_name": self.upsert_procname},
-            "delete": {"procedure_name": self.delete_procname},
-            "merge": {"procedure_name": self.merge_procname}
+            "insert": {"procedure_name": self.insert_procname, "procedure_basename": self.insert_procname},
+            "select": {"procedure_name": self.select_procname, "procedure_basename": self.insert_procname},
+            "update": {"procedure_name": self.update_procname, "procedure_basename": self.insert_procname},
+            "upsert": {"procedure_name": self.upsert_procname, "procedure_basename": self.insert_procname},
+            "upsert_insert": {"procedure_name": self.upsert_procname + "_insert", "procedure_basename": self.upsert_procname},
+            "upsert_update": {"procedure_name": self.upsert_procname + "_update", "procedure_basename": self.upsert_procname},
+            "delete": {"procedure_name": self.delete_procname, "procedure_basename": self.insert_procname},
+            "merge": {"procedure_name": self.merge_procname, "procedure_basename": self.insert_procname},
+            "merge_insert": {"procedure_name": self.merge_procname + "_insert", "procedure_basename": self.merge_procname},
+            "merge_update": {"procedure_name": self.merge_procname + "_update", "procedure_basename": self.merge_procname}
         }
 
         self.constraint_description_map = {
@@ -327,7 +331,24 @@ class UtPLSQLGenerator:
         package_body += before_template
 
         # Generate API fragments for each body API in the options
+        # Get the list of API types from the options dictionary
         ut_api_types = self.options_dict.get("ut_api_types", [])
+
+        # Create a new list to store the updated API types
+        updated_api_types = []
+
+        # Iterate over the current list and expand "merge" and "upsert"
+        for api_type in ut_api_types:
+            if api_type == "merge":
+                updated_api_types.extend(["merge_insert", "merge_update"])
+            elif api_type == "upsert":
+                updated_api_types.extend(["upsert_insert", "upsert_update"])
+            else:
+                updated_api_types.append(api_type)
+
+        # Replace the original list with the updated list
+        ut_api_types = updated_api_types
+
         _package_procedure = ''
         table_desc_title = self.table.table_name.replace('_', ' ').title()
         merged_dict["table_desc_title"] = table_desc_title
@@ -335,15 +356,19 @@ class UtPLSQLGenerator:
         for _api_type in ut_api_types:
             mapping = self.api_function_map.get(_api_type)
             _procedure_name = mapping["procedure_name"]
+            _procedure_basename = mapping["procedure_basename"]
 
             _package_procedure = self._construct_api_test(procedure_basename=_api_type,
                                                           procedure_name=_procedure_name,
                                                           template_type='body')
 
-            api_type_desc = str(_api_type).title()
+            api_type_desc = str(_api_type).title().replace('_', '-')
             merged_dict["api_type_desc"] = api_type_desc
             merged_dict["api_type_lc"] = str(_api_type).lower()
+            merged_dict["procedure_name"] = _procedure_name
             merged_dict["procedure_name_lc"] = _procedure_name.lower()
+            merged_dict["procedure_basename"] = _procedure_basename
+            merged_dict["procedure_basename_lc"] = _procedure_basename.lower()
             merged_dict["fk_tables"] = self.table_constraints.fk_tables
             merged_dict["fk_tables_lc"] = self.table_constraints.fk_tables.lower()
 
@@ -438,6 +463,22 @@ class UtPLSQLGenerator:
 
         # Generate API fragments for each specified API in the options
         ut_api_types = self.options_dict.get("ut_api_types", [])
+
+        # Create a new list to store the updated API types
+        updated_api_types = []
+
+        # Iterate over the current list and expand "merge" and "upsert"
+        for api_type in ut_api_types:
+            if api_type == "merge":
+                updated_api_types.extend(["merge_insert", "merge_update"])
+            elif api_type == "upsert":
+                updated_api_types.extend(["upsert_insert", "upsert_update"])
+            else:
+                updated_api_types.append(api_type)
+
+        # Replace the original list with the updated list
+        ut_api_types = updated_api_types
+
         _package_procedure = ''
         table_desc_title = self.table.table_name.replace('_', ' ').title()
         merged_dict["table_desc_title"] = table_desc_title
@@ -445,14 +486,21 @@ class UtPLSQLGenerator:
         for _api_type in ut_api_types:
             mapping = self.api_function_map.get(_api_type)
             _procedure_name = mapping["procedure_name"]
+            _procedure_basename = mapping["procedure_basename"]
 
             _package_procedure = self._construct_api_test(procedure_basename=_api_type,
-                                                          procedure_name=_procedure_name)
+                                                          procedure_name=_procedure_name,
+                                                          template_type='spec')
 
-            api_type_desc = str(_api_type).title()
+            api_type_desc = str(_api_type).title().replace('_', '-')
             merged_dict["api_type_desc"] = api_type_desc
             merged_dict["api_type_lc"] = str(_api_type).lower()
+            merged_dict["procedure_name"] = _procedure_name
             merged_dict["procedure_name_lc"] = _procedure_name.lower()
+            merged_dict["procedure_basename"] = _procedure_basename
+            merged_dict["procedure_basename_lc"] = _procedure_basename.lower()
+            merged_dict["fk_tables"] = self.table_constraints.fk_tables
+            merged_dict["fk_tables_lc"] = self.table_constraints.fk_tables.lower()
 
             package_spec += "\n" + _package_procedure
             package_spec = inject_values(
