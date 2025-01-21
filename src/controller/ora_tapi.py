@@ -1,7 +1,7 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
-__version__ = "1.4.21"
+__version__ = "1.4.20"
 import copy
 import time
 
@@ -17,6 +17,8 @@ from pathlib import Path
 from os import chdir
 from model.ora_tapi_csv import CSVManager
 from model.framework_errors import UnsupportedOption
+from lib.app_utils import get_latest_dist, get_latest_version
+from packaging.version import Version
 
 CONFIG_LOCATION = project_home()/ 'resources' / 'config'
 
@@ -97,6 +99,9 @@ class CodeManager:
 
         self.skip_on_missing_table = self.config_manager.bool_config_value(config_section='behaviour',
                                                                            config_key='skip_on_missing_table')
+
+        check_github_for_updates = self.config_manager.bool_config_value(config_section='behaviour',
+                                                                         config_key='check_github_for_updates')
 
         self.col_auto_maintain_method = self.config_manager.config_value(config_section='api_controls',
                                                                          config_key='col_auto_maintain_method')
@@ -236,6 +241,15 @@ class CodeManager:
         self.view.print_console(text=f'  Triggers skipped: {results["triggers_skipped"]}',
                                 msg_level=MsgLvl.warning)
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
+        if check_github_for_updates:
+            latest_version = get_latest_version(repo_owner='avalon60', repo_name='OraTAPI')
+            latest_url = get_latest_dist(repo_owner='avalon60', repo_name='OraTAPI')
+            if Version(latest_version) > Version(__version__):
+                self.view.print_console(text=f'A newer version, {latest_version}, of OraTAPI is available.',
+                                        msg_level=MsgLvl.warning)
+                self.view.print_console(text=f'Run the update oratapi command to download and install.',
+                                        msg_level=MsgLvl.warning)
+
         exec_end_timestamp = current_timestamp()
         epoc_end_ts = int(time.time())
         self.view.print_console(text=f'{PROG_NAME}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
@@ -309,10 +323,10 @@ class CodeManager:
 
             exists_status = self.check_table_exists(schema_name=self.table_owner, table_name=table_name)
             if not exists_status and self.skip_on_missing_table:
-                self.view.print_console(text=f'Table {self.table_owner}.{table_name} does not exist - skipping!',
+                self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} does not exist - skipping!',
                                         msg_level=MsgLvl.warning)
-            elif not self.skip_on_missing_table:
-                self.view.print_console(text=f'Table {self.table_owner}.{table_name} does not exist - bailing out!',
+            elif not exists_status and not self.skip_on_missing_table:
+                self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} does not exist - bailing out!',
                                         msg_level=MsgLvl.error)
                 exit(1)
             else:

@@ -11,12 +11,86 @@ from os import get_terminal_size, system
 from datetime import datetime
 from platform import platform
 import uuid
-import random
-import string
+import requests
+from urllib.parse import urlsplit
 
 
 MESSAGE_RIGHT_PAD=15
 MESSAGE_MIN_LEN=40
+
+def get_latest_dist(repo_owner: str, repo_name: str) -> str:
+    """
+    Fetches the latest release distribution file path of a GitHub repository.
+
+    :param repo_owner: The owner of the repository (e.g., 'avalon60')
+    :param repo_name: The name of the repository (e.g., 'OraTAPI')
+    :return: The latest release version or download URL
+    """
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        version = data.get("tag_name")  # e.g., "v1.4.20"
+        for asset in data.get("assets", []):
+            if asset["name"].startswith("oratapi-") and asset["name"].endswith(".tar.gz"):
+                return asset["browser_download_url"]  # Return the download URL for the tarball
+        return f"Version: {version} (No .tar.gz file found)"
+    else:
+        return f"Failed to fetch latest release. HTTP Status: {response.status_code}"
+
+def get_latest_version(repo_owner: str, repo_name: str) -> str:
+    """
+    Fetches the latest release version of a GitHub repository.
+
+    :param repo_owner: The owner of the repository (e.g., 'avalon60')
+    :param repo_name: The name of the repository (e.g., 'OraTAPI')
+    :return: Version
+    """
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        version = data.get("tag_name")  # e.g., "v1.4.20"
+        return version
+
+def download_file(url: str, save_dir: str) -> Path:
+    """
+    Downloads a file from a URL and saves it to a specified local directory.
+
+    :param url: str, The URL of the file to download.
+    :param save_dir: str, The local directory where the file should be saved.
+    :returns: Path, The full path to the downloaded file.
+    :raises: Exception if the download fails.
+    """
+    # Extract the file name from the URL
+    file_name = Path(urlsplit(url).path).name
+
+    # Ensure the save directory exists
+    save_path = Path(save_dir)  # Convert save_dir to a Path object
+    save_path.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
+
+    # Full path where the file will be saved
+    file_path = save_path / file_name
+
+    # Download the file
+    try:
+        print(f"Downloading {url}...")
+        response = requests.get(url, stream=True)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+
+        # Write the file to the specified location
+        with file_path.open(mode='wb') as file:  # Use Path's `open` method
+            for chunk in response.iter_content(chunk_size=8192):  # Download in chunks
+                file.write(chunk)
+
+        print(f"File downloaded successfully: {file_path}")
+        return file_path
+    except Exception as e:
+        print(f"Error downloading file: {e}")
+        raise
+
 
 class SystemCommandError(Exception):
     """This exception is raised when we detect a failure when attempting to execute an operating system command, or
