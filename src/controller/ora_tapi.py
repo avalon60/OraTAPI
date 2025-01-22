@@ -17,7 +17,7 @@ from pathlib import Path
 from os import chdir
 from model.ora_tapi_csv import CSVManager
 from model.framework_errors import UnsupportedOption
-from lib.app_utils import get_latest_dist, get_latest_version
+from lib.app_utils import get_latest_dist_url, get_latest_version
 from packaging.version import Version
 
 CONFIG_LOCATION = project_home()/ 'resources' / 'config'
@@ -243,7 +243,7 @@ class CodeManager:
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
         if check_github_for_updates:
             latest_version = get_latest_version(repo_owner='avalon60', repo_name='OraTAPI')
-            latest_url = get_latest_dist(repo_owner='avalon60', repo_name='OraTAPI')
+            latest_url = get_latest_dist_url(repo_owner='avalon60', repo_name='OraTAPI')
             if Version(latest_version) > Version(__version__):
                 self.view.print_console(text=f'A newer version, {latest_version}, of OraTAPI is available.',
                                         msg_level=MsgLvl.warning)
