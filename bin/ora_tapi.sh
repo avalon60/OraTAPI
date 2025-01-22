@@ -9,12 +9,6 @@
 #
 #      <OraTAPI-Home>/bin/ora_tapi.sh -h
 #
-#    For Mac or Linux, before the first execution, ensure you set the
-#    execute permissions:
-#
-#    cd <OraTAPI-Home>/bin
-#    chmod 750 ora_tapi.sh
-#
 #------------------------------------------------------------------------------
 
 # Use a workaround for realpath if it's not available (possibly not on Mac)

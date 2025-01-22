@@ -5,15 +5,12 @@ Wrapper script for calling OraTAPI/controller/quick_config.py.
 .DESCRIPTION
 This script sets up the environment and executes the initialisation routines - a Python program.
 
-This utility copies `.samplei` files from the resources directory to
+This utility copies `.sample` files from the resources directory to
 target locations, based on the template_category, and specific copying rules.
 We only initialise, if specific files does not exist, we avoid clobbering them.
 
 For help, use:
     <OraTAPI-Home>\bin\quick_config.ps1 -h
-
-Before the first execution, ensure you set the execute permissions:
-    Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 
 .AUTHOR
 Clive Bostock

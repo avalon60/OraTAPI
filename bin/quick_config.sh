@@ -13,12 +13,6 @@
 #
 #      <OraTAPI-Home>/bin/quick_config.sh -h
 #
-#    For Mac or Linux, before the first execution, ensure you set the
-#    execute permissions:
-#
-#    cd <OraTAPI-Home>/bin
-#    chmod 750 quick_config.sh
-#
 #------------------------------------------------------------------------------
 
 # Use a workaround for realpath if it's not available (possibly not on Mac)

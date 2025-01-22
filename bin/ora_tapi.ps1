@@ -8,9 +8,6 @@ This script sets up the environment and executes the OraTAPI Python program.
 For help, use:
     <OraTAPI-Home>\bin\ora_tapi.ps1 -h
 
-Before the first execution, ensure you set the execution policy:
-    Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-
 .AUTHOR
 Clive Bostock
 .DATE
