@@ -4,7 +4,6 @@ __description__ = "Application utilities"
 
 import re
 import sys
-import time
 import platform
 from pathlib import Path
 from os import get_terminal_size, system
@@ -21,9 +20,11 @@ MESSAGE_MIN_LEN=40
 def get_latest_dist(repo_owner: str, repo_name: str) -> str:
     """
     Fetches the latest release distribution file path of a GitHub repository.
+    This assumes that the tarball file name is of the form oratapi-X.Y.Z.tar.gz,
+    where the X.Y.Z represents the version or OraTAPI.
 
-    :param repo_owner: The owner of the repository (e.g., 'avalon60')
-    :param repo_name: The name of the repository (e.g., 'OraTAPI')
+    :param repo_owner: The owner of the repository (e.g. 'avalon60')
+    :param repo_name: The name of the repository (e.g. 'OraTAPI')
     :return: The latest release version or download URL
     """
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
