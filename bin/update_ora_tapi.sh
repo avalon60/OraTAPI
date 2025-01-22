@@ -5,19 +5,12 @@
 #   Name: update_ora_tapi.sh
 #  Descr: Wrapper shell for calling OraTAPI/src/controller/update_ora_tapi.py
 #  
-# This utility copies `.sample` files from the resources directory to
-# target locations, based on the template_category, and specific copying rules.
-# We only initialise, if specific files does not exist, we avoid clobbering them.
+# This utility updates the sample, config files, templates and executables from a
+# downloaded OraTAPI distribution file.
 #
 #    For help, use:
 #
 #      <OraTAPI-Home>/bin/update_ora_tapi.sh -h
-#
-#    For Mac or Linux, before the first execution, ensure you set the
-#    execute permissions:
-#
-#    cd <OraTAPI-Home>/bin
-#    chmod 750 update_ora_tapi.sh
 #
 #------------------------------------------------------------------------------
 
