@@ -22,7 +22,12 @@ dependencies = [
     "cryptography>=43.0.3",
     "cffi>=1.17.1",
     "bump2version>=1.0.1",
-    "build>=1.2.2.post1"
+    "build>=1.2.2.post1",
+    "requests>=2.32.3",
+    "urllib3==2.3.0",
+    "charset-normalizer>=3.4.1",
+    "configobj>=5.0.9",
+    "idna>=3.10"
 ]
 
 # Useful if publishing through PyPI

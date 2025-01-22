@@ -1,16 +1,21 @@
 build==1.2.2.post1
 bump2version==1.0.1
+certifi==2024.12.14
 cffi==1.17.1
+charset-normalizer==3.4.1
+configobj==5.0.9
 cryptography==43.0.3
+idna==3.10
 markdown-it-py==3.0.0
 mdurl==0.1.2
 oracledb==2.5.0
--e git+https://github.com/avalon60/OraTAPI.git@dc19b10c6979c192c1832f6e514ec3310c3a70c4#egg=OraTAPI
 packaging==24.2
 pycparser==2.22
 Pygments==2.18.0
 pyproject_hooks==1.2.0
+requests==2.32.3
 rich==13.9.4
 setuptools-scm==8.1.0
 tomli==2.2.1
 typing_extensions==4.12.2
+urllib3==2.3.0
