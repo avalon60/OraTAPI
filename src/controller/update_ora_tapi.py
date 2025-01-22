@@ -2,12 +2,12 @@
 """
 Author: Clive Bostock
 Date: 2025-01-21
-Description: Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder.
+Description: Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder or by downloading the latest version from GitHub.
 """
 __author__ = "Clive Bostock"
 __date__ = "2025-01-21"
-__description__ = "Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder."
-__version__ = "1.4.22"
+__description__ = "Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder or by downloading the latest version from GitHub."
+__version__ = "1.4.20"
 
 import argparse
 import shutil
@@ -16,6 +16,7 @@ import re
 from pathlib import Path
 from packaging.version import Version
 from lib.file_system_utils import project_home
+from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
 
 PROG_NAME = Path(__file__).name
 
@@ -46,36 +47,6 @@ def confirm_action(message: str) -> bool:
             return True
         elif response in {"n", "no"}:
             return False
-
-
-def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
-    """
-    Extracts a tarball to a specified directory with safety checks to avoid overwriting the current installation.
-
-    :param tarball_path: Path to the tarball file.
-    :param extract_to: Path to the directory where the tarball will be unpacked.
-    :returns: Path to the root of the unpacked directory.
-    """
-    print(f"Extracting {tarball_path} to {extract_to}...")
-
-    with tarfile.open(tarball_path, 'r:gz') as tar:
-        # Get the root directory of the tarball
-        root_dir_name = tar.getnames()[0].split('/')[0]
-        unpacked_root = extract_to / root_dir_name
-
-        # Safety check: Prevent overwriting the current installation directory
-        current_installation_dir = project_home()
-        if unpacked_root == current_installation_dir:
-            raise RuntimeError(
-                f"Extraction aborted! The tarball root directory ({unpacked_root}) matches the current installation directory. "
-                f"To avoid overwriting, please move the tarball or extract it to a different location."
-            )
-
-        # Proceed with extraction
-        tar.extractall(path=extract_to)
-
-    print(f"Extraction complete. Root unpacked directory: {unpacked_root}")
-    return unpacked_root
 
 
 def upgrade_files(upgrade_dir: Path) -> None:
@@ -129,6 +100,48 @@ def upgrade_files(upgrade_dir: Path) -> None:
 
 
 
+
+def validate_staging_directory(staging_dir: Path) -> None:
+    """
+    Ensures the specified staging directory exists.
+
+    :param staging_dir: Path to the staging directory.
+    :raises: ValueError if the directory does not exist.
+    """
+    if not staging_dir.is_dir():
+        raise ValueError(f"Error: Staging directory '{staging_dir}' does not exist.")
+
+
+def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
+    """
+    Extracts a tarball to a specified directory with safety checks to avoid overwriting the current installation.
+
+    :param tarball_path: Path to the tarball file.
+    :param extract_to: Path to the directory where the tarball will be unpacked.
+    :returns: Path to the root of the unpacked directory.
+    """
+    print(f"Extracting {tarball_path} to {extract_to}...")
+
+    with tarfile.open(tarball_path, 'r:gz') as tar:
+        # Get the root directory of the tarball
+        root_dir_name = tar.getnames()[0].split('/')[0]
+        unpacked_root = extract_to / root_dir_name
+
+        # Safety check: Prevent overwriting the current installation directory
+        current_installation_dir = project_home()
+        if unpacked_root == current_installation_dir:
+            raise RuntimeError(
+                f"Extraction aborted! The tarball root directory ({unpacked_root}) matches the current installation directory. "
+                f"To avoid overwriting, please move the tarball or extract it to a different location."
+            )
+
+        # Proceed with extraction
+        tar.extractall(path=extract_to)
+
+    print(f"Extraction complete. Root unpacked directory: {unpacked_root}")
+    return unpacked_root
+
+
 def main() -> None:
     """
     Main function to parse arguments and perform actions.
@@ -136,50 +149,109 @@ def main() -> None:
     print(f"{PROG_NAME}: OraTAPI upgrade utility version: {__version__}")
     print('OraTAPI upgrade started...')
     parser = argparse.ArgumentParser(
-        description="Upgrade OraTAPI by unpacking a tarball and copying files to the existing installation."
+        description="Upgrade OraTAPI by unpacking a tarball or downloading the latest version from GitHub."
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "-t", "--tarball",
-        required=True,
+        type=str,
         help="Specify the path to the tarball file."
+    )
+    group.add_argument(
+        "-s", "--staging-dir",
+        type=str,
+        help="Specify a staging directory to download the latest version from GitHub."
     )
 
     args = parser.parse_args()
-    tarball_path = Path(args.tarball)
-    extract_to = tarball_path.parent
 
-    # Extract version from tarball
-    try:
-        tarball_version = Version(extract_version_from_tarball(tarball_path))
-        current_version = Version(__version__)
-        print(f"Current OraTAPI version: {current_version}")
-        print(f"Tarball OraTAPI version: {tarball_version}")
+    if args.tarball:
+        tarball_path = Path(args.tarball)
+        extract_to = tarball_path.parent
 
-        if tarball_version == current_version:
-            print("Error: OraTAPI is already at the target version.")
+        try:
+            tarball_version = Version(extract_version_from_tarball(tarball_path))
+            current_version = Version(__version__)
+            print(f"Current OraTAPI version: {current_version}")
+            print(f"Tarball OraTAPI version: {tarball_version}")
+
+            if tarball_version == current_version:
+                print("Error: OraTAPI is already at the target version.")
+                exit(1)
+            elif tarball_version > current_version:
+                if not confirm_action(
+                        "A newer version of OraTAPI is available. Do you want to proceed with the upgrade?"):
+                    print("Upgrade canceled.")
+                    exit(0)
+            else:
+                print("Warning: The tarball version is older than the current version.")
+                if not confirm_action("Do you still want to proceed?"):
+                    print("Upgrade canceled.")
+                    exit(0)
+        except ValueError as e:
+            print(f"Error: {e}")
             exit(1)
-        elif tarball_version > current_version:
-            if not confirm_action("A newer version of OraTAPI is available. Do you want to proceed with the upgrade?"):
-                print("Upgrade canceled.")
-                exit(0)
-        else:
-            print("Warning: The tarball version is older than the current version.")
-            if not confirm_action("Do you still want to proceed?"):
-                print("Upgrade canceled.")
-                exit(0)
-    except ValueError as e:
-        print(f"Error: {e}")
-        exit(1)
 
-    # Extract the tarball
-    unpacked_dir = extract_tarball(tarball_path, extract_to)
+        # Extract the tarball
+        unpacked_dir = extract_tarball(tarball_path, extract_to)
 
-    # Upgrade files
-    try:
-        upgrade_files(unpacked_dir)
-    finally:
-        print(f"Cleaning up unpacked directory: {unpacked_dir}")
-        shutil.rmtree(unpacked_dir, ignore_errors=True)
+        # Upgrade files
+        try:
+            upgrade_files(unpacked_dir)
+        finally:
+            print(f"Cleaning up unpacked directory: {unpacked_dir}")
+            shutil.rmtree(unpacked_dir, ignore_errors=True)
+
+    elif args.staging_dir:
+        staging_dir = Path(args.staging_dir)
+        validate_staging_directory(staging_dir)
+
+        try:
+            # Get the latest version from GitHub
+            latest_version = Version(get_latest_version("avalon60", "OraTAPI"))
+            current_version = Version(__version__)
+            print(f"Current OraTAPI version: {current_version}")
+            print(f"Latest OraTAPI version on GitHub: {latest_version}")
+
+            if latest_version == current_version:
+                print("OraTAPI is already up to date.")
+                exit(0)
+            elif latest_version > current_version:
+                if not confirm_action("A newer version is available on GitHub. Do you want to download it?"):
+                    print("Download canceled.")
+                    exit(0)
+
+                tarball_url = get_latest_dist_url("avalon60", "OraTAPI")
+
+                # Validate the URL before proceeding
+                if not tarball_url or "http" not in tarball_url:
+                    print(f"Error: Failed to fetch the tarball URL. Details: {tarball_url}")
+                    exit(1)
+
+                tarball_path = staging_dir / Path(tarball_url).name
+                print(f"Downloading to: {tarball_path}")
+                download_file(url=tarball_url, save_dir=staging_dir)
+
+                if not confirm_action("Download complete. Do you want to proceed with the upgrade?"):
+                    print("Upgrade canceled.")
+                    exit(0)
+            else:
+                print("Warning: The latest version on GitHub is older than the current version.")
+                exit(0)
+
+        except Exception as e:
+            print(f"Error: Unable to fetch the latest version or download the tarball. Details: {e}")
+            exit(1)
+
+        # Extract the tarball
+        unpacked_dir = extract_tarball(tarball_path, staging_dir)
+
+        # Upgrade files
+        try:
+            upgrade_files(unpacked_dir)
+        finally:
+            print(f"Cleaning up unpacked directory: {unpacked_dir}")
+            shutil.rmtree(unpacked_dir, ignore_errors=True)
 
     print('OraTAPI upgrade complete.')
 
