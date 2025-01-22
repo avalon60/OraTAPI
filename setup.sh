@@ -67,12 +67,14 @@ fi
 let step=${step}+1
 step_desc="Create virtual environment if it doesn't exist"
 echo "Step ${step}: ${step_desc}..."
-if [ ! -d "$VENV_DIR" ]; then
-    echo "Creating virtual environment in: $VENV_DIR"
-    $PYTHON -m venv "$VENV_DIR"
+if [  -d "$VENV_DIR" ]
+then
+    rm -fr $VENV_DIR
+    echo "Recreating virtual environment in: $VENV_DIR"
 else
-    echo "Virtual environment already exists in: $VENV_DIR"
+    echo "Creating virtual environment in: $VENV_DIR"
 fi
+$PYTHON -m venv "$VENV_DIR"
 
 # Step 3: Activate the virtual environment
 let step=${step}+1
