@@ -1,7 +1,7 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
-__version__ = "1.4.20"
+__version__ = "1.4.21"
 import copy
 import time
 
