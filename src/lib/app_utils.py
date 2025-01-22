@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 MESSAGE_RIGHT_PAD=15
 MESSAGE_MIN_LEN=40
 
-def get_latest_dist(repo_owner: str, repo_name: str) -> str:
+def get_latest_dist_url(repo_owner: str, repo_name: str) -> str:
     """
     Fetches the latest release distribution file path of a GitHub repository.
     This assumes that the tarball file name is of the form oratapi-X.Y.Z.tar.gz,
@@ -56,7 +56,7 @@ def get_latest_version(repo_owner: str, repo_name: str) -> str:
         version = data.get("tag_name")  # e.g., "v1.4.20"
         return version
 
-def download_file(url: str, save_dir: str) -> Path:
+def download_file(url: str, save_dir: Path) -> Path:
     """
     Downloads a file from a URL and saves it to a specified local directory.
 
