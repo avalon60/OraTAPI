@@ -96,9 +96,16 @@ def upgrade_files(upgrade_dir: Path) -> None:
                 files_upgraded += 1
                 print(f"Upgraded: {src_file} -> {relative_target}")
 
+    # Copy pyproject.toml and requirements.txt from the upgrade directory
+    for filename in ['pyproject.toml', 'requirements.txt', 'setup.sh', 'setup.ps1', 'LICENSE', 'README.md']:
+        upgrade_file = upgrade_dir / filename
+        if upgrade_file.exists() and upgrade_file.is_file():
+            target_file = root_install_dir / filename
+            shutil.copy2(upgrade_file, target_file)
+            print(f"Upgraded: {upgrade_file} -> {target_file}")
+            files_upgraded += 1
+
     print(f"Total files upgraded: {files_upgraded}")
-
-
 
 
 def validate_staging_directory(staging_dir: Path) -> None:
