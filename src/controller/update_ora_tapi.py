@@ -7,7 +7,7 @@ Description: Script to upgrade OraTAPI by extracting a tarball and copying files
 __author__ = "Clive Bostock"
 __date__ = "2025-01-21"
 __description__ = "Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder or by downloading the latest version from GitHub."
-__version__ = "1.4.22"
+__version__ = "1.4.23"
 
 import argparse
 import shutil
