@@ -85,7 +85,7 @@ def upgrade_files(upgrade_dir: Path) -> None:
                 print(f"Upgraded: {template_file} -> {relative_target}")
 
     # Upgrade src directory
-    src_dir = root_install_dir / "src"
+    src_dir = upgrade_dir / "src"
     if src_dir.exists():
         for src_file in src_dir.rglob("*"):
             if src_file.is_file():  # Ensure it is a file
