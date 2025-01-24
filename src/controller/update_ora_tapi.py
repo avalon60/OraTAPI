@@ -7,7 +7,7 @@ Description: Script to upgrade OraTAPI by extracting a tarball and copying files
 __author__ = "Clive Bostock"
 __date__ = "2025-01-21"
 __description__ = "Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder or by downloading the latest version from GitHub."
-__version__ = "1.4.23"
+__version__ = "1.4.22"
 
 import argparse
 import shutil
@@ -85,7 +85,7 @@ def upgrade_files(upgrade_dir: Path) -> None:
                 print(f"Upgraded: {template_file} -> {relative_target}")
 
     # Upgrade src directory
-    src_dir = upgrade_resources / "src"
+    src_dir = root_install_dir / "src"
     if src_dir.exists():
         for src_file in src_dir.rglob("*"):
             if src_file.is_file():  # Ensure it is a file
