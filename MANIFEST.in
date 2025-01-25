@@ -38,3 +38,4 @@ exclude resources/config/pi_columns.csv
 # Exclude misc file
 exclude .gitignore
 exclude .bumpversion.cfg
+exclude MANIFEST.in
