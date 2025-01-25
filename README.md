@@ -318,6 +318,7 @@ If you are on Windows and have Git Bash installed, the Linux/macOS instructions 
 OraTAPI can be used via PowerShell or Git Bash. 
 
 ## Performing Upgrades
+### Migrations
 It's worth noting that when you unzip the installation archive file, it creates a directory, whose name is of the form 
 `oratapi-M.m.p`, where the M, m and p, represent the major, minor and patch components of the version. This means 
 that you should be able to locate the archive and unzip it from the same location as you did for previous your installation(s), 
@@ -392,6 +393,90 @@ OraTAPI operation complete.
 ```
 
 ---
+### In-situ upgrades
+The ability to perform in-situ upgrades is introduced with OraTAPI 1.4.24. This provides a much simpler and more 
+convenient method of applying updates to your installation. 
+
+To perform an update, the `update_ora_tapi` command is introduced. This command resides in the `bin` directory, below 
+the root folder of where OraTAPI is installed. You can run this command in two ways. If you have a tarball of an OraTAPI 
+release, you can point the command at the tarball, and it will prompt for confirmation, before updating OraTAPI.
+
+Example:
+```
+$ bin/update_ora_tapi.sh -t ../oratapi-1.4.25.tar.gz
+update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.24
+OraTAPI upgrade started...
+Current OraTAPI version: 1.4.24
+Tarball OraTAPI version: 1.4.25
+A newer version of OraTAPI is available. Do you want to proceed with the upgrade? [y/n]: 
+```
+So here we use the -t flag to specify the pathname to a tarball. Entering "y" will cause the update to proceed.
+
+The second, and perhaps more convenient method, is by having `ora_tapi` check for a new version for you. This is 
+where the new OraTAPI.ini setting comes somewhat into play. If this is set, then, when you run the ora_tapi.py command, 
+it will reach out to GitHub to check if a newer version exists, and it will print out a warning message, informing you 
+that a newer version is available. You can then have the `update_ora_tapi` download the latest release, and have it 
+apply it to your installation.
+
+```
+$ bin/update_ora_tapi.sh -s /tmp
+update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.24
+OraTAPI upgrade started...
+Current OraTAPI version: 1.4.24
+Latest OraTAPI version on GitHub: 1.4.25
+A newer version is available on GitHub. Do you want to download it? [y/n]: y
+Downloading to: /tmp/oratapi-1.4.25.tar.gz
+Downloading https://github.com/avalon60/OraTAPI/releases/download/v1.4.25/oratapi-1.4.25.tar.gz...
+File downloaded successfully: /tmp/oratapi-1.4.25.tar.gz
+Download complete. Do you want to proceed with the upgrade? [y/n]: 
+```
+Press 'y' and enter to proceed:
+
+```
+Extracting /tmp/oratapi-1.4.24.tar.gz to /tmp...
+Extraction complete. Root unpacked directory: /tmp/oratapi-1.4.24
+Upgraded: /tmp/oratapi-1.4.24/resources/config/samples/OraTAPI.ini.sample -> resources/config/OraTAPI.ini.sample
+Upgraded: /tmp/oratapi-1.4.24/resources/config/samples/pi_columns.csv.sample -> resources/config/pi_columns.csv.sample
+...
+Upgraded: /tmp/oratapi-1.4.24/setup.ps1 -> /home/clive/PycharmProjects/stage/oratapi/setup.ps1
+Upgraded: /tmp/oratapi-1.4.24/LICENSE -> /home/clive/PycharmProjects/stage/oratapi/LICENSE
+Upgraded: /tmp/oratapi-1.4.24/README.md -> /home/clive/PycharmProjects/stage/oratapi/README.md
+Total files upgraded: 127
+Cleaning up unpacked directory: /tmp/oratapi-1.4.24
+Adjusting permissions for: /home/clive/PycharmProjects/stage/oratapi/setup.sh
+Please run the setup.sh script to complete the upgrade.
+```
+
+NOTE: Irrespective of which option you choose to use, you must then run the `setup` command as advised at the end of 
+      the `update_ora_tapi` command output.
+
+Command Synopsis:
+
+```
+bin/update_ora_tapi.sh -h
+update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.22
+OraTAPI upgrade started...
+usage: update_ora_tapi.py [-h] (-t TARBALL | -s STAGING_DIR)
+
+Upgrade OraTAPI by unpacking a tarball or downloading the latest version from GitHub.
+
+options:
+  -h, --help            show this help message and exit
+  -t TARBALL, --tarball TARBALL
+                        Specify the path to the tarball file.
+  -s STAGING_DIR, --staging-dir STAGING_DIR
+                        Specify a staging directory to download the latest version from GitHub.
+```
+
+A new property is introduced. This can be used to instruct the `ora_tapi` command to perform a check for new versions 
+of OraTAPI, published to GitHub.
+
+```
+# Set check_github_for_updates to true to enable checks for newer versions of OraTAPI, otherwise set to false.
+check_github_for_updates = true
+```
+This property can be found in the `behaviour` section.
+
 
 ## The Primary Components
 The OraTAPI tools consist of three major parts:
