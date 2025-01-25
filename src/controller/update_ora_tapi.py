@@ -185,39 +185,6 @@ def set_setup_perms():
         print(f"Adjusting permissions for: {setup_script}")
         setup_script.chmod(0o750)
 
-def run_setup():
-    """
-    Runs the setup script (either `setup.ps1` on Windows or `setup.sh` on Linux/macOS).
-
-    """
-    # Determine the operating system
-    is_windows = platform.system() == "Windows"
-
-    # Select the appropriate setup script based on the OS
-    if is_windows:
-        setup_script = project_home() / 'setup.ps1'
-        print(f"Running setup script: {setup_script}")
-
-        # Execute the PowerShell script using subprocess
-        try:
-            subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(setup_script)], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Error running setup script: {e}")
-            raise
-    else:
-        setup_script = project_home() / 'setup.sh'
-
-        # Adjust file permissions (chmod 750)
-        print(f"Adjusting permissions for: {setup_script}")
-        setup_script.chmod(0o750)
-
-        # Execute the shell script
-        print(f"Running setup script: {setup_script}")
-        try:
-            subprocess.run(["bash", str(setup_script)], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Error running setup script: {e}")
-            raise
 
 def main() -> None:
     """
