@@ -35,3 +35,6 @@ exclude resources/config/OraTAPI.ini
 exclude resources/config/OraTAPI.csv
 exclude resources/config/pi_columns.csv
 
+# Exclude misc file
+exclude .gitignore
+exclude .bumpversion.cfg
