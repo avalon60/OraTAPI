@@ -2,7 +2,7 @@
 
 # OraTAPI - Oracle Table API Generator 
 
-Version 1.4.26
+Version 1.4.27
 
 - [OraTAPI - Oracle Table API Generator](#oratapi---oracle-table-api-generator)
   - [About OraTAPI](#about-oratapi)
