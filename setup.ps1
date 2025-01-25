@@ -32,24 +32,28 @@ if (-not (Get-Command pip -ErrorAction SilentlyContinue)) {
     Write-Host "pip is already installed."
 }
 
-# Step 2: Create virtual environment if it doesn't exist
+# Step 2: Create virtual environment (recreate if it exists)
 $step++
-$step_desc = "Create virtual environment if it doesn't exist"
+$step_desc = "Create virtual environment (recreate if it exists)"
 Write-Host "Step ${step}: ${step_desc}..."
-if (-not (Test-Path $VENV_DIR)) {
-    Write-Host "Creating virtual environment in: $VENV_DIR"
-    python -m venv $VENV_DIR
+if (Test-Path $VENV_DIR) {
+    Write-Host "Recreating virtual environment in: $VENV_DIR"
+    Remove-Item -Recurse -Force -Path $VENV_DIR
 } else {
-    Write-Host "Virtual environment already exists in: $VENV_DIR"
+    Write-Host "Creating virtual environment in: $VENV_DIR"
 }
+python -m venv $VENV_DIR
 
 # Step 3: Activate the virtual environment
 $step++
 $step_desc = "Activate the virtual environment"
 Write-Host "Step ${step}: ${step_desc}..."
-Write-Host "Activating virtual environment..."
-# Use the virtual environment's Python directly
 $venvPython = Join-Path -Path $VENV_DIR -ChildPath "Scripts\python.exe"
+if (-not (Test-Path $venvPython)) {
+    Write-Host "Error: Python not found in the virtual environment. Exiting."
+    Exit 1
+}
+Write-Host "Activating virtual environment..."
 
 # Step 4: Upgrade pip to ensure you're using the latest version
 Write-Host "Upgrading pip..."
@@ -77,4 +81,3 @@ Write-Host "Setup completed successfully!"
 
 # Return to the original directory
 Pop-Location
-

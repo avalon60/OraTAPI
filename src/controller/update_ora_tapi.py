@@ -7,7 +7,7 @@ Description: Script to upgrade OraTAPI by extracting a tarball and copying files
 __author__ = "Clive Bostock"
 __date__ = "2025-01-21"
 __description__ = "Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder or by downloading the latest version from GitHub."
-__version__ = "1.4.22"
+from controller.ora_tapi import __version__
 
 import argparse
 import shutil
@@ -17,6 +17,9 @@ from pathlib import Path
 from packaging.version import Version
 from lib.file_system_utils import project_home
 from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
+import os
+import subprocess
+import platform
 
 PROG_NAME = Path(__file__).name
 
@@ -91,8 +94,26 @@ def upgrade_files(upgrade_dir: Path) -> None:
             if src_file.is_file():  # Ensure it is a file
                 target_file = root_install_dir / "src" / src_file.relative_to(src_dir)
                 target_file.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_file, target_file)
                 relative_target = target_file.relative_to(root_install_dir)
+                try:
+                    shutil.copy2(src_file, target_file)
+                except PermissionError:
+                    print(f'File busy, skipped: {relative_target}')
+                files_upgraded += 1
+                print(f"Upgraded: {src_file} -> {relative_target}")
+
+    # Upgrade bin directory
+    src_dir = upgrade_dir / "bin"
+    if src_dir.exists():
+        for src_file in src_dir.rglob("*"):
+            if src_file.is_file():  # Ensure it is a file
+                target_file = root_install_dir / "bin" / src_file.relative_to(src_dir)
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                relative_target = target_file.relative_to(root_install_dir)
+                try:
+                    shutil.copy2(src_file, target_file)
+                except PermissionError:
+                    print(f'File busy, skipped: {relative_target}')
                 files_upgraded += 1
                 print(f"Upgraded: {src_file} -> {relative_target}")
 
@@ -148,6 +169,55 @@ def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
     print(f"Extraction complete. Root unpacked directory: {unpacked_root}")
     return unpacked_root
 
+def set_setup_perms():
+    """
+    Runs the setup script (either `setup.ps1` on Windows or `setup.sh` on Linux/macOS).
+
+    """
+    # Determine the operating system
+    is_windows = platform.system() == "Windows"
+
+    # Select the appropriate setup script based on the OS
+    if not is_windows:
+        setup_script = project_home() / 'setup.sh'
+
+        # Adjust file permissions (chmod 750)
+        print(f"Adjusting permissions for: {setup_script}")
+        setup_script.chmod(0o750)
+
+def run_setup():
+    """
+    Runs the setup script (either `setup.ps1` on Windows or `setup.sh` on Linux/macOS).
+
+    """
+    # Determine the operating system
+    is_windows = platform.system() == "Windows"
+
+    # Select the appropriate setup script based on the OS
+    if is_windows:
+        setup_script = project_home() / 'setup.ps1'
+        print(f"Running setup script: {setup_script}")
+
+        # Execute the PowerShell script using subprocess
+        try:
+            subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(setup_script)], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running setup script: {e}")
+            raise
+    else:
+        setup_script = project_home() / 'setup.sh'
+
+        # Adjust file permissions (chmod 750)
+        print(f"Adjusting permissions for: {setup_script}")
+        setup_script.chmod(0o750)
+
+        # Execute the shell script
+        print(f"Running setup script: {setup_script}")
+        try:
+            subprocess.run(["bash", str(setup_script)], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running setup script: {e}")
+            raise
 
 def main() -> None:
     """
@@ -260,7 +330,14 @@ def main() -> None:
             print(f"Cleaning up unpacked directory: {unpacked_dir}")
             shutil.rmtree(unpacked_dir, ignore_errors=True)
 
-    print('OraTAPI upgrade complete.')
+
+    is_windows = platform.system() == "Windows"
+
+    if is_windows:
+        print("Please run the setup.ps1 script to complete the upgrade.")
+    else:
+        set_setup_perms()
+        print("Please run the setup.sh script to complete the upgrade.")
 
 
 if __name__ == "__main__":

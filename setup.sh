@@ -67,10 +67,9 @@ fi
 let step=${step}+1
 step_desc="Create virtual environment if it doesn't exist"
 echo "Step ${step}: ${step_desc}..."
-if [  -d "$VENV_DIR" ]
-then
-    rm -fr $VENV_DIR
+if [ -d "$VENV_DIR" ]; then
     echo "Recreating virtual environment in: $VENV_DIR"
+    rm -fr $VENV_DIR
 else
     echo "Creating virtual environment in: $VENV_DIR"
 fi
@@ -80,19 +79,24 @@ $PYTHON -m venv "$VENV_DIR"
 let step=${step}+1
 step_desc="Activate the virtual environment"
 echo "Step ${step}: ${step_desc}..."
+VENV_PYTHON="${APP_HOME}/${VENV_DIR}/${SOURCE_DIR}/python"
+if [ ! -x "$VENV_PYTHON" ]; then
+    echo "Error: Python not found in the virtual environment. Exiting."
+    exit 1
+fi
 echo "Activating virtual environment..."
-source "${VENV_DIR}/${SOURCE_DIR}/activate"
+source "${APP_HOME}/${VENV_DIR}/${SOURCE_DIR}/activate"
 
 # Step 4: Upgrade pip to ensure you're using the latest version
 echo "Upgrading pip..."
-venv/${SOURCE_DIR}/python -m pip install --upgrade pip
+"$VENV_PYTHON" -m pip install --upgrade pip
 
 
 # Step 5: Perform the packages install
 step_desc="Perform the packages install"
 let step=${step}+1
 echo "Step ${step}: ${step_desc}..."
-$PYTHON -m pip install .
+"$VENV_PYTHON" -m pip install .
 
 # Step 6: Set executable permissions for shell scripts
 step_desc="Set executable permissions for shell script"
@@ -105,4 +109,3 @@ chmod +x "$BIN_DIR/ora_tapi.sh"
 echo "Setup completed successfully!"
 
 popd
-

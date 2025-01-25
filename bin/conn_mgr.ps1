@@ -15,7 +15,7 @@ Clive Bostock
 #>
 
 # Define the entry point and directories
-$ENTRY_POINT = "conn_mgr.py"
+$ENTRY_POINT = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath) + ".py"
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PROJECT_DIR = Split-Path -Parent $SCRIPT_DIR
 $BIN_DIR = Join-Path $PROJECT_DIR "bin"

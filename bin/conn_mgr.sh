@@ -15,16 +15,10 @@
 realpath() {
   [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
-ENTRY_POINT="conn_mgr.py"
+ENTRY_POINT="$(basename $0 .sh).py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
-BIN_DIR="${PROJECT_DIR}/bin"
 CONTROL_DIR="${PROJECT_DIR}/src/controller"
-VIEW_DIR="${PROJECT_DIR}/src/view"
-LIB_DIR="${PROJECT_DIR}/src/lib"
-MODEL_DIR="${PROJECT_DIR}/src/model"
-E="-e"
-
 E="-e"
 
 # Virtual environment activation (adjust based on your setup)
