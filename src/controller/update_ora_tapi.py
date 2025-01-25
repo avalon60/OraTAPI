@@ -17,8 +17,6 @@ from pathlib import Path
 from packaging.version import Version
 from lib.file_system_utils import project_home
 from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
-import os
-import subprocess
 import platform
 
 PROG_NAME = Path(__file__).name
