@@ -1,7 +1,7 @@
 """
 __author__: Clive Bostock
 __date__: 2024-12-01
-__description__: User/Security module. This is responsible for managing developer specific settings; primarily
+__description__: User/Security module. This is responsible for managing developer-specific settings; primarily
                  password encryption/decryption and configuration settings.
 
                  Passwords are located to the $HOME/<sanitised_project_name>/<typ>_credentials.ini file.
@@ -22,15 +22,6 @@ import configparser
 import os
 import subprocess
 import platform
-
-APP_HOME = os.path.dirname(os.path.realpath(__file__))
-APP_HOME = Path(os.path.dirname(APP_HOME))
-CONFIG_DIR = APP_HOME / 'config'
-OHAI_TEST_INI = CONFIG_DIR / 'config.ini'
-REPORTS_DIR = APP_HOME / "reports"
-LOGS_DIR = APP_HOME / "logs"
-SCREENSHOTS_DIR = APP_HOME / "screenshots"
-USER_SECRETS_INI = 'secrets.ini'
 
 
 def _system_id():
@@ -87,8 +78,8 @@ def _system_id():
 class UserSecurity:
     def __init__(self, project_identifier:str, credential_type:str = "dsn"):
         """Initialise a UserSec object.
-        :param project_identifier: An alphanumeric string which identifies the project. This is used to create a hidden .<project_identifier>  directory, in the users home directory.
-        :param credential_type: Defines the type of credentials we are working with. We store one credential type per config file.
+        :param project_identifier: An alphanumeric string which identifies the project. This is used to create a hidden .<project_identifier> directory, in the users home directory.
+        :param credential_type: Define the type of credentials we are working with. We store one credential type per config file.
         """
 
         sanitised_dir_name = sanitise_dir_name(directory_name=project_identifier)
@@ -106,8 +97,8 @@ class UserSecurity:
 
         :param connection_name: The name of the stored database connection.
         :return: A tuple containing decrypted username, decrypted password, and DSN.
-        :raises FileNotFoundError: If the credentials configuration file does not exist.
-        :raises KeyError: If the connection name does not exist in the credentials configuration file.
+        :raises FileNotFoundError: If the credential configuration file does not exist.
+        :raises KeyError: If the connection name does not exist in the credential configuration file.
         """
         # Check if the configuration file exists
         if not self.user_config_file_path.exists():
@@ -205,7 +196,7 @@ class UserSecurity:
         Write a key/value pair to the configparser file. If the key already exists, update the value and print a message.
 
         :param connection_name: Config file section name.
-        :param credential_key: Key to add/update in the credentials config file.
+        :param credential_key: Key to add/update in the credential config file.
         :param credential_value: Value to associate with the key.
         """
         config = configparser.ConfigParser()
@@ -326,7 +317,7 @@ def _derive_key(encryption_password: str, salt: bytes) -> bytes:
 # Don't leave a @log_call here
 def _encrypted_user_credential(credential: str) -> str:
     """The encrypted_user_password function accepts a username, or password, and returns the encrypted form,
-    which is locked in (encrypted) to the users machine.
+    which is locked in (encrypted) to the user's machine.
 
     Args:
         credential (str): The plaintext credential component (username, password...).
@@ -348,7 +339,7 @@ def _decrypted_user_credential(encrypted_credential: str) -> str:
     and ciphertext.
 
     Returns:
-        str:  The plaintext password.
+        str: The plaintext credential.
     """
     system_identifier = _system_id()
     decrypted_credential = _data_decrypt(encrypted_data=encrypted_credential, encryption_password=system_identifier)
