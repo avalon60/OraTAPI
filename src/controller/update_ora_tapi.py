@@ -146,7 +146,7 @@ def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
     :param extract_to: Path to the directory where the tarball will be unpacked.
     :returns: Path to the root of the unpacked directory.
     """
-    print(f"Extracting {tarball_path} to {extract_to}...")
+    print(f"Extracting {tarball_path} to {extract_to.resolve()}... ")
 
     with tarfile.open(tarball_path, 'r:gz') as tar:
         # Get the root directory of the tarball
