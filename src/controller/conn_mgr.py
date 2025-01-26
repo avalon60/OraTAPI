@@ -1,6 +1,7 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-12-10"
 __description__ = "Command-line tool for managing database connection entries in a configuration file."
+
 from controller.ora_tapi import __version__
 import argparse
 import configparser
@@ -9,20 +10,18 @@ import getpass
 from model.user_security import UserSecurity
 
 PROG_NAME = Path(__file__).name
-CONFIG_PATH = Path.home() / ".OraTAPI/dsn_credentials.ini"
 
-user_security = UserSecurity(project_identifier="OraTAPI")
 
-def ensure_config_file():
+def ensure_config_file(config_pathname:Path):
     """
     Ensure the configuration file exists.
     """
-    if not CONFIG_PATH.parent.exists():
-        CONFIG_PATH.parent.mkdir(parents=True)
+    if not config_pathname.parent.exists():
+        config_pathname.parent.mkdir(parents=True)
 
-    if not CONFIG_PATH.exists():
-        CONFIG_PATH.touch()
-        print(f"Created configuration file at {CONFIG_PATH}")
+    if not config_pathname.exists():
+        config_pathname.touch()
+        print(f"Created configuration file at {config_pathname}")
 
 
 def list_connections(config):
@@ -46,38 +45,39 @@ def list_connections(config):
         print("No database connections found.")
 
 
-def delete_connection(config, name):
+def delete_connection(config, connection_name, config_pathname:Path):
     """
     Delete a connection from the config file after confirmation.
 
     :param config: ConfigParser object
-    :param name: Name of the connection to delete
+    :param connection_name: Name of the connection to delete
+    :param config_pathname:
     """
-    if config.has_section(name):
-        confirm = input(f"Are you sure you want to delete the connection '{name}'? (y/n): ").lower()
+    if config.has_section(connection_name):
+        confirm = input(f"Are you sure you want to delete the connection '{connection_name}'? (y/n): ").lower()
         if confirm == 'y':
-            config.remove_section(name)
-            save_config(config)
-            print(f"Connection '{name}' deleted.")
+            config.remove_section(connection_name)
+            save_config(config, config_pathname=config_pathname)
+            print(f"Connection '{connection_name}' deleted.")
         else:
             print("Deletion cancelled.")
     else:
-        print(f"Connection '{name}' does not exist.")
+        print(f"Connection '{connection_name}' does not exist.")
 
 
-def edit_connection(config, name):
+def edit_connection(config, name, user_security):
     """
     Edit an existing connection interactively.
 
     :param config: ConfigParser object
     :param name: Name of the connection to edit
+    :param user_security: UserSecurity object
     """
     if not config.has_section(name):
         print(f"Connection '{name}' does not exist.")
         return
 
-    db_username, db_password, dsn \
-        = user_security.named_connection_creds(connection_name=name)
+    db_username, db_password, dsn = user_security.named_connection_creds(connection_name=name)
 
     print(f"Editing connection '{name}'...")
     username = input(f"Enter username [{db_username}]: ") or db_username
@@ -92,12 +92,13 @@ def edit_connection(config, name):
         print("Edit cancelled.")
 
 
-def create_connection(config, name):
+def create_connection(config, name, user_security):
     """
     Create a new connection interactively.
 
     :param config: ConfigParser object
     :param name: Name of the new connection
+    :param user_security: UserSecurity object
     """
     if config.has_section(name):
         print(f"Connection '{name}' already exists.")
@@ -122,23 +123,23 @@ def create_connection(config, name):
         print("Creation cancelled.")
 
 
-def save_config(config):
+def save_config(config, config_pathname: Path):
     """
     Save the configuration file.
 
     :param config: ConfigParser object
+    :param config_pathname:
     """
-    with CONFIG_PATH.open('w') as configfile:
+    with config_pathname.open('w') as configfile:
         config.write(configfile)
 
 
 def main():
     print(f"{PROG_NAME}: OraTAPI connection manager utility version: {__version__}")
-    ensure_config_file()
-    parser = argparse.ArgumentParser(description="Database connection manager.",
-                                     epilog="Used to create/edit/delete or store named database connections. "
-                                            "Database connections are stored, encrypted, in a local store.")
-
+    parser = argparse.ArgumentParser(
+        description="Database connection manager.",
+        epilog="Used to create/edit/delete or store named database connections. "
+               "Database connections are stored, encrypted, in a local store.")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-c', '--create', action='store_true', help="Create a new connection.")
@@ -147,11 +148,18 @@ def main():
     group.add_argument('-l', '--list', action='store_true', help="List all connections.")
 
     parser.add_argument('-n', '--name', type=str, help="Name of the connection.")
+    parser.add_argument('-t', '--credential-type', type=str, choices=['dsn', 'url'], default='dsn',
+                        help="Type of credential to use (default: dsn).")
 
     args = parser.parse_args()
+    credential_type = args.credential_type
+    config_file = Path.home() / f".OraTAPI/{credential_type}_credentials.ini"
+    ensure_config_file(config_pathname=config_file)
 
     config = configparser.ConfigParser()
-    config.read(CONFIG_PATH)
+    config.read(config_file)
+
+    user_security = UserSecurity(project_identifier="OraTAPI", credential_type=args.credential_type)
 
     if args.list:
         list_connections(config)
@@ -159,17 +167,17 @@ def main():
         if not args.name:
             print("The --name option is required for creating a connection.")
         else:
-            create_connection(config, args.name)
+            create_connection(config, args.name, user_security)
     elif args.edit:
         if not args.name:
             print("The --name option is required for editing a connection.")
         else:
-            edit_connection(config, args.name)
+            edit_connection(config, args.name, user_security)
     elif args.delete:
         if not args.name:
             print("The --name option is required for deleting a connection.")
         else:
-            delete_connection(config, args.name)
+            delete_connection(config, args.name, config_pathname=config_file)
 
 
 if __name__ == "__main__":
