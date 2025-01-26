@@ -18,6 +18,7 @@ Version 1.4.27
   - [Performing Upgrades](#performing-upgrades)
     - [Migrations](#migrations)
     - [In-situ upgrades](#in-situ-upgrades)
+      - [The check\_github\_for\_updates Property](#the-check_github_for_updates-property)
   - [The Primary Components](#the-primary-components)
     - [Command-line Tools](#command-line-tools)
       - [Windows:](#windows)
@@ -415,11 +416,11 @@ A newer version of OraTAPI is available. Do you want to proceed with the upgrade
 So here we use the -t flag to specify the pathname to a tarball. Entering "y" will cause the update to proceed.
 
 The second, and perhaps more convenient method, is by having `ora_tapi` check for a new version for you. This is 
-where the new OraTAPI.ini setting comes somewhat into play. If this is set, then, when you run the ora_tapi.py command, 
-it will reach out to GitHub to check if a newer version exists, and it will print out a warning message, informing you 
-that a newer version is available. You can then have the `update_ora_tapi` download the latest release, and have it 
-apply it to your installation.
-
+where the new OraTAPI.ini setting ([The check\_github\_for\_updates Property](#the-check_github_for_updates-property)) 
+comes somewhat into play. If this is set, then, when you run the ora_tapi.py command, it will reach out to GitHub to 
+check if a newer version exists, and it will print out a warning message, informing you that a newer version is 
+available. You can then have the `update_ora_tapi` download the latest release, and have it apply it to your 
+installation.
 ```
 $ bin/update_ora_tapi.sh -s /tmp
 update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.24
@@ -469,7 +470,7 @@ options:
   -s STAGING_DIR, --staging-dir STAGING_DIR
                         Specify a staging directory to download the latest version from GitHub.
 ```
-
+#### The check_github_for_updates Property
 A new property is introduced. This can be used to instruct the `ora_tapi` command to perform a check for new versions 
 of OraTAPI, published to GitHub.
 
