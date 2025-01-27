@@ -6,7 +6,7 @@ __description__ = ("Module for managing database and application connection entr
 import configparser
 from pathlib import Path
 import getpass
-from model.user_security import UserSecurity
+from lib.user_security import UserSecurity
 
 
 class ConnectMgr:

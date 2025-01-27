@@ -11,7 +11,7 @@ from lib.config_manager import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
 from lib.app_utils import current_timestamp, format_elapsed_time
-from model.user_security import UserSecurity
+from lib.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl
 from pathlib import Path
 from os import chdir

@@ -4,10 +4,7 @@ __description__ = "Module for managing database connection and application entri
 
 from controller.ora_tapi import __version__
 import argparse
-import configparser
 from pathlib import Path
-import getpass
-from model.user_security import UserSecurity
 from lib.connecttion_mgr import ConnectMgr
 PROG_NAME = Path(__file__).name
 
