@@ -1,3 +1,8 @@
+__author__ = "Clive Bostock"
+__date__ = "2025-01-27"
+__description__ = ("Module for managing database and application connection entries in a configuration file. Two "
+                   "variations of file are maintained. One for DSNs and another for URLs. These are auto-created (if "
+                   "required) and maintained based on the credential_type initialisation parameter.")
 import configparser
 from pathlib import Path
 import getpass
@@ -5,13 +10,14 @@ from model.user_security import UserSecurity
 
 
 class ConnectMgr:
-    def __init__(self, project_identifier:str, config_pathname: Path, credential_type: str):
+    def __init__(self, project_identifier:str, credential_type: str):
         """
         Initialize the ConnectMgr object.
-        :project_identifier: Unique string identifying the project. Used to formulate the ~.<project_identifier> folder name.
+        :project_identifier: Unique string identifying the project. Used to formulate the .<project_identifier> folder name.
         :param config_pathname: Path to the configuration file
         :param credential_type: Type of credential (e.g. 'dsn')
         """
+        config_pathname = Path.home() / f".OraTAPI/{credential_type}_credentials.ini"
         self.config_pathname = config_pathname
         self.credential_type = credential_type
         self.config = configparser.ConfigParser()

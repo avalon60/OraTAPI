@@ -1,6 +1,6 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-12-10"
-__description__ = "Command-line tool for managing database connection entries in a configuration file."
+__description__ = "Module for managing database connection and application entries in a configuration file."
 
 from controller.ora_tapi import __version__
 import argparse
@@ -31,9 +31,9 @@ def main():
                         help="Type of credential to use (default: dsn).")
 
     args = parser.parse_args()
-    config_file = Path.home() / f".OraTAPI/{args.credential_type}_credentials.ini"
 
-    conn_mgr = ConnectMgr(project_identifier='OraTAPI', config_pathname=config_file, credential_type=args.credential_type)
+
+    conn_mgr = ConnectMgr(project_identifier='OraTAPI', credential_type=args.credential_type)
 
     if args.list:
         conn_mgr.list_connections()
