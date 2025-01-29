@@ -2,7 +2,7 @@
 # Author: Clive Bostock
 #   Date: 1 Dec 2022 (A Merry Christmas to one and all! :o)
 #   Name: freeze.bat
-#  Descr: Generates a Pyython requirements.txt file for DCCM
+#  Descr: Generates a Pyython requirements.txt file.
 ##############################################################################
 APP_HOME=$(realpath $0)
 APP_HOME=$(dirname ${APP_HOME})
