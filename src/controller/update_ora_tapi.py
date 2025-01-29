@@ -66,7 +66,7 @@ def upgrade_files(upgrade_dir: Path) -> None:
     if config_samples_dir.exists():
         for sample_file in config_samples_dir.rglob("*"):
             if sample_file.is_file():  # Ensure it is a file
-                target_file = current_resources / "config" / sample_file.relative_to(config_samples_dir)
+                target_file = current_resources / "config" / "samples" / sample_file.relative_to(config_samples_dir)
                 target_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(sample_file, target_file)
                 relative_target = target_file.relative_to(root_install_dir)
