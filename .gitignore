@@ -33,3 +33,5 @@ dist/
 
 
 src/controller/quick_config (copy).py
+
+*.pyc
