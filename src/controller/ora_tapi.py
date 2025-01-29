@@ -101,7 +101,8 @@ class CodeManager:
                                                                            config_key='skip_on_missing_table')
 
         check_github_for_updates = self.config_manager.bool_config_value(config_section='behaviour',
-                                                                         config_key='check_github_for_updates')
+                                                                         config_key='check_github_for_updates',
+                                                                         default=True)
 
         self.col_auto_maintain_method = self.config_manager.config_value(config_section='api_controls',
                                                                          config_key='col_auto_maintain_method')
