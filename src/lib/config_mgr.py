@@ -6,6 +6,69 @@ from configparser import ConfigParser, ExtendedInterpolation
 import configparser
 import os
 
+
+def load_config(file_path: Path) -> configparser.ConfigParser:
+    """
+    Loads a configuration file and returns a ConfigParser object.
+
+    :param file_path: Path to the configuration file
+    :return: ConfigParser object containing the configuration data
+    """
+    config = configparser.ConfigParser()
+    config.read(file_path)
+    return config
+
+def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
+    """
+    Compares two configuration files and reports new and obsolete properties.
+
+    :param config_file_path: Path to the actual configuration file
+    :param config_sample_file: Path to the sample configuration file
+    """
+    print("Checking for config file updates...")
+    print(f"\nComparing (current): {config_file_path}")
+    print(f"      with (latest): {config_sample_file}\n")
+    config_file = load_config(config_file_path)
+    config_sample = load_config(config_sample_file)
+
+    new_properties = []
+    obsolete_properties = []
+
+    # Get all sections from both config files
+    all_sections = set(config_file.sections()).union(set(config_sample.sections()))
+
+    for section in all_sections:
+        # Strip leading/trailing spaces from section names
+        section = section.strip()
+
+        # Get options from both sections, if they exist
+        file_options = set(option.strip() for option in config_file.options(section)) if config_file.has_section(section) else set()
+        sample_options = set(option.strip() for option in config_sample.options(section)) if config_sample.has_section(section) else set()
+
+        # Determine new and obsolete options
+        new_in_sample = sample_options - file_options
+        obsolete_in_file = file_options - sample_options
+
+        # Collect results for new and obsolete options
+        for option in new_in_sample:
+            new_properties.append(f"[NEW] {section}.{option} is present in sample but missing from actual config")
+        for option in obsolete_in_file:
+            obsolete_properties.append(f"[OBSOLETE] {section}.{option} is present in actual config but missing from sample")
+
+    # Output results
+    if new_properties:
+        print("New properties:")
+        print("\n".join(new_properties))
+    else:
+        print("No new properties found.")
+
+    if obsolete_properties:
+        print("\nObsolete properties:")
+        print("\n".join(obsolete_properties))
+    else:
+        print("\nNo obsolete properties found.")
+
+
 class ConfigManager:
     def __init__(self, config_file_path:Path):
         self.config_file_path = Path(config_file_path)
@@ -76,9 +139,6 @@ class ConfigManager:
             # Update self.global_substitutions with key-value pairs from each section
             self.global_substitutions.update(dict(self.config.items(section)))
 
-    from pathlib import Path
-    import os
-
     def path_config_value(self, config_section: str, config_key: str,
                           default: str = None, suppress_warnings: bool = False) -> Path:
         """
@@ -128,8 +188,8 @@ class ConfigManager:
 
 
 if __name__ == '__main__':
-    config_file = Path('../../resources/config/samples/OraTAPI.ini.sample')
-    config_manager = ConfigManager(config_file_path=config_file)
-    config_manager.print_config()
+    actual_config_path = Path('/home/clive/PycharmProjects/stage/oratapi-1.4.16/resources/config/OraTAPI.ini')
+    sample_config_path = Path('/home/clive/PycharmProjects/stage/oratapi-1.4.16/resources/config/samples/OraTAPI.ini.sample')
 
-
+    # Run the comparison with debug output
+    compare_config_files(actual_config_path, sample_config_path)
