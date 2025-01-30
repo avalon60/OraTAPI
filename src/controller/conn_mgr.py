@@ -2,10 +2,10 @@ __author__ = "Clive Bostock"
 __date__ = "2024-12-10"
 __description__ = "Module for managing database connection and application entries in a configuration file."
 
-from controller.ora_tapi import __version__
+from controller import __version__
 import argparse
 from pathlib import Path
-from lib.connecttion_mgr import ConnectMgr
+from lib.connection_mgr import ConnectMgr
 PROG_NAME = Path(__file__).name
 
 
