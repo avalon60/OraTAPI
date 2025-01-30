@@ -7,7 +7,7 @@ Description: Script to upgrade OraTAPI by extracting a tarball and copying files
 __author__ = "Clive Bostock"
 __date__ = "2025-01-21"
 __description__ = "Script to upgrade OraTAPI by extracting a tarball and copying files from an unpacked upgrade folder or by downloading the latest version from GitHub."
-from controller.ora_tapi import __version__
+from controller import __version__
 
 import argparse
 import shutil
@@ -18,6 +18,7 @@ from packaging.version import Version
 from lib.file_system_utils import project_home
 from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
 import platform
+from lib.config_mgr import compare_config_files
 
 PROG_NAME = Path(__file__).name
 
@@ -125,6 +126,12 @@ def upgrade_files(upgrade_dir: Path) -> None:
             files_upgraded += 1
 
     print(f"Total files upgraded: {files_upgraded}")
+
+    config_pathname = upgrade_resources / "config" / "OraTAPI.ini"
+    sample_config_pathname = config_samples_dir / "OraTAPI.ini.sample"
+    compare_config_files(config_file_path=config_pathname, config_sample_file=sample_config_pathname)
+
+    print("\nDone.")
 
 
 def validate_staging_directory(staging_dir: Path) -> None:
