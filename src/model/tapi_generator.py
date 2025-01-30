@@ -8,7 +8,7 @@ import copy
 import re
 
 from lib.file_system_utils import project_home
-from lib.config_manager import ConfigManager
+from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home

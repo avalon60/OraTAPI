@@ -5,7 +5,7 @@ __date__ = "2024-11-09"
 __description__ = "Generates the utPLSQL test skeleton code - package spec & package body."
 
 from lib.file_system_utils import project_home
-from lib.config_manager import ConfigManager
+from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from model.db_objects import TableConstraints
 from model.session_manager import DBSession

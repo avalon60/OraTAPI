@@ -3,7 +3,7 @@ __date__ = "2024-11-09"
 __description__ = "Module responsible for display to console"
 
 from enum import Enum
-from lib.config_manager import ConfigManager
+from lib.config_mgr import ConfigManager
 from pathlib import Path
 from rich import print
 from rich.console import Console
