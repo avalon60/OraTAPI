@@ -7,13 +7,14 @@ Description: Script to migrate, export, or import configuration and template fil
 __author__ = "Clive Bostock"
 __date__ = "2024-12-31"
 __description__ = "Script to migrate, export, or import configuration and template files for OraTAPI."
-from controller.ora_tapi import __version__
+from controller import __version__
 
 import argparse
 import shutil
 import zipfile
 from configparser import ConfigParser
 from pathlib import Path
+from lib.config_mgr import compare_config_files
 
 from lib.file_system_utils import project_home
 
@@ -49,55 +50,6 @@ def import_resources(import_path: Path) -> None:
     config_sample = resources_dir / "config" / "samples" / "OraTAPI.ini.sample"
     config_target = resources_dir / "config" / "OraTAPI.ini"
     compare_config_files(config_sample_file=config_sample, config_file_path=config_target)
-
-
-def compare_config_files(config_file_path: Path, config_sample_file: Path) -> None:
-    """
-    Compare configuration files to detect changes.
-
-    :param config_file_path: Path to the current config file.
-    :param config_sample_file: Path to the sample config file.
-    """
-    print('\nChecking for OraTAPI.ini updates/obsolescence...')
-    current_config = ConfigParser()
-    sample_config = ConfigParser()
-
-    current_config.read(config_file_path)
-    sample_config.read(config_sample_file)
-
-    new_sections = set(sample_config.sections()) - set(current_config.sections())
-    deprecated_sections = set(current_config.sections()) - set(sample_config.sections())
-
-    if new_sections:
-        print(f"New sections found in supplied OraTAPI.ini.sample: {', '.join(new_sections)}")
-    if deprecated_sections:
-        print(f"Deprecated sections: {', '.join(deprecated_sections)}")
-
-    if not new_sections and not deprecated_sections:
-        print("\nNo config changes introduced with release.")
-
-    for section in sample_config.sections():
-        if section not in current_config:
-            print(f"WARNING: New section introduced: [{section}] - not yet implemented in current config.")
-            continue
-
-        new_keys = set(sample_config[section].keys()) - set(current_config[section].keys())
-        deprecated_keys = set(current_config[section].keys()) - set(sample_config[section].keys())
-
-        if new_keys:
-            print(f"WARNING: New keys introduced for section [{section}]: {', '.join(new_keys)}")
-
-        if deprecated_keys:
-            print(f"WARNING: Obsoleted keys from section [{section}]: {', '.join(deprecated_keys)}")
-
-    for section in current_config.sections():
-        if section not in sample_config:
-            print(f"WARNING: Obsoleted section found: [{section}] - persists in current config.")
-
-    if 'logger' in deprecated_sections:
-        print("Deprecated section: [logger]")
-
-    print('\nOraTAPI.ini checks complete.\n')
 
 
 def migrate_files(previous_install_dir: Path) -> None:
