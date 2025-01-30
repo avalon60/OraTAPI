@@ -1,13 +1,13 @@
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
-__version__ = "1.4.29"
+from controller import __version__
 import copy
 import time
 
 from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
-from lib.config_manager import ConfigManager
+from lib.config_mgr import ConfigManager
 from model.session_manager import DBSession
 from lib.file_system_utils import project_home
 from lib.app_utils import current_timestamp, format_elapsed_time
