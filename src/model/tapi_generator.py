@@ -342,7 +342,7 @@ class ApiGenerator:
             if column_name_lc in self.auto_maintained_cols_lc or column_name_lc == self.row_vers_column_name.lower():
                 continue
             column_name_lc = column_name.lower()
-            parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype' else 'p_row.' + column_name_lc
+            parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype'  or column_name_lc in self.table.pk_columns_list_lc else 'p_row.' + column_name_lc
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
             is_pk_column = self.table.column_property_value(column_name=column_name, property_name='is_pk_column')
             param_prefix = '* ' if is_pk_column else '  '
