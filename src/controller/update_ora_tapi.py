@@ -20,6 +20,8 @@ from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
 import platform
 from lib.config_mgr import compare_config_files
 import requests
+import markdown
+from bs4 import BeautifulSoup
 
 PROG_NAME = Path(__file__).name
 
@@ -210,6 +212,13 @@ def set_setup_perms():
         setup_script.chmod(0o750)
 
 
+def markdown_to_plain_text(md_text: str) -> str:
+    """Converts Markdown text to plain text by stripping formatting."""
+    html_content = markdown.markdown(md_text)  # Convert Markdown to HTML
+    text_content = BeautifulSoup(html_content, "html.parser").get_text()  # Extract plain text
+    return text_content
+
+
 def main() -> None:
     """
     Main function to parse arguments and perform actions.
@@ -286,7 +295,8 @@ def main() -> None:
                 exit(0)
             elif latest_version > current_version:
                 print(f"A newer version, {latest_version}, is available on GitHub:")
-                release_notes = get_latest_release_notes(owner='avalon60', repo='OraTAPI')
+                release_notes_md = get_latest_release_notes(owner='avalon60', repo='OraTAPI')
+                release_notes = markdown_to_plain_text(md_text=release_notes_md)
                 text_width=100
                 print("=" * text_width)
                 print(release_notes)

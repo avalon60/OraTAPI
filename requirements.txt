@@ -1,3 +1,5 @@
+beautifulsoup4==4.12.3
+bs4==0.0.2
 build==1.2.2.post1
 bump2version==1.0.1
 certifi==2024.12.14
@@ -6,9 +8,11 @@ charset-normalizer==3.4.1
 configobj==5.0.9
 cryptography==43.0.3
 idna==3.10
+Markdown==3.7
 markdown-it-py==3.0.0
 mdurl==0.1.2
 oracledb==2.5.0
+-e git+https://github.com/avalon60/OraTAPI.git@595a80488ec8169107df4725e9edf6355f1b98d4#egg=OraTAPI
 packaging==24.2
 pycparser==2.22
 Pygments==2.18.0
@@ -16,6 +20,7 @@ pyproject_hooks==1.2.0
 requests==2.32.3
 rich==13.9.4
 setuptools-scm==8.1.0
+soupsieve==2.6
 tomli==2.2.1
 typing_extensions==4.12.2
 urllib3==2.3.0
