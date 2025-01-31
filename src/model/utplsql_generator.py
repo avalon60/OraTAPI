@@ -4,6 +4,8 @@ __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Generates the utPLSQL test skeleton code - package spec & package body."
 
+import copy
+
 from lib.file_system_utils import project_home
 from lib.config_mgr import ConfigManager
 from model.db_objects import Table
@@ -21,7 +23,7 @@ from copy import deepcopy
 
 
 # Define our substitution placeholder string for indent spaces.
-# The number of spaces for an indent tab, is defined in OraTAPI.ini
+# The number of spaces for an indent tab is defined in OraTAPI.ini
 IDNT = '%indent_spaces%'
 
 APP_HOME = project_home()
@@ -389,6 +391,9 @@ class UtPLSQLGenerator:
 
             _procedure_name = constraint_dict["constraint_name_lc"]
             constraint_type = constraint_dict["constraint_type"]
+            if 'sys_' in _procedure_name and constraint_type == 'N':
+                _procedure_name = f"{cons_columns[0].lower()}_not_null"
+
             merged_dict["throws_code"] = self.constraint_exceptions_map[constraint_type]
 
 
@@ -519,6 +524,8 @@ class UtPLSQLGenerator:
 
             _procedure_name = constraint_dict["constraint_name_lc"]
             constraint_type = constraint_dict["constraint_type"]
+            if 'sys_' in _procedure_name and constraint_type == 'N':
+                _procedure_name = f"{cons_columns[0].lower()}_not_null"
 
             merged_dict["throws_code"] = self.constraint_exceptions_map[constraint_type]
 
@@ -560,8 +567,11 @@ class UtPLSQLGenerator:
 
         procedure = self._package_api_template(template_category="ut_packages", template_type=template_type,
                                                template_name='constraint_test')
+        _constraint_dict = copy.deepcopy(constraint_dict)
 
-        subst_dict = {"api_type": procedure_basename, "procedure_name": procedure_name} | constraint_dict
+        _constraint_dict["constraint_name"] = procedure_name.upper()
+        _constraint_dict["constraint_name_lc"] = procedure_name.lower()
+        subst_dict = {"api_type": procedure_basename, "procedure_name": procedure_name} | _constraint_dict
 
 
         procedure = inject_values(substitutions=subst_dict,
