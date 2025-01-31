@@ -6,7 +6,6 @@ __description__ = "Generates the utPLSQL test skeleton code - package spec & pac
 
 import copy
 
-from lib.file_system_utils import project_home
 from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from model.db_objects import TableConstraints
@@ -15,7 +14,7 @@ from lib.file_system_utils import project_home
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
-from copy import deepcopy
+
 from model.tapi_generator import inject_values
 from model.framework_errors import InconsistentRequest
 from model.ora_tapi_csv import CSVManager
@@ -564,6 +563,7 @@ class UtPLSQLGenerator:
 
     def _construct_constraint_test(self, procedure_basename: str, procedure_name: str, constraint_dict:dict,
                                    template_type:str = 'spec') -> str:
+
 
         procedure = self._package_api_template(template_category="ut_packages", template_type=template_type,
                                                template_name='constraint_test')
