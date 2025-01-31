@@ -19,8 +19,28 @@ from lib.file_system_utils import project_home
 from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
 import platform
 from lib.config_mgr import compare_config_files
+import requests
 
 PROG_NAME = Path(__file__).name
+
+
+
+def get_latest_release_notes(owner: str, repo: str) -> str:
+    """
+    Fetches the latest release notes from the GitHub API.
+
+    :param owner: GitHub username or organization name.
+    :param repo: GitHub repository name.
+    :return: The latest release notes (description of the update).
+    """
+    url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        release_data = response.json()
+        return release_data.get("body", "No release notes available.")
+    else:
+        return f"Error fetching release notes: {response.status_code}"
 
 
 def extract_version_from_tarball(tarball_path: Path) -> str:
@@ -144,7 +164,6 @@ def validate_staging_directory(staging_dir: Path) -> None:
     if not staging_dir.is_dir():
         raise ValueError(f"Error: Staging directory '{staging_dir}' does not exist.")
 
-
 def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
     """
     Extracts a tarball to a specified directory with safety checks to avoid overwriting the current installation.
@@ -266,7 +285,13 @@ def main() -> None:
                 print("OraTAPI is already up to date.")
                 exit(0)
             elif latest_version > current_version:
-                if not confirm_action("A newer version is available on GitHub. Do you want to download it?"):
+                print(f"A newer version, {latest_version}, is available on GitHub:")
+                release_notes = get_latest_release_notes(owner='avalon60', repo='OraTAPI')
+                text_width=100
+                print("=" * text_width)
+                print(release_notes)
+                print("=" * 100)
+                if not confirm_action("Do you want to download this update?"):
                     print("Download canceled.")
                     exit(0)
 
