@@ -219,6 +219,11 @@ class CodeManager:
                                     text=f"Cannot find table schema by the name of: {self.table_owner}")
             exit(0)
 
+        if not self.table_schema_has_tables():
+            self.view.print_console(msg_level=MsgLvl.error,
+                                    text=f"The nominated table owner schema, {self.table_owner}, has no tables!")
+            exit(0)
+
         # Validate table names and process. We get a dictionary of results returned.
         results = self.process_table_names()
 
@@ -281,8 +286,9 @@ class CodeManager:
 
     def process_table_names(self) -> dict:
         """
-        Process the provided table names, ensuring they exist in the database.
+        Here we process the provided table names, ensuring they exist in the database.
         """
+
         table_list = []
         if self.table_names_list[0] == '%':
             table_list_sql = 'select table_name from all_tables where owner = upper(:schema_name)'
@@ -395,6 +401,32 @@ class CodeManager:
                 print(f"An error occurred: {e}")
             return False
 
+    def table_schema_has_tables(self) -> bool:
+        """
+        Check if the nominated table owner schema actually has any tables.
+
+        :return: True if the schema has one or more tables, otherwise False.
+        :rtype: bool
+
+        This method executes an SQL query to count the number of tables in the specified schema.
+        It uses the `all_tables` view to retrieve the count of tables where the owner matches
+        the given schema name. The query result is processed, and if the count is greater than 0,
+        the method returns True, indicating that the schema contains tables.
+
+        Example SQL Query:
+            select count(*) from all_tables where owner = upper(:schema_name)
+
+        Raises:
+            Exception: If the database query fails or if the connection is not established.
+        """
+        count_tables_sql = 'select count(*) from all_tables where owner = upper(:schema_name)'
+        binds = {'schema_name': self.table_owner}
+        result = self.db_session.fetch_as_lists(sql_query=count_tables_sql, bind_mappings=binds)
+        table_count = result[0][0] if result else 0  # Fetch the count from the first row, first column
+        if table_count > 0:
+            return True
+        else:
+            return False
 
     def generate_api_for_table(self, table_name: str):
         """
