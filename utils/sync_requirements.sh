@@ -3,7 +3,8 @@
 # Author: Clive Bostock
 #   Date: 16 Dec 2024 (A Merry Christmas to one and all! :o)
 #   Name: package.sh
-#  Descr: Creates an installable package of the project.
+#  Descr: Sync requirements.txt to pyproject.toml
+#         Use this with caution - experimental!
 ##############################################################################
 # Use a workaround for realpath if it's not available (possibly not on Mac)
 realpath() {
@@ -16,10 +17,10 @@ realpath() {
   fi
 }
 
-PROG_PATH=$(realpath $0)
-PROG_DIR=$(dirname ${PROG_PATH})
-APP_HOME=$(dirname ${PROG_DIR})
-pushd ${APP_HOME}
+PROG_PATH=$(realpath "$0")
+PROG_DIR=$(dirname "${PROG_PATH}")
+APP_HOME=$(dirname "${PROG_DIR}")
+pushd "${APP_HOME}" || { echo "Failed to switch to APP_HOME"; exit 1; }
 echo "App home: ${APP_HOME}"
 source venv/bin/activate
 python3 utils/sync_requirements.py
