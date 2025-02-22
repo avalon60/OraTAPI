@@ -44,9 +44,12 @@ class CodeManager:
             self.view = Interactions(controller=self, config_file_path=config_file_path)
         except MissingParameterError as e:
             print(
-                f"\n[ERROR] {e}\n\nRequired:\n\n    python ora_tapi.py -c CONN_NAME\n    or\n    python ora_tapi.py -d "
+                f"\n[ERROR] {e}\n\nRequired:\n\n    <ora_tapi> -c CONN_NAME\n    or\n    <ora_tapi> -d "
                 f"DSN -u DB_USERNAME -p DB_PASSWORD\n"
-                f"\nYou must specify at least one of the two above, along with any other options."
+
+                f"\nYou must specify at least one of the two above, along with any other optional arguments.\n"
+                f"\nDepending on your platform, you should replace <ora_tapi> with either of ora_tapi.sh or "
+                f"ora_tapi.ps1/ora_tapi."
                 f"\nUse -h for help."
 
             )
