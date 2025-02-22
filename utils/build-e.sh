@@ -16,10 +16,11 @@ realpath() {
   fi
 }
 
-PROG_PATH=$(realpath $0)
-PROG_DIR=$(dirname ${PROG_PATH})
-APP_HOME=$(dirname ${PROG_DIR})
-pushd ${APP_HOME}
+PROG_PATH=$(realpath "$0")
+PROG_DIR=$(dirname "${PROG_PATH}")
+APP_HOME=$(dirname "${PROG_DIR}")
+pushd "${APP_HOME}" || { echo "Failed to switch to APP_HOME"; exit 1; }
+source utils/utils.env
 echo "App home: ${APP_HOME}"
-source venv/bin/activate
+source_venv
 python3 -m pip install -e . 
