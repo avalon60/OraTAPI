@@ -12,7 +12,7 @@ from model.session_manager import DBSession
 from lib.file_system_utils import project_home
 from lib.app_utils import current_timestamp, format_elapsed_time
 from lib.user_security import UserSecurity
-from view.interactions import Interactions, MsgLvl
+from view.interactions import Interactions, MsgLvl, MissingParameterError
 from pathlib import Path
 from os import chdir
 from model.ora_tapi_csv import CSVManager
@@ -40,7 +40,17 @@ class CodeManager:
         config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
         if not config_file_path.exists():
             raise FileNotFoundError(f'Unable to locate config file: {config_file_path}')
-        self.view = Interactions(controller=self, config_file_path=config_file_path)
+        try:
+            self.view = Interactions(controller=self, config_file_path=config_file_path)
+        except MissingParameterError as e:
+            print(
+                f"\n[ERROR] {e}\n\nRequired:\n\n    python ora_tapi.py -c CONN_NAME\n    or\n    python ora_tapi.py -d "
+                f"DSN -u DB_USERNAME -p DB_PASSWORD\n"
+                f"\nYou must specify at least one of the two above, along with any other options."
+                f"\nUse -h for help."
+
+            )
+            exit(1)  # Exit with an error status
         args_dict = self.view.args_dict
 
         options_dict = copy.deepcopy(args_dict)
