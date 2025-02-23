@@ -39,7 +39,9 @@ class CodeManager:
         chdir(proj_home)
         config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
         if not config_file_path.exists():
-            raise FileNotFoundError(f'Unable to locate config file: {config_file_path}')
+            print(f'ERROR: Unable to locate config file: {config_file_path}')
+            print(f'This is possibly due to an incomplete installation. Did you run the quick config command?')
+            exit(1)
         try:
             self.view = Interactions(controller=self, config_file_path=config_file_path)
         except MissingParameterError as e:
@@ -51,7 +53,6 @@ class CodeManager:
                 f"optional arguments.\n\nDepending on your platform, you should replace <ora_tapi> with either of "
                 f"ora_tapi.sh (Linux/macOS/Git Bash) or\nora_tapi.ps1/ora_tapi (Windows PowerShell).\n"
                 f"\nUse -h for help."
-
             )
             exit(1)  # Exit with an error status
         args_dict = self.view.args_dict
