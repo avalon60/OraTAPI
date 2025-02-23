@@ -161,6 +161,11 @@ class CodeManager:
         enable_tapis_when_ut_enabled = self.config_manager.bool_config_value(config_section='behaviour',
                                                                               config_key='enable_tapis_when_ut_enabled',
                                                                               default=False)
+
+        self.skip_on_missing_pk = self.config_manager.bool_config_value(config_section='behaviour',
+                                                                               config_key='skip_on_missing_pk',
+                                                                               default=True)
+
         if self.enable_ut_code_generation and  enable_tapis_when_ut_enabled:
             self.enable_tapi_generation = True
         elif self.enable_ut_code_generation and not enable_tapis_when_ut_enabled:
@@ -349,6 +354,9 @@ class CodeManager:
                 self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} does not exist - bailing out!',
                                         msg_level=MsgLvl.error)
                 exit(1)
+            elif not self.table_has_pk(table_name=table_name) and self.skip_on_missing_pk:
+                self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} has no primary key - skipping!',
+                                        msg_level=MsgLvl.warning)
             else:
                 if package_enabled and self.enable_tapi_generation:
                     self.generate_api_for_table(table_name)
@@ -440,6 +448,40 @@ class CodeManager:
             return True
         else:
             return False
+
+    def table_has_pk(self, table_name: str) -> bool:
+        """
+        Determine whether the specified table has a primary key.
+
+        :param table_name: Name of the table to check.
+        :type table_name: str
+
+        :return: True if the table has a primary key defined, False otherwise.
+        :rtype: bool
+
+        This method executes an SQL query against the Oracle data dictionary view `all_constraints`
+        to verify the existence of a primary key constraint for the given table within the specified schema.
+
+        Example SQL Query:
+            select count(*) from all_constraints
+            where constraint_type = 'P'
+              and owner = upper(:schema_name)
+              and table_name = upper(:table_name)
+
+        Raises:
+            Exception: If the database query fails or if the connection is not established.
+        """
+        pk_check_sql = """
+            select count(*) from all_constraints
+            where constraint_type = 'P'
+              and owner = upper(:schema_name)
+              and table_name = upper(:table_name)
+        """
+        binds = {'schema_name': self.table_owner, 'table_name': table_name}
+        result = self.db_session.fetch_as_lists(sql_query=pk_check_sql, bind_mappings=binds)
+        pk_count = result[0][0] if result else 0  # Fetch the count from the first row, first column
+
+        return pk_count > 0
 
     def generate_api_for_table(self, table_name: str):
         """
