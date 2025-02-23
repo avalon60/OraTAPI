@@ -1,3 +1,4 @@
+# Example of an config file tailored for unit test code generation.
 [project]
 default_app_name = Human Resources
 
@@ -101,11 +102,11 @@ noop_column_string =
 # default_api_types: Specifies the default of which APIs to include to the package.
 # Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
 # default_api_types = insert, select, update, delete, upsert, merge
-default_api_types = insert, select, update, delete
+default_api_types = insert, select, delete
 
-# The following parameters influence the generated name packages.
+# The parameters influence the generated name packages.
 # The default package name format is <table_name_lc>_tapi
-tapi_pkg_name_prefix =
+tapi_pkg_name_prefix = ut_
 tapi_pkg_name_postfix = _tapi
 
 # return_pk_columns: If set to true, causes primary/unique keys to be in/out parameters. Returning the values.
@@ -113,23 +114,24 @@ tapi_pkg_name_postfix = _tapi
 return_pk_columns = true
 return_ak_columns = false
 # Include p_commit boolean parameter (in). Should be set to true or false. Typically this would be set to false.
-include_commit = false
+include_commit = true
 
 # utPLSQL controls follow
 [ut_controls]
 # Set enable_ut_code_generation = true, to generate starter code for utPLSQL testing packages.
-enable_ut_code_generation = false
+enable_ut_code_generation = true
 
-# The %suite annotation substitutions string
-ut_suite =
+# The %suite annotation string - change to suit requirements
+ut_suite = utAppSuite
 
-# Update ut_product_code, to effect the %suitepath major component (before the dot).
-ut_prod_code = ProductCode
+# Update ut_product_code, to effect the suitepath first component (before the dot)- change to suit requirements
+ut_prod_code = utproduct
 
 # If ut_prod_sub_domain_code is set to auto_table, then the first characters in the table name, before the first underscore
 # are assumed. When set to auto_schema, then the first characters in the schema name, before the first underscore
 # are assumed. Otherwise this is assumed to be the value provided.
-ut_prod_sub_domain_code = auto_table
+ut_prod_sub_domain_code = auto_schema
+
 
 # The following parameters influence the generated name packages.
 # Typically we would set to something like:
@@ -151,14 +153,13 @@ ut_cc_test_throws = -02290
 # Expected --throws() code for not null check constraints tests
 ut_nn_test_throws = -01400
 
-# PL/SQL Logger settings
 [logger]
 # If you have not set up synonyms, we need prefix with the schema where logger is installed.
 # By default we assume logger_user. If you have run create_logger_synonyms.sql, you don't need to
 # prefix these. If these are absent, defaults are assumed to be `logger` and `logger_logs`. The `llogger` sample
 # templates take advantage of these settings.
-logger_pkg = logger_user.logger
-logger_logs = logger_user.logger_logs
+logger_pkg = logger
+logger_logs = logger_logs
 
 [schemas]
 # Set default owners. These can be overridden on the command line.
@@ -166,7 +167,7 @@ logger_logs = logger_user.logger_logs
 default_table_owner = hr
 
 # default_package_owner can be overridden using the -po / --package_owner argument.
-default_package_owner = hr
+default_package_owner = unit_test
 
 # default_view_owner can be overridden using the -vo / --view_owner argument.
 default_view_owner = hr
