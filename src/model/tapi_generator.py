@@ -55,9 +55,9 @@ def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces
     :param substitutions: The dictionary of substitutions (optionally nested).
     :type substitutions: (Dict[str, Any])
     :param target_string: A string with %key% placeholders, for substitutions based on the supplied dictionary.
-    :type target_string: str
+    :type target_string: Str
     :return: The template contents with placeholders replaced by corresponding values.
-    :rtype: str
+    :rtype: Str
     """
     _substitutions = copy.deepcopy(substitutions)
     _substitutions["STAB"] = ' ' * stab_spaces
@@ -81,6 +81,66 @@ class ApiGenerator:
                  options_dict: dict,
                  trace: bool = False):
         """
+            Generates Table APIs (TAPI) for Oracle databases.
+
+    This class uses configuration files, templates, and database metadata to create PL/SQL
+    procedures (and potentially other database objects like views and triggers) that
+    interact with a specified table.It supports generating APIs for common
+    database operations (insert, update, delete, merge, select, upsert) and provides
+    flexibility through configuration options and command-line arguments.
+
+    Attributes:
+        proj_home (Path): The project's home directory.
+        column_expressions_dir (Path): Directory containing column expression templates.
+        view_template_dir (Path): Directory containing view templates.
+        trigger_template_dir (Path): Directory containing trigger templates.
+        options_dict (dict): Dictionary of command-line options.
+        config_manager (ConfigManager): Manages application configuration.
+        table_owner (str): Schema (owner) of the target table.
+        table (Table): Object representing the target table and its metadata.
+        auto_maintained_cols (list): List of auto-maintained column names.
+        signature_types (list): List of signature types ('rowtype', 'coltype').
+        indent_spaces (int): Number of spaces for indentation.
+        sig_file_ext (str): File extension for specification files.
+        body_file_ext (str): File extension for body files.
+        include_defaults (bool): Whether to include default values in APIs.
+        return_pk_columns (bool): Whether to return primary key columns.
+        return_ak_columns (bool): Whether to return alternate key columns.
+        include_commit (bool): Whether to include a COMMIT statement in APIs.
+        noop_column_string (str): String used for "no-operation" updates.
+        row_vers_column_name (str): Name of the row version column.
+        col_auto_maintain_method (str): Method for auto-maintaining columns.
+        delete_procname (str): Name for delete procedures.
+        select_procname (str): Name for select procedures.
+        insert_procname (str): Name for insert procedures.
+        merge_procname (str): Name for merge procedures.
+        update_procname (str): Name for update procedures.
+        upsert_procname (str): Name for upsert procedures.
+        view_name_suffix (str): Suffix for view names.
+        logger_pkg (str): Name of the logger package.
+        logger_logs (str): Name of the logger logs table/procedure.
+        csv_manager (CSVManager): Manages CSV data.
+        pi_column_manager (PIColumnsManager): Manages PI column data.
+        view_name_suffix_lc (str): Lowercase version of view_name_suffix.
+        global_substitutions (dict): Dictionary of global template substitutions.
+        merged_dict (dict): Merged dictionary of global substitutions and options.
+        column_insert_expressions (dict): Dictionary of insert column expressions.
+        column_update_expressions (dict): Dictionary of update column expressions.
+
+    Methods:
+        load_column_expressions() -> list: Loads column expressions from template files.
+        _logger_appends(signature_type: str, soft_tabs: int, skip_list: list = None) -> str: Generates logger append code.
+        _noop_assignment(column_name: str, soft_tabs: int) -> str: Generates no-op assignment code.
+        _column_expression(signature_type: str, operation_type: str, column_name: str) -> str: Determines column expression.
+        _params_string(signature_type: str, soft_tabs: int = 4) -> str: Generates parameter string.
+        _returning_columns(skip_list: list = None, soft_tabs: int = 4) -> str: Generates returning columns clause.
+        _into_parameters(signature_type: str, skip_list: list = None, soft_tabs: int = 4) -> str: Generates into parameters clause.
+        _returning_into_clause(signature_type: str, skip_list: list = None, soft_tabs: int = 4) -> str: Generates returning into clause.
+        _mrg_param_alias_list_string(signature_type: str, operation_type: str = 'create', skip_list: list = None, soft_tabs: int = 4) -> str: Generates merge parameter alias list.
+        _mrg_predicates_string(soft_tabs: int = 4) -> str: Generates merge predicates string.
+        _mrg_update_assignments_string(signature_type: str, operation_type: str, skip_list: list = None, soft_tabs: int = 4) -> str: Generates merge update assignments string.
+        _mrg_src_column_list_string(signature_type: str, operation_type: str = 'create', skip_list: list = None, soft_tabs: int = 4) -> str: Generates merge source column list.
+
         :param database_session: A DBSession instance for connecting to the database.
         :param table_owner: Schema Name of the table.
         :param table_name: Table name of the table for which we need to generate a TAPI
