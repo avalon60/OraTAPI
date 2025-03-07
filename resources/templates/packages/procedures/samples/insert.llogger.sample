@@ -1,6 +1,6 @@
 %procedure_signature%
 
-%STAB%%STAB%l_scope           %logger_logs%.scope%type    := gc_unit_prefix || '%delete_procname%';
+%STAB%%STAB%l_scope           %logger_logs%.scope%type    := gc_unit_prefix || '%insert_procname%';
 %STAB%%STAB%l_params          %logger_pkg%.tab_param;
 
 %STAB%begin
