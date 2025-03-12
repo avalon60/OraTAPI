@@ -9,6 +9,7 @@
 #         system.
 #------------------------------------------------------------------------------
 
+# Function to get the absolute path
 realpath() {
   if command -v readlink >/dev/null 2>&1; then
     # Linux or systems where readlink is available
@@ -18,6 +19,7 @@ realpath() {
     cd "$(dirname "$1")" && pwd
   fi
 }
+
 step=0
 PROG_PATH=$(realpath "$0")
 APP_HOME=$(dirname "${PROG_PATH}")
@@ -28,34 +30,34 @@ set -e
 pushd "${APP_HOME}"
 
 # Determine Python interpreter
-if [ "${OS}" = "Windows_NT" ]
-then
+if [ "${OS}" = "Windows_NT" ]; then
     PYTHON="python"
     SOURCE_DIR="Scripts"
-elif command -v python3 >/dev/null 2>&1
-then
+    PIP="pip"
+elif command -v python3 >/dev/null 2>&1; then
     PYTHON="python3"
     SOURCE_DIR="bin"
+    PIP="pip3"
 fi
 
+# Verify Python installation
 ${PYTHON} --version 2> /dev/null
-if [ $? -ne 0 ]
-then
+if [ $? -ne 0 ]; then
     echo "Error: Neither python3 nor python is installed."
     exit 1
 fi
 echo "Using Python interpreter: $PYTHON"
 
 # Define variables
-VENV_DIR="venv"  # Change this if you want a different name for the virtual env
-BIN_DIR="bin"    # Directory containing shell scripts
+VENV_DIR="venv"  # Name of the virtual environment
+BIN_DIR="bin"     # Directory containing shell scripts
 
 # Step 1: Check if pip is installed
 let step=${step}+1
 step_desc="Check if pip is installed"
 echo "Step ${step}: ${step_desc}..."
-if ! command -v pip >/dev/null 2>&1; then
-    echo "pip not found. Installing pip..."
+if ! command -v ${PIP} >/dev/null 2>&1; then
+    echo "${PIP} not found. Installing pip..."
     curl -O https://bootstrap.pypa.io/get-pip.py
     $PYTHON get-pip.py
     rm get-pip.py
@@ -85,22 +87,33 @@ if [ ! -x "$VENV_PYTHON" ]; then
     exit 1
 fi
 echo "Activating virtual environment..."
-source "${APP_HOME}/${VENV_DIR}/${SOURCE_DIR}/activate"
-
-# Step 4: Upgrade pip to ensure you're using the latest version
-echo "Upgrading pip..."
+if [ -f "${APP_HOME}/${VENV_DIR}/${SOURCE_DIR}/activate" ]
+then
+  source "${APP_HOME}/${VENV_DIR}/${SOURCE_DIR}/activate"
+else
+  echo $E "Error - could not locate: ${APP_HOME}/${VENV_DIR}/${SOURCE_DIR}/activate"
+  echo $E "Deploying chute - bailing out!"
+  exit 1
+fi
+# Step 4: Upgrade pip
+let step=${step}+1
+step_desc="Upgrade pip"
+echo "Step ${step}: ${step_desc}..."
 "$VENV_PYTHON" -m pip install --upgrade pip
 
-
-# Step 5: Perform the packages install
-step_desc="Perform the packages install"
+# Step 5: Install packages safely
 let step=${step}+1
+step_desc="Install required packages"
 echo "Step ${step}: ${step_desc}..."
-"$VENV_PYTHON" -m pip install .
+if [[ "$(uname)" == "Darwin" ]]; then
+    "$VENV_PYTHON" -m pip install --break-system-packages .
+else
+    "$VENV_PYTHON" -m pip install .
+fi
 
 # Step 6: Set executable permissions for shell scripts
-step_desc="Set executable permissions for shell script"
 let step=${step}+1
+step_desc="Set executable permissions for shell scripts"
 echo "Step ${step}: ${step_desc}..."
 echo "Setting executable permissions for shell scripts..."
 chmod +x "$BIN_DIR/conn_mgr.sh"
