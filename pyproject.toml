@@ -3,8 +3,10 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "OraTAPI"
-version = "1.5.5"
+name = "oratapi"
+version = "1.5.4"
+license = "MIT"
+license-files = ["LICENSE", "ORACLE_INTERNAL_LICENSE.txt"]
 description = "Oracle Table API Generator Application"
 authors = [ {name = "Clive Bostock"} ]
 dependencies = [
@@ -55,7 +57,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Database",
     "Topic :: Software Development :: Code Generators",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
 
