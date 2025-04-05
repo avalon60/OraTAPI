@@ -2006,11 +2006,11 @@ end jobs_tapi;
 /
 ```
 
-
-## License
-
-OraTAPI is licensed under the [MIT License](LICENSE).
-
 ---
+## Licensing
 
-This README covers the tool's purpose, usage, configuration, and output, providing a clear guide for potential users. Let me know if you'd like any adjustments!
+This project is licensed under the MIT License (see [LICENSE](LICENSE)).
+
+An additional internal-use license has been granted to Oracle Corporation.
+See [ORACLE_INTERNAL_LICENSE.txt](ORACLE_INTERNAL_LICENSE.txt) for details.
+
