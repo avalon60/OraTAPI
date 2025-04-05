@@ -2,10 +2,12 @@ Internal Use License for Oracle Corporation
 
 The author of the OraTAPI project grants Oracle Corporation a non-exclusive, royalty-free, perpetual license to:
 
-1. Use, copy, modify, and fork the OraTAPI codebase internally within Oracle, without the need to comply with the terms of the open source license under which it is publicly released (currently MIT).
+1. Use, copy, modify, and fork the OraTAPI codebase internally within Oracle, without the need to comply with the terms of the open source license under which it is
+publicly released (currently MIT).
 2. Redistribute internally across Oracle systems, infrastructure, and repositories, without needing to retain open source attribution or license notices.
 
-This license does not authorize Oracle Corporation to redistribute the OraTAPI code externally outside of Oracle, or sublicense it to third parties, outside of the publicly available open source license.
+This license does not authorise Oracle Corporation to redistribute the OraTAPI code externally outside of Oracle, or sublicense it to third parties, outside of
+the publicly available open source license.
 
 Issued by: Clive Bostock
 Date: 2025-04-05
