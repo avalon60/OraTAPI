@@ -35,16 +35,14 @@ if (Test-Path "venv/bin/activate") {
 } elseif (Test-Path "venv/Scripts/activate") {
     # Activate the virtual environment for Windows style
     . "venv/Scripts/activate"
- elseif (Test-Path ".venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style
-    . ".venv/bin/activate"
-}
- elseif (Test-Path ".venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style
+} elseif (Test-Path ".venv/Scripts/activate") {
+    # Activate the virtual environment for Windows style (if in .venv)
     . ".venv/Scripts/activate"
 } else {
     Write-Host "Cannot locate activate script from venv directory!" -ForegroundColor Red
     Exit 1
 }
+
+# Install the project in editable mode
 python -m pip install -e .
 
