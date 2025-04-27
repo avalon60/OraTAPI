@@ -920,13 +920,15 @@ class ApiGenerator:
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
         table_name_lc = self.table.table_name.lower()
+        predicate_num = 0
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
             column_name_lc = column_name.lower()
             # if not column_name in self.table.pk_columns_list and column_name_lc != self.table.row_vers_column_name:
             if column_name not in self.table.in_out_column_list and column_name not in self.table.out_column_list:
                 continue
-
-            leader = f', ' if col_position > 1 else f'  '
+            predicate_num += 1
+            leader = f', ' if predicate_num > 1 else f'  '
+            print(f'DEBUG: predicate_num = {predicate_num}')
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             if column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
