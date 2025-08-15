@@ -14,13 +14,6 @@
 %STAB%%STAB%%STAB% %update_assignments_string_lc%
 %STAB%%STAB%where
 %STAB%%STAB%%STAB%%key_predicates_string_lc%
-%STAB%%STAB%%upd_returning_clause_lc%;
-
-%STAB%%STAB%update %table_name_lc%
-%STAB%%STAB%set
-%STAB%%STAB%%STAB% %update_assignments_string_lc%
-%STAB%%STAB%where
-%STAB%%STAB%%STAB%%key_predicates_string_lc%
 %STAB%%STAB%%ins_returning_clause_lc%;
 
 %STAB%%STAB%if sql%rowcount = 0
