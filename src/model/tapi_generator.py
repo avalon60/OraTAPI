@@ -928,7 +928,7 @@ class ApiGenerator:
                 continue
             predicate_num += 1
             leader = f', ' if predicate_num > 1 else f'  '
-            print(f'DEBUG: predicate_num = {predicate_num}')
+            # print(f'DEBUG: predicate_num = {predicate_num}')
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
             if column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
@@ -1884,6 +1884,7 @@ class ApiGenerator:
                               "returning_clause": returning_clause_lc.upper(),
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
+                              "procname": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
@@ -1924,6 +1925,7 @@ class ApiGenerator:
                               "parameter_list_string": parameter_list_string,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
+                              "procname": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
@@ -1974,6 +1976,7 @@ class ApiGenerator:
                               "returning_clause_lc": returning_clause_lc,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
+                              "procname": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
@@ -2043,6 +2046,7 @@ class ApiGenerator:
                               "upd_returning_clause_lc": upd_returning_clause_lc,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
+                              "procname": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
@@ -2096,6 +2100,7 @@ class ApiGenerator:
                               "returning_clause_lc": returning_clause_lc,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
+                              "procname": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
@@ -2160,6 +2165,7 @@ class ApiGenerator:
                               "mrg_src_column_list_string_lc": mrg_src_column_list_string,
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
+                              "procname": procedure_name,
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 

@@ -20,3 +20,11 @@ aut,s,Undefined,True,True,True
 aut,],Undefined,True,True,True
 aut,depertments,Undefined,True,True,True
 aut,employee,Undefined,True,True,True
+dqu_core,dqu_binds_dictionary,Undefined,True,True,True
+dqu_core,dqu_cardinality_tests,Undefined,True,True,True
+dqu_core,dqu_pluggable_binds,Undefined,True,True,True
+dqu_core,dqu_pluggable_tests,Undefined,True,True,True
+dqu_core,dqu_runtime_binds,Undefined,True,True,True
+dqu_core,dqu_tests,Undefined,True,True,True
+dqu_core,dqu_test_results,Undefined,True,True,True
+dqu_core,dqu_test_run,Undefined,True,True,True
