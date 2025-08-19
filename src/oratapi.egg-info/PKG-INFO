@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: oratapi
-Version: 1.5.7
+Version: 1.5.8
 Summary: Oracle Table API Generator Application
 Author: Clive Bostock
 License-Expression: MIT
@@ -34,7 +34,7 @@ Requires-Dist: cffi>=1.17.1
 Requires-Dist: bump2version>=1.0.1
 Requires-Dist: build>=1.2.2.post1
 Requires-Dist: requests>=2.32.3
-Requires-Dist: urllib3==2.3.0
+Requires-Dist: urllib3==2.5.0
 Requires-Dist: charset-normalizer>=3.4.1
 Requires-Dist: configobj>=5.0.9
 Requires-Dist: idna>=3.10
