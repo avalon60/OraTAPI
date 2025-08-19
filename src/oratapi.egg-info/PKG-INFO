@@ -1,0 +1,41 @@
+Metadata-Version: 2.4
+Name: oratapi
+Version: 1.5.7
+Summary: Oracle Table API Generator Application
+Author: Clive Bostock
+License-Expression: MIT
+Project-URL: Repository, https://github.com/avalon60/OraTAPI
+Keywords: python,oracle,database,plsql,table api,stored procedures,views,database triggers,code generator,automation
+Classifier: Programming Language :: Python :: 3
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Database
+Classifier: Topic :: Software Development :: Code Generators
+Classifier: Operating System :: OS Independent
+License-File: LICENSE
+License-File: ORACLE_INTERNAL_LICENSE.txt
+Requires-Dist: beautifulsoup4==4.12.3
+Requires-Dist: bs4==0.0.2
+Requires-Dist: Markdown==3.7
+Requires-Dist: typing_extensions>=4.12.2
+Requires-Dist: tomli>=2.2.1
+Requires-Dist: setuptools-scm>=8.1.0
+Requires-Dist: rich>=13.9.4
+Requires-Dist: pyproject_hooks>=1.2.0
+Requires-Dist: Pygments>=2.18.0
+Requires-Dist: pycparser>=2.22
+Requires-Dist: packaging>=24.2
+Requires-Dist: oracledb>=2.5.0
+Requires-Dist: mdurl>=0.1.2
+Requires-Dist: markdown-it-py>=3.0.0
+Requires-Dist: soupsieve==2.6
+Requires-Dist: cryptography>=43.0.3
+Requires-Dist: cffi>=1.17.1
+Requires-Dist: bump2version>=1.0.1
+Requires-Dist: build>=1.2.2.post1
+Requires-Dist: requests>=2.32.3
+Requires-Dist: urllib3==2.3.0
+Requires-Dist: charset-normalizer>=3.4.1
+Requires-Dist: configobj>=5.0.9
+Requires-Dist: idna>=3.10
+Dynamic: license-file

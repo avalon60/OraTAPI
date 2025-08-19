@@ -1,0 +1,4 @@
+[console_scripts]
+conn_mgr = controller.conn_mgr:main
+ora_tapi = controller.ora_tapi:main
+quick_config = controller.quick_config:main
