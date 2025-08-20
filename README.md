@@ -95,7 +95,7 @@ OraTAPI is a versatile tool that offers the following configurable options:
 - **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be securely stored and used transparently.  
 
 ### Limitations
-- As of this release, database connections are basic - cloud wallets are not supported.
+- Connection via LDAP and database wallet are now supported, however you must install the Instant Client. You can either create an oracle client directory in the OraTAPI root folder, or set the ORACLE\_IC\_CLIENT shell variable to point to an alternative location.  
 ---
 
 ### Documentation
