@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from model.framework_errors import UnsupportedPlatform
-from lib.file_system_utils import sanitise_dir_name
+from lib.fsutils import sanitise_dir_name
 from pathlib import Path
 
 import configparser

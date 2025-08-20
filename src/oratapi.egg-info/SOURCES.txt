@@ -110,7 +110,8 @@ src/lib/__init__.py
 src/lib/app_utils.py
 src/lib/config_mgr.py
 src/lib/connection_mgr.py
-src/lib/file_system_utils.py
+src/lib/framework_errors.py
+src/lib/fsutils.py
 src/lib/user_security.py
 src/model/__init__.py
 src/model/db_objects.py

@@ -21,3 +21,5 @@ src/view/__pycache__/
 staging/package_body/
 staging/package_spec/
 venv/
+
+memory-bank.zip

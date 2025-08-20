@@ -9,7 +9,7 @@ from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_mgr import ConfigManager
 from model.session_manager import DBSession
-from lib.file_system_utils import project_home
+from lib.fsutils import project_home
 from lib.app_utils import current_timestamp, format_elapsed_time
 from lib.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl, MissingParameterError
@@ -230,7 +230,7 @@ class CodeManager:
                 = user_security.named_connection_creds(connection_name=self.conn_name)
 
         # Database session setup
-        self.db_session: DBSession = DBSession(dsn=self.dsn, db_username=self.db_username, db_password=self.db_password)
+        self.db_session: DBSession = DBSession(dsn=self.dsn, user=self.db_username, password=self.db_password)
         self.view.print_console(msg_level=MsgLvl.success, text="Database session established successfully.")
 
         if not self.schema_exists(schema_name=self.table_owner):
@@ -406,6 +406,19 @@ class CodeManager:
                    WHERE username = :schema_name"""
 
         try:
+            print(f"[TRACE] db_session is None? {self.db_session is None}")
+            if self.db_session is not None:
+                # some drivers have is_healthy(); if absent, this is harmless
+                ok = getattr(self.db_session, "is_healthy", lambda: "unknown")()
+                print(f"[TRACE] connection.is_healthy() -> {ok}")
+                try:
+                    who = self.db_session.cursor().execute(
+                        "select user, sys_context('userenv','service_name') from dual"
+                    ).fetchone()
+                    print(f"[TRACE] session identity -> user={who[0]} service={who[1]}")
+                except Exception as e:
+                    print(f"[TRACE] cursor precheck failed: {type(e).__name__}: {e}")
+
             with self.db_session.cursor() as cursor:
                 if self.trace:
                     print(f"Executing query: {query}")

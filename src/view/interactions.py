@@ -9,7 +9,7 @@ from pathlib import Path
 
 from model.framework_errors import InvalidParameter
 from view.console_display import MsgLvl, ConsoleMgr
-from lib.file_system_utils import project_home
+from lib.fsutils import project_home
 import os
 import getpass
 
