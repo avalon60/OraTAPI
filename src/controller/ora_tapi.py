@@ -406,18 +406,17 @@ class CodeManager:
                    WHERE username = :schema_name"""
 
         try:
-            print(f"[TRACE] db_session is None? {self.db_session is None}")
+            # print(f"[TRACE] db_session is None? {self.db_session is None}")
             if self.db_session is not None:
                 # some drivers have is_healthy(); if absent, this is harmless
                 ok = getattr(self.db_session, "is_healthy", lambda: "unknown")()
-                print(f"[TRACE] connection.is_healthy() -> {ok}")
                 try:
                     who = self.db_session.cursor().execute(
                         "select user, sys_context('userenv','service_name') from dual"
                     ).fetchone()
-                    print(f"[TRACE] session identity -> user={who[0]} service={who[1]}")
                 except Exception as e:
-                    print(f"[TRACE] cursor precheck failed: {type(e).__name__}: {e}")
+                    print(f"ERROR: cursor precheck failed: {type(e).__name__}: {e}")
+                    raise
 
             with self.db_session.cursor() as cursor:
                 if self.trace:

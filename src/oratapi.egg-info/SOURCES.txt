@@ -119,6 +119,7 @@ src/model/framework_errors.py
 src/model/ora_tapi_csv.py
 src/model/pi_csv.py
 src/model/session_manager.py
+src/model/session_manager.py.old
 src/model/tapi_generator.py
 src/model/utplsql_generator.py
 src/oratapi.egg-info/PKG-INFO

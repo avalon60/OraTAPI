@@ -28,3 +28,4 @@ dqu_core,dqu_runtime_binds,Undefined,True,True,True
 dqu_core,dqu_tests,Undefined,True,True,True
 dqu_core,dqu_test_results,Undefined,True,True,True
 dqu_core,dqu_test_run,Undefined,True,True,True
+orac,message_embeddings,Undefined,True,True,True
