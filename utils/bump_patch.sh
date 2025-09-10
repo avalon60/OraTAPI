@@ -16,10 +16,17 @@ realpath() {
   fi
 }
 
-PROG_PATH=$(realpath $0)
-PROG_DIR=$(dirname ${PROG_PATH})
-APP_HOME=$(dirname ${PROG_DIR})
-pushd ${APP_HOME}
-source venv/bin/activate
+PROG_PATH=$(realpath "$0")
+PROG_DIR=$(dirname "${PROG_PATH}")
+APP_HOME=$(dirname "${PROG_DIR}")
+pushd "${APP_HOME}" || { echo "Failed to switch to APP_HOME"; exit 1; }
+source utils/utils.env
+source_venv
 echo "App home: ${APP_HOME}"
-bump2version patch
+
+if [ "$1" = "dirty" ]
+then
+  bump2version --allow-dirty --no-commit patch
+else  
+  bump2version patch
+fi

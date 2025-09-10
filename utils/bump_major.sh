@@ -2,8 +2,8 @@
 ##############################################################################
 # Author: Clive Bostock
 #   Date: 16 Dec 2024 (A Merry Christmas to one and all! :o)
-#   Name: bump_minor.sh
-#  Descr: Bump the version minor number
+#   Name: bump_major.sh
+#  Descr: Bump the version major number
 ##############################################################################
 # Use a workaround for realpath if it's not available (possibly not on Mac)
 realpath() {
@@ -16,16 +16,16 @@ realpath() {
   fi
 }
 
-PROG_PATH=$(realpath "$0")
-PROG_DIR=$(dirname "${PROG_PATH}")
-APP_HOME=$(dirname "${PROG_DIR}")
-pushd "${APP_HOME}" || { echo "Failed to switch to APP_HOME"; exit 1; }
+PROG_PATH=$(realpath $0)
+PROG_DIR=$(dirname ${PROG_PATH})
+APP_HOME=$(dirname ${PROG_DIR})
+pushd ${APP_HOME}
 source utils/utils.env
 source_venv
 echo "App home: ${APP_HOME}"
 if [ "$1" = "dirty" ]
 then
-  bump2version --allow-dirty --no-commit minor
+  bump2version --allow-dirty --no-commit major
 else  
-  bump2version minor
+  bump2version major
 fi
