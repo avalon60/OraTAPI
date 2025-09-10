@@ -467,6 +467,8 @@ class ApiGenerator:
             if not assignment:
                 if signature_type == "coltype":
                     assignment = f'p_{column_name_lc}'
+                elif signature_type == "rowtype" and column_name_lc in self.auto_maintained_cols_lc:
+                    assignment = column_name_lc
                 else:
                     if column_name_lc in self.table.pk_columns_list_lc:
                         assignment = f'p_{column_name_lc}'
@@ -480,6 +482,8 @@ class ApiGenerator:
             if not assignment:
                 if signature_type == "coltype":
                     assignment = f'p_{column_name_lc}'
+                elif signature_type == "rowtype" and column_name_lc in self.auto_maintained_cols_lc:
+                    assignment = column_name_lc
                 else:
                     if column_name_lc in self.table.pk_columns_list_lc:
                         assignment = f'p_{column_name_lc}'
