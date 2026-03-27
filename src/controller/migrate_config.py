@@ -16,7 +16,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from lib.config_mgr import compare_config_files
 
-from lib.file_system_utils import project_home
+from lib.fsutils import project_home
 
 PROG_NAME = Path(__file__).name
 

@@ -13,8 +13,12 @@ bin/ora_tapi.ps1
 bin/ora_tapi.sh
 bin/quick_config.ps1
 bin/quick_config.sh
+bin/tnsnames.ora
+bin/tnsnames.zip
 bin/update_ora_tapi.ps1
 bin/update_ora_tapi.sh
+resources/config/OraTAPI.ini.sample
+resources/config/pi_columns.csv.sample
 resources/config/samples/OraTAPI.ini.sample
 resources/config/samples/OraTAPI.ini.ut.sample
 resources/config/samples/pi_columns.csv.sample
@@ -99,6 +103,12 @@ resources/templates/ut_packages/spec/samples/package_header.liquibase.sample
 resources/templates/ut_packages/spec/samples/package_header.llogger.sample
 resources/templates/ut_packages/spec/samples/package_header.logger.sample
 src/OraTAPI.csv
+src/OraTAPI.egg-info/PKG-INFO
+src/OraTAPI.egg-info/SOURCES.txt
+src/OraTAPI.egg-info/dependency_links.txt
+src/OraTAPI.egg-info/entry_points.txt
+src/OraTAPI.egg-info/requires.txt
+src/OraTAPI.egg-info/top_level.txt
 src/controller/__init__.py
 src/controller/__main__.py
 src/controller/conn_mgr.py
@@ -134,6 +144,7 @@ src/view/interactions.py
 staging/.gitkeep
 utils/build-e.ps1
 utils/build-e.sh
+utils/bump_major.sh
 utils/bump_minor.sh
 utils/bump_patch.sh
 utils/code_lines.sh

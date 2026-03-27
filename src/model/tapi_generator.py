@@ -163,6 +163,9 @@ class ApiGenerator:
         self.table = Table(database_session=database_session, table_owner=self.table_owner,
                            table_name=table_name, config_manager=config_manager, trace=trace)
 
+        # Cache identity columns (lowercase) for quick skip decisions (any generation type)
+        self.identity_cols_lc = [col.lower() for col in self.table.columns_list if self.table.is_identity(col)]
+
         auto_maintained_cols = self.config_manager.config_value(config_section="api_controls",
                                                             config_key="auto_maintained_cols")
         auto_maintained_cols = auto_maintained_cols.replace(' ', '')
@@ -196,6 +199,15 @@ class ApiGenerator:
         self.return_ak_columns = self.config_manager.bool_config_value(config_section="api_controls",
                                                                        config_key="return_ak_columns",
                                                                        default=False)
+
+        # api_surface: controls whether generated API targets base table or passthrough view
+        # Valid values: table, view. Default: view
+        self.api_surface = self.config_manager.config_value(
+            config_section="api_controls",
+            config_key="api_surface",
+            default="view",
+            valid_values=["table", "view"],
+        ).lower()
 
         self.include_commit = self.config_manager.bool_config_value(config_section="api_controls",
                                                                     config_key="include_commit")
@@ -323,6 +335,19 @@ class ApiGenerator:
                            config_manager=config_manager,
                            trace=trace)
 
+        # Derive API target object name (metadata stays on base table). When api_surface=view, target is passthrough view.
+        view_suffix = self.view_name_suffix.lower()
+        self.base_table_name_lc = self.table.table_name_lc
+        self.api_target_name_lc = self.base_table_name_lc + view_suffix if self.api_surface == "view" else self.base_table_name_lc
+        self.api_target_owner = options_dict["package_owner"] if self.api_surface == "view" else self.table_owner
+
+        # Override substitution for emitted code targets; metadata uses base table internals
+        self.global_substitutions["api_target_name_lc"] = self.api_target_name_lc
+        # Keep table_name* bound to the base table for naming/changesets; use api_target* for DML/rowtype surface
+        self.global_substitutions["table_name_lc"] = self.base_table_name_lc
+        self.global_substitutions["table_name"] = self.base_table_name_lc.upper()
+        self.global_substitutions["base_table_name_lc"] = self.base_table_name_lc
+
         # The column expressions properties are used to store the contents of the column expressions
         # found in the templates/column_expressions directories.
         self.column_insert_expressions = {}
@@ -393,6 +418,11 @@ class ApiGenerator:
         return messages
 
     def _logger_appends(self, signature_type: str, soft_tabs:int, skip_list: list = None,) -> str:
+        # Normalise skip list (lowercase) so callers can pass None or mixed-case lists
+        if skip_list is None:
+            skip_list = []
+        skip_list = [item.lower() for item in skip_list]
+
         logger_appends = ''
         tabs = "%STAB%" * soft_tabs
         col_id = 0
@@ -400,7 +430,6 @@ class ApiGenerator:
             column_name_lc = column_name.lower()
             if column_name_lc in self.auto_maintained_cols_lc or column_name_lc == self.row_vers_column_name.lower():
                 continue
-            column_name_lc = column_name.lower()
             parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype'  or column_name_lc in self.table.pk_columns_list_lc else 'p_row.' + column_name_lc
             data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
             is_pk_column = self.table.column_property_value(column_name=column_name, property_name='is_pk_column')
@@ -465,6 +494,8 @@ class ApiGenerator:
                     column_name_lc in chain(self.auto_maintained_cols, [self.row_vers_column_name])):
                 assignment = self.column_insert_expressions[column_name]
             if not assignment:
+                if self.table.is_identity(column_name):
+                    return ''
                 if signature_type == "coltype":
                     assignment = f'p_{column_name_lc}'
                 elif signature_type == "rowtype" and column_name_lc in self.auto_maintained_cols_lc:
@@ -695,10 +726,16 @@ class ApiGenerator:
         return params_out
 
 
-    def _column_list_string(self, skip_list = None, soft_tabs:int = 4, column_prefix:str = '')-> str:
-        """Returns a line separated (\n) list of select columns"""
+    def _column_list_string(self, skip_list = None, soft_tabs:int = 4, column_prefix:str = '', skip_identity: bool = True)-> str:
+        """Returns a line separated (\n) list of columns.
+
+        skip_identity=True is appropriate for insert/merge-create paths; set to False for select/get so identity PKs
+        are included in the projection.
+        """
         if skip_list is None:
             skip_list = []
+        if skip_identity:
+            skip_list = [*skip_list, *self.identity_cols_lc]
 
         tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
         columns_out = ""
@@ -717,11 +754,15 @@ class ApiGenerator:
     def _parameter_list_string(self, signature_type:str,
                                operation_type:str = 'select',
                                skip_list: list = None,
-                               soft_tabs:int = 4) -> str:
+                               soft_tabs:int = 4,
+                               skip_identity: bool = True) -> str:
         """Returns a line separated (\n) list of select columns"""
 
         if skip_list is None:
             skip_list = []
+        # Skip identity columns for parameter/value lists when inserting/merging; include them for select
+        if skip_identity:
+            skip_list = [*skip_list, *self.identity_cols_lc]
 
         tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
         if signature_type == "coltype":
@@ -773,6 +814,8 @@ class ApiGenerator:
         _operation_type = 'modify' if operation_type == 'update' else operation_type
         if skip_list is None:
             skip_list = []
+        # Skip identity columns when building update assignments (insert paths not here)
+        skip_list = [*skip_list, *self.identity_cols_lc]
         tabs = "%STAB%" * soft_tabs  # The number of STABs in the respective template.
         if signature_type == "coltype":
             set_string = ""
@@ -801,7 +844,8 @@ class ApiGenerator:
                 column_name_lc = column_name.lower()
                 if column_name in self.table.pk_columns_list:
                     continue
-                if column_name_lc == self.table.row_vers_column_name and self.col_auto_maintain_method == 'trigger':
+                # Skip trigger-maintained audit columns and row version when using triggers
+                if self.col_auto_maintain_method == 'trigger' and (column_name_lc in self.auto_maintained_cols_lc or column_name_lc == self.table.row_vers_column_name):
                     continue
                 column_id += 1
 
@@ -922,7 +966,7 @@ class ApiGenerator:
 
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
         predicate_num = 0
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
             column_name_lc = column_name.lower()
@@ -987,13 +1031,15 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
             column_name_lc = column_name.lower()
             if column_name_lc in self.auto_maintained_cols:
+                continue
+            if self.table.is_identity_always(column_name):
                 continue
 
             processed_columns += 1
@@ -1063,12 +1109,14 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.pk_columns_list, start = 1):
             if column_name.lower() in self.auto_maintained_cols:
+                continue
+            if self.table.is_identity(column_name):
                 continue
             processed_columns += 1
             column_name_lc = column_name.lower()
@@ -1086,7 +1134,8 @@ class ApiGenerator:
             signature += param + '\n'
             param = ''
 
-        leader = f', '
+        # If no PK params were emitted (e.g. identity PK skipped), start p_row without a leading comma
+        leader = f', ' if processed_columns > 0 else f'  '
         param = f'{STAB}{STAB}{leader}p_{"row".ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
         in_out = f'{STAB}in out'
         param += in_out
@@ -1171,7 +1220,7 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
@@ -1229,13 +1278,14 @@ class ApiGenerator:
         signature += f'{STAB}procedure {procedure_name}\n'
 
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
             if column_name.lower() in self.auto_maintained_cols:
                 continue
+            # keep identity PKs in select predicates
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
             processed_columns += 1
@@ -1326,7 +1376,7 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
@@ -1405,13 +1455,14 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
         for col_position, column_name in enumerate(self.table.columns_list, start = 1):
             if column_name.lower() in self.auto_maintained_cols:
                 continue
+            # keep identity PKs as update predicates
             if not self.table.column_property_value(column_name=column_name, property_name='is_pk_column'):
                 continue
             processed_columns += 1
@@ -1510,7 +1561,7 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
@@ -1582,7 +1633,7 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
@@ -1690,7 +1741,7 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
@@ -1764,7 +1815,7 @@ class ApiGenerator:
         STAB = self.global_substitutions["STAB"]
         signature += f'{STAB}procedure {procedure_name}\n'
         signature += f'{STAB}(\n'
-        table_name_lc = self.table.table_name.lower()
+        table_name_lc = self.api_target_name_lc
 
         processed_columns = 0
 
@@ -1870,7 +1921,8 @@ class ApiGenerator:
                                                                soft_tabs=4)
         parameter_list_string = parameter_list_string_lc.upper()
 
-        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2, skip_list=skip_column_list)
+        logger_skip_list = [*skip_column_list, *self.identity_cols_lc]
+        logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2, skip_list=logger_skip_list)
 
         returning_clause_lc = ''
         if self.return_pk_columns or self.return_ak_columns:
@@ -1887,8 +1939,8 @@ class ApiGenerator:
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "procname": procedure_name,
-                              "table_name_lc": self.table.table_name_lc.lower(),
-                              "table_name": self.table.table_name.upper()}
+                              "table_name_lc": self.api_target_name_lc,
+                              "table_name": self.api_target_name_lc.upper()}
 
         procedure_body_template = inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
@@ -1903,11 +1955,12 @@ class ApiGenerator:
         procedure_body_template = self._package_api_template(template_category="packages", template_type='procedures',
                                                              template_name=f"select")
 
-        column_list_string_lc = self._column_list_string(soft_tabs=3)
+        column_list_string_lc = self._column_list_string(soft_tabs=3, skip_identity=False)
 
         parameter_list_string_lc = self._parameter_list_string(signature_type=signature_type,
                                                                operation_type='select',
-                                                               soft_tabs=3)
+                                                               soft_tabs=3,
+                                                               skip_identity=False)
         parameter_list_string = parameter_list_string_lc.upper()
 
         # Convert to lowercase for comparison, return lowercase results. We want a list of columns which are
@@ -1928,8 +1981,8 @@ class ApiGenerator:
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "procname": procedure_name,
-                              "table_name_lc": self.table.table_name_lc.lower(),
-                              "table_name": self.table.table_name.upper()}
+                              "table_name_lc": self.api_target_name_lc,
+                              "table_name": self.api_target_name_lc.upper()}
 
         procedure_body_template = inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
@@ -1979,8 +2032,8 @@ class ApiGenerator:
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "procname": procedure_name,
-                              "table_name_lc": self.table.table_name_lc.lower(),
-                              "table_name": self.table.table_name.upper()}
+                              "table_name_lc": self.api_target_name_lc,
+                              "table_name": self.api_target_name_lc.upper()}
 
         procedure_body_template = inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
@@ -2022,8 +2075,9 @@ class ApiGenerator:
                                                                     operation_type='modify',
                                                                     skip_list=skip_column_list, soft_tabs=3)
 
+        logger_skip_list = [*skip_column_list, *self.identity_cols_lc]
         logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
-                                                       skip_list=skip_column_list)
+                                                       skip_list=logger_skip_list)
 
         upd_returning_clause_lc = ''
         if self.return_pk_columns or self.return_ak_columns:
@@ -2049,8 +2103,8 @@ class ApiGenerator:
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "procname": procedure_name,
-                              "table_name_lc": self.table.table_name_lc.lower(),
-                              "table_name": self.table.table_name.upper()}
+                              "table_name_lc": self.api_target_name_lc,
+                              "table_name": self.api_target_name_lc.upper()}
 
         procedure_body_template = inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
@@ -2103,8 +2157,8 @@ class ApiGenerator:
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "procname": procedure_name,
-                              "table_name_lc": self.table.table_name_lc.lower(),
-                              "table_name": self.table.table_name.upper()}
+                              "table_name_lc": self.api_target_name_lc,
+                              "table_name": self.api_target_name_lc.upper()}
 
         procedure_body_template = inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
@@ -2145,12 +2199,14 @@ class ApiGenerator:
                                                                             soft_tabs=4)
 
         column_list_string = self._column_list_string(skip_list=skip_column_list, soft_tabs=5, column_prefix = '')
+        src_skip_list = [*skip_column_list, *self.identity_cols_lc]
         mrg_src_column_list_string = self._mrg_src_column_list_string(signature_type=signature_type,
-                                                                      skip_list=skip_column_list,
+                                                                      skip_list=src_skip_list,
                                                                       soft_tabs=5)
 
+        logger_skip_list = [*skip_column_list, *self.identity_cols_lc]
         logger_params_append_lc = self._logger_appends(signature_type=signature_type, soft_tabs=2,
-                                                       skip_list=skip_column_list)
+                                                       skip_list=logger_skip_list)
 
         substitutions_dict = {"mrg_param_alias_list_lc": mrg_param_alias_list_lc,
                               "mrg_param_alias_list": mrg_param_alias_list_lc.upper(),
@@ -2168,8 +2224,8 @@ class ApiGenerator:
                               "procedure_signature": procedure_signature,
                               "procedure_name": procedure_name,
                               "procname": procedure_name,
-                              "table_name_lc": self.table.table_name_lc.lower(),
-                              "table_name": self.table.table_name.upper()}
+                              "table_name_lc": self.api_target_name_lc,
+                              "table_name": self.api_target_name_lc.upper()}
 
         procedure_body_template = inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
