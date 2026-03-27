@@ -2,7 +2,7 @@
 
 # OraTAPI - Oracle Table API Generator 
 
-Version 1.6.2
+Version 1.6.4
 
 - [OraTAPI - Oracle Table API Generator](#oratapi---oracle-table-api-generator)
   - [About OraTAPI](#about-oratapi)
@@ -97,7 +97,7 @@ OraTAPI is a versatile tool that offers the following configurable options:
 ### Limitations
 Connection via LDAP or Wallets is only supported via thick client. To configure thick client, either:
 
-- Place the basic Oracle instant client in an oracle_client folder, in the root OraTAPI directory.
+- Place the basic [Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client/downloads.html) in an oracle_client folder, directly below the root OraTAPI directory.
 - Set and export the ORACLE_IC_HOME shell variable, to point to the Instant Client location.
 ---
 
