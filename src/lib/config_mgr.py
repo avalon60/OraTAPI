@@ -88,7 +88,7 @@ class ConfigManager:
             raise FileNotFoundError
 
     def config_value(self, config_section: str, config_key: str,
-                     default: str = None) -> str:
+                     default: str = None, valid_values: list = None) -> str:
         """
         Retrieve a value from a user configparser file.
 
@@ -100,13 +100,18 @@ class ConfigManager:
         """
 
         if not self.config.has_option(config_section, config_key) and default is not None:
-            return default
+            value = default
+        else:
+            if not self.config.has_section(config_section) or not self.config.has_option(config_section, config_key):
+                message = f"The key {config_section}.{config_key} does not exist in the config file ({self.config_file_path })."
+                raise KeyError(f"{message}")
+            value = self.config.get(config_section, config_key)
 
-        if not self.config.has_section(config_section) or not self.config.has_option(config_section, config_key):
-            message = f"The key {config_section}.{config_key} does not exist in the config file ({self.config_file_path })."
-            raise KeyError(f"{message}")
+        if valid_values is not None:
+            if value not in valid_values:
+                raise ValueError(f"Invalid value for {config_section}.{config_key}: '{value}'. Valid values: {valid_values}")
 
-        return self.config.get(config_section, config_key)
+        return value
 
 
     def bool_config_value(self, config_section: str, config_key: str,

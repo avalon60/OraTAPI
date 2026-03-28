@@ -86,6 +86,12 @@ class Table:
                  Inner dictionary keys: 'data_type', 'default_value', 'nullable'
         :rtype: dict
         """
+        identity_query = """
+                select column_name, generation_type
+                from all_tab_identity_cols
+                where owner = :schema_name
+                  and table_name = :table_name
+        """
         query = """
                 select 
                     column_name,
@@ -103,6 +109,12 @@ class Table:
         column_list = []
         try:
             with self.db_session.cursor() as cursor:
+                # Pre-fetch identity metadata so we can flag GENERATED ALWAYS columns.
+                if self.trace:
+                    print(f"Executing identity query: {identity_query}")
+                cursor.execute(identity_query, schema_name=self.schema_name, table_name=self.table_name)
+                identity_map = {row[0].upper(): row[1] for row in cursor}
+
                 if self.trace:
                     print(f"Executing query: {query}")
                     print(f"Parameters: schema_name={self.schema_name}, table_name={self.table_name}")
@@ -121,6 +133,9 @@ class Table:
                     self.max_col_name_len = len(column_name) if len(column_name) > self.max_col_name_len else self.max_col_name_len
                     is_ak_column = True if not is_pk_column and column_keyed else False
                     is_row_version_column = True if column_name.lower() == self.row_vers_column_name.lower() else False
+                    identity_generation_type = identity_map.get(column_name.upper())
+                    is_identity = identity_generation_type is not None
+                    is_identity_always = identity_generation_type.upper() == 'ALWAYS' if identity_generation_type else False
                     column_metadata_dict[column_name] = {
                         "data_type": data_type,
                         "default_value": data_default,
@@ -128,7 +143,10 @@ class Table:
                         "is_pk_column": is_pk_column,
                         "is_ak_column": is_ak_column,
                         "is_key_column": column_keyed,
-                        "is_row_version_column": is_row_version_column
+                        "is_row_version_column": is_row_version_column,
+                        "is_identity": is_identity,
+                        "identity_generation_type": identity_generation_type,
+                        "is_identity_always": is_identity_always
                     }
                     if is_pk_column:
                         self.pk_columns_list.append(column_name.upper())
@@ -170,6 +188,23 @@ class Table:
         column_dict = self.columns_dict[_column_name]
         property_value = column_dict[property_name.lower()]
         return property_value
+
+    def is_identity_always(self, column_name: str) -> bool:
+        """Return True if the column is defined as GENERATED ALWAYS AS IDENTITY."""
+        _column_name = column_name.upper()
+        column_dict = self.columns_dict.get(_column_name, {})
+        return bool(column_dict.get("is_identity_always"))
+
+    def is_identity(self, column_name: str) -> bool:
+        """Return True if the column is defined as an identity column (any generation type)."""
+        _column_name = column_name.upper()
+        column_dict = self.columns_dict.get(_column_name, {})
+        return bool(column_dict.get("is_identity"))
+
+    def identity_generation_type(self, column_name: str):
+        _column_name = column_name.upper()
+        column_dict = self.columns_dict.get(_column_name, {})
+        return column_dict.get("identity_generation_type")
 
     def _is_column_keyed(self, column_name: str) -> bool:
         """

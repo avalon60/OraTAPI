@@ -29,3 +29,13 @@ dqu_core,dqu_tests,Undefined,True,True,True
 dqu_core,dqu_test_results,Undefined,True,True,True
 dqu_core,dqu_test_run,Undefined,True,True,True
 orac,message_embeddings,Undefined,True,True,True
+asv_core,gtr_batches,Undefined,True,True,True
+asv_core,gtr_batch_crops,Undefined,True,True,True
+asv_core,gtr_crops,Undefined,True,True,True
+asv_core,gtr_data_files,Undefined,True,True,True
+asv_core,gtr_data_rows_rej,Undefined,True,True,True
+asv_core,gtr_data_rows_stg,Undefined,True,True,True
+asv_core,gtr_data_rows_valid,Undefined,True,True,True
+asv_core,gtr_files_validation_reports,Undefined,True,True,True
+asv_core,gtr_geometry_files,Undefined,True,True,True
+asv_core,gtr_rows_validation_reports,Undefined,True,True,True

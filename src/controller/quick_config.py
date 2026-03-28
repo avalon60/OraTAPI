@@ -13,7 +13,7 @@ import argparse
 import shutil
 from configparser import ConfigParser
 
-from lib.file_system_utils import project_home
+from lib.fsutils import project_home
 from pathlib import Path
 from itertools import chain
 from lib.config_mgr import compare_config_files
