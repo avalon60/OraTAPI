@@ -8,7 +8,7 @@ import time
 from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_mgr import ConfigManager
-from model.session_manager import DBSession
+from lib.session_manager import DBSession
 from lib.fsutils import project_home
 from lib.app_utils import current_timestamp, format_elapsed_time
 from lib.user_security import UserSecurity

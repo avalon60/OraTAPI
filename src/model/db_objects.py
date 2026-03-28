@@ -6,7 +6,7 @@ __description__ = "Home of the table metadata APIs. Here we model Table classes.
 
 # DBSession is a subclass of oracledb.Connection which has a self.cursor() attribute.
 from lib.config_mgr import ConfigManager
-from model.session_manager import DBSession
+from lib.session_manager import DBSession
 
 
 def get_constraint_description(constraint_type:str) -> str:

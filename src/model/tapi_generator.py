@@ -10,7 +10,7 @@ import re
 from lib.fsutils import project_home
 from lib.config_mgr import ConfigManager
 from model.db_objects import Table
-from model.session_manager import DBSession
+from lib.session_manager import DBSession
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict

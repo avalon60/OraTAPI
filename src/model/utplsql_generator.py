@@ -9,11 +9,10 @@ import copy
 from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from model.db_objects import TableConstraints
-from model.session_manager import DBSession
+from lib.session_manager import DBSession
 from lib.fsutils import project_home
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
 
 from model.tapi_generator import inject_values
 from model.framework_errors import InconsistentRequest
