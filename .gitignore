@@ -5,12 +5,15 @@ apex_test_train.py
 build/
 dist/
 .idea/
+.claude/
 OraTAPI.egg-info/
 *.pyc
 resources/config/case_notes.txt
 *.sql
 src/controller/example.csv
 src/controller/quick_config (copy).py
+src/oratapi.egg-info/
+src/OraTAPI.egg-info/
 src/lib/__pycache__/
 src/lib/__pycache__/
 src/model/__pycache__/
