@@ -43,7 +43,7 @@ Version 1.8.0
       - [\[logger\]](#logger)
       - [\[schemas\]](#schemas)
       - [\[misc\]](#misc)
-      - [\[ut\_control\]](#ut_control)
+      - [\[ut\_control\]](#ut_controls)
       - [\[console\]](#console)
       - [Example configuration file:](#example-configuration-file)
     - [Fine-Grained File Controls](#fine-grained-file-controls)
@@ -56,7 +56,7 @@ Version 1.8.0
       - [Maintained by Trigger](#maintained-by-trigger)
       - [Maintained by Column Expression](#maintained-by-column-expression)
     - [The auto\_maintained\_cols Property](#the-auto_maintained_cols-property)
-    - [The row\_version\_column\_name Property](#the-row_version_column_name-property)
+    - [The row\_version\_column\_name Property](#the-row_vers_column_name-property)
   - [utPLSQL Support](#utplsql-support)
     - [Overview](#overview)
     - [Controls](#controls)
@@ -224,7 +224,7 @@ the behaviour, in as much as they shape the code and content of the generated fi
     The Windows command must be run from a Windows PowerShell terminal.  
 
 ## Post Installation
-The next step is to configure the `OraTAP.ini` file and your template files. Samples of these files are provided, and 
+The next step is to configure the `OraTAPI.ini` file and your template files. Samples of these files are provided, and 
 you could navigate through the various directories to manually instantiate all your files by copying the samples to the 
 required file names and directories. However, a `quick_config` tool is available to help you set up more quickly. Several 
 options are available to choose from:
@@ -234,7 +234,7 @@ options are available to choose from:
 - Logger
 - Liquibase & Logger
 
-The respective parameters passed need to be in lowercase (`basic`, `liquibase`, `logger` `llogger`).
+The respective parameters passed need to be in lowercase (`basic`, `liquibase`, `logger`, `llogger`).
 
 If you opt for the `llogger` templates, you will need to install the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).  
 
@@ -297,14 +297,13 @@ customisations to the configuration. However, you can force an overwriting, by a
 
 The full command synopsis is:
 ```
-$ bin/quick_config.sh -h
-usage: quick_config.py [-h] -t {liquibase,basic,llogger} [-T] [-f]
+usage: quick_config.py [-h] -t {liquibase,basic,logger,llogger} [-T] [-f]
 
 Copy template files based on template category.
 
 options:
   -h, --help            show this help message and exit
-  -t {liquibase,basic,llogger}, --template_category {liquibase,basic,llogger}
+  -t {liquibase,basic,logger,llogger}, --template_category {liquibase,basic,logger,llogger}
                         Specify the template category ('liquibase' or 'basic').
   -T, --templates_only  Only instantiate templates (Do not overwrite control files).
   -f, --force           Overwrite existing files.
@@ -632,7 +631,7 @@ If we don't want to use a named connection, the alternative is to specify:
 
 Taking the basic example, we can modify this to:
 ```bash
-ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -u cbostock -p <my_password> -d dev-db
+ora_tapi.sh -To HR -t employees,departments -a cbostock -u cbostock -p <my_password> -d dev-db
 ```
 In this example, we assume that the dev-db is a TNS Names entry.  
 
@@ -645,16 +644,17 @@ In this example, we assume that the dev-db is a TNS Names entry.
 | `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
 | `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
 | `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
-| `-g`, `--staging_dir` | Directory for the staging area.                                                            | `./staging`              |
+| `-g`, `--staging_dir` | Directory for the staging area.(Default is based on OraTAPI install location)                   | `<OraTAPI-HOME>/staging` |
+| `-G`, `--ut_staging_dir` | Directory for the Unit Test staging area.(Default is based on OraTAPI install location)      | `<OraTAPI-HOME>/staging` |
 | `-p`, `--db_password`      | Database password.                                                                         |                          |
-| `-P`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
-| `-S`, `--schema_name`      | Schema containing the target tables (required).                                            |                          |
-| `-t`, `--table_names`      | Comma-separated list of tables (use `%` for all tables).                                   | `%`                      |
+| `-po`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
+| `-t`, `--table_names`      | A space separated list of table names.                                                      | All tables               |
 | `-To`, `--table_owner`     | The table owner/schema on whose tables the generated APIs are to be based.                 |                          |
 | `-to`, `--trigger_owner`   | The schema in which the generated scripts should create the triggers.                      |                          |
 | `-vo`, `--view_owner`      | The schema in which the generated scripts should create the views.                         |                          |
 | `-u`, `--db_username`      | Database username.                                                                         |                          |
-| `-T`, `--api_types`        | Comma-separated list of API types (e.g., `insert, select, update, delete, upsert, merge`). | Configured default types |
+| `-T`, `--api_types`        | A space separated list of API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
+| `-U`, `--ut_api_types`     | A space separated list of Unit Test API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
 
 ---
 
@@ -664,7 +664,7 @@ Generated files are written to the staging area and organised into subdirectorie
 - **Package Specification (`spec_dir`)**: Contains DDL source files defining the PL/SQL package interface.
 - **Package Body (`body_dir`)**: Contains DDL source files implementing the PL/SQL package logic.
 - **View (`view`)**: Contains DDL source files implementing any generated view scripts.
-- **Trigger (`view`)**: Contains DDL source files implementing any generated trigger scripts.
+- **Trigger (`trigger`)**: Contains DDL source files implementing any generated trigger scripts.
 
 Each API package is customised based on a combination of the `.ini` configuration, command-line options and template 
 files. File extensions for package spec and body source files can be configured via the 
@@ -694,7 +694,7 @@ The OraTAPI.ini file is made up of named sections. The sections are denoted by s
 section name is enclosed. Within each section is one or more properties, used to control the behaviour in one way or 
 another, of the `ora_tapi` command.  
 
-As a reminder, the file is located as `<raTAPI_HOME/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
+As a reminder, the file is located as `<OraTAPI_HOME/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
 initialises settings, based upon the contents of this file.  
 
 Here we cover the various sections and properties.
@@ -777,7 +777,7 @@ Here we cover the various sections and properties.
   - **Purpose**: Customises the naming conventions for the delete procedure.
 
 - **select_procname**: Specifies the procedure name to be used for select API.
-z  - Example: `select_procname = get`
+  - Example: `select_procname = get`
   - **Purpose**: Customises the naming conventions for the select procedure.
 
 - **insert_procname**: Specifies the procedure name to be used for insert API.
@@ -871,7 +871,7 @@ z  - Example: `select_procname = get`
 
 ---
 
-#### [ut_control]
+#### [ut_controls]
 - **enable_ut_code_generation**: Enables / disables code generation of utPLSQL packages.
   - Example: `enable_ut_code_generation = true`
   - **Purpose**: When set to true / on, utPLSQL code generation is switched on. When set to false / off utPLSQL code generation is disabled.
@@ -935,7 +935,7 @@ z  - Example: `select_procname = get`
 
 ```ini
 [OraTAPI]
-version = 1.1.9
+version = oratapi-<x.y.z>
 
 [project]
 default_app_name = Human Resources
@@ -1078,11 +1078,11 @@ colour_console = true
 The OraTAPI.ini file has been covered in the previous sections. Here we look at the CSV controls.
 
 #### Controlling File Updates
-Fine-grained control over which files can or cannot be updated, is implemented via the OrtTAPI.csv file. The location of 
+Fine-grained control over which files can or cannot be updated, is implemented via the OraTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
 location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
-sets ths location to `resources/config`.  
+sets this location to `resources/config`.  
 
 The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
 on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
@@ -1125,7 +1125,7 @@ and / or `Table Name`, or you can wild-card the entries with any of the followin
 enter an exact column name. The Description is optional, but allows you to describe why the column has been entered to 
 the list.  
 
-When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepened with the string `PI column: `. Example:  
+When generating the parameter logging commands, a check is made to see if a match is found. If a match is found, then the parameter logging statement is commented out, and prepended with the string `PI column: `. Example:  
 
 ```
 logger_user.logger.append_param(l_params, '* p_row.employee_id', p_row.employee_id);
@@ -1227,11 +1227,11 @@ its current value.
 This is a comma separated list of column names which are maintained either by table triggers or by use of column 
 expressions, configured to appear within the generated TAPIs (more on these a little later).
 
-This list should not include the column included to the `row_version_column_name` property (if one is set).
+This list should not include the column included to the `row_vers_column_name` property (if one is set).
 
 ### The row_version_column_name Property
 The row_version_column_name, need not be set, if you are not interested in the optimistic locking aspects of the TAPI 
-generation, however, if it is set, <b>ensure that the row_version_column_name column name is not included to the 
+generation, however, if it is set, <b>ensure that the row_vers_column_name column name is not included to the 
 `auto_maintained_cols` list of columns</b>.
 
 ## utPLSQL Support
@@ -1249,7 +1249,7 @@ search conditions and parent tables (foreign key related) are listed.
 For the most part the utPLSQL code generation is controlled by properties in the `ut_controls` section of the `OraTAPI.ini` file.
 There is also a related property, `enable_tapis_when_ut_enabled` under the `behaviour` section. This should be set to false, if
 you wish to disable generation of TAPI, View and Trigger code whilst generating utPLSQL package code.
-The control properties associated with utPLSQL package generation are described under the [\[ut\_control\]](#ut_control) 
+The control properties associated with utPLSQL package generation are described under the [\[ut\_control\]](#ut_controls) 
 subsection.
 
 
@@ -1277,19 +1277,19 @@ In addition, the following may be used.
 
 ## Connection Manager
 
-The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DNS (TNS) strings can be stored and retrieved locally, by use of a conventient name. Credentials are transparrently encrypted/decrypted from a locally maintained store. The `conn_mgr` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
+The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DSN (TNS) strings can be stored and retrieved locally, by use of a convenient name. Credentials are transparently encrypted/decrypted from a locally maintained store. The `conn_mgr` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
 
-- -p / --db_password
-- -u / --db_username
-- -d / --dsn
-- -s / --save_connection
+- -c / --create
+- -e / --edit
+- -d / --delete
+- -l / --list
 
-However, for more complete control, you need to use the `conn_mgr` command. This allows you to:
+This allows you to:
 
-- List your connections
 - Add new connections
 - Update connections
 - Delete connections
+- List existing connections
 
 The Add and Update options cause the `conn_mgr` to enter an interactive dialog mode.
 
@@ -1303,6 +1303,8 @@ usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-n NAME]
 
 Database connection manager.
 
+Database connection manager.
+
 options:
   -h, --help            show this help message and exit
   -c, --create          Create a new connection.
@@ -1310,12 +1312,14 @@ options:
   -d, --delete          Delete an existing connection.
   -l, --list            List all connections.
   -n NAME, --name NAME  Name of the connection.
+  -t {dsn,url}, --credential-type {dsn,url}
+                        Type of credential to use (default: dsn).
 
-Used to create/edit/delete or store named database connections.Database connections are stored, encrypted, in a local store.
+Used to create/edit/delete or store named database connections. Database connections are stored, encrypted, in a local store.
+
+NOTE: For OraTAPI, you should not use the -t flag, if you do, you should specify dsn.
 
 ```
-Here’s a revised version of your sentence with improved grammar and clarity:
-
 The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive.
 Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
 
@@ -1324,7 +1328,7 @@ Connection credentials are stored with 256-bit AES encryption, to a local store,
 
 ## Sample Generated Table API Packages:
 
-Here we see examples og TAPI packages, based on the `jobs` table, and using the `basic` and `logger` 
+Here we see examples of TAPI packages, based on the `jobs` table, and using the `basic` and `logger` 
 templates.
 
 The `jobs` table:
