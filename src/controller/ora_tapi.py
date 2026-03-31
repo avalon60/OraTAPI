@@ -225,12 +225,17 @@ class CodeManager:
         self.table_names_list = self.table_names
 
         user_security = UserSecurity(project_identifier="OraTAPI")
+        wallet_zip_path = ""
         if self.conn_name:
             self.db_username, self.db_password, self.dsn \
                 = user_security.named_connection_creds(connection_name=self.conn_name)
+            wallet_zip_path = user_security.connection_property(connection_name=self.conn_name,
+                                                                property_key="wallet_zip_path",
+                                                                default_value="")
 
         # Database session setup
-        self.db_session: DBSession = DBSession(dsn=self.dsn, user=self.db_username, password=self.db_password)
+        self.db_session: DBSession = DBSession(dsn=self.dsn, user=self.db_username, password=self.db_password,
+                                               wallet_zip_path=wallet_zip_path)
         self.view.print_console(msg_level=MsgLvl.success, text="Database session established successfully.")
 
         if not self.schema_exists(schema_name=self.table_owner):

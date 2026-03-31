@@ -91,6 +91,24 @@ class UserSecurity:
         self.user_config_file_path = Path(self._get_user_config_file_path())
         self._create_user_credentials_file()
 
+    def connection_property(self, connection_name: str, property_key: str, default_value: str = None) -> str:
+        """
+        Return a stored connection property in plain text.
+
+        For DSN connections we retain backwards compatibility with older stores that
+        persisted the connect string under ``dsn`` rather than ``resource_id``.
+        """
+        config = configparser.ConfigParser()
+        config.read(self.user_config_file_path)
+
+        if not config.has_section(connection_name):
+            return default_value
+
+        if property_key == "resource_id":
+            return config.get(connection_name, "resource_id", fallback=config.get(connection_name, "dsn", fallback=default_value))
+
+        return config.get(connection_name, property_key, fallback=default_value)
+
     def named_connection_creds(self, connection_name: str) -> tuple[str, str, str]:
         """
         Returns the decrypted username, decrypted password, and the DSN for a given connection name.
@@ -122,14 +140,15 @@ class UserSecurity:
         # Retrieve and decrypt the username and password
         encrypted_username = config.get(connection_name, "username")
         encrypted_password = config.get(connection_name, "password")
-        dsn = config.get(connection_name, "dsn")
+        dsn = config.get(connection_name, "resource_id", fallback=config.get(connection_name, "dsn"))
 
         username = _decrypted_user_credential(encrypted_credential=encrypted_username)
         password = _decrypted_user_credential(encrypted_credential=encrypted_password)
 
         return username, password, dsn
 
-    def update_named_connection(self, connection_name:str, username: str, password:str, dsn: str):
+    def update_named_connection(self, connection_name:str, username: str, password:str, dsn: str,
+                                wallet_zip_path: str = "", resource_id: str = None):
         """Create (or update, if already exists) a connection entry, fo the supplied connection details.
         :param connection_name: The named connection.This is effectively a section in a config file.
         :param username: The username to encrypt and store.
@@ -140,9 +159,15 @@ class UserSecurity:
         self._create_new_connection_section(connection_name= connection_name)
         encrypted_username = _encrypted_user_credential(credential=username)
         encrypted_password = _encrypted_user_credential(credential=password)
+        resource_id = resource_id or dsn
         self._update_credential_entry(connection_name=connection_name, credential_key="username", credential_value=encrypted_username)
         self._update_credential_entry(connection_name=connection_name, credential_key="password", credential_value=encrypted_password)
         self._update_credential_entry(connection_name=connection_name, credential_key="dsn", credential_value=dsn)
+        self._update_credential_entry(connection_name=connection_name, credential_key="resource_id", credential_value=resource_id)
+        if wallet_zip_path:
+            self._update_credential_entry(connection_name=connection_name, credential_key="wallet_zip_path", credential_value=wallet_zip_path)
+        else:
+            self._delete_credential_entry(connection_name=connection_name, credential_key="wallet_zip_path")
 
     def _create_user_credentials_file(self, new_connection_name: str | None = None) -> None:
         """
@@ -220,6 +245,19 @@ class UserSecurity:
 
         with open(self.user_config_file_path, 'w') as config_file:
             config.write(config_file)
+
+    def _delete_credential_entry(self, connection_name: str, credential_key: str) -> None:
+        """Delete a key from the credential store if it exists."""
+        config = configparser.ConfigParser()
+
+        if not os.path.exists(self.user_config_file_path):
+            raise FileNotFoundError(f"The config file {self.user_config_file_path} does not exist.")
+
+        config.read(self.user_config_file_path)
+        if config.has_section(connection_name) and config.has_option(connection_name, credential_key):
+            config.remove_option(connection_name, credential_key)
+            with open(self.user_config_file_path, 'w') as config_file:
+                config.write(config_file)
 
 
     def _user_credential_value(self, connection_name: str, credential_key: str,
@@ -433,4 +471,3 @@ if __name__ == "__main__":
     db_password = user_security.decrypted_password(connection_name='bozzy')
 
     print(f'Retrieved Username: {db_username}; password: {db_password}')
-

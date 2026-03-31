@@ -1283,6 +1283,7 @@ The connection manager allows you to treat database connections in a similar man
 - -e / --edit
 - -d / --delete
 - -l / --list
+- -C / --print-creds
 
 This allows you to:
 
@@ -1290,6 +1291,7 @@ This allows you to:
 - Update connections
 - Delete connections
 - List existing connections
+- List existing connections with decrypted credentials
 
 The Add and Update options cause the `conn_mgr` to enter an interactive dialog mode.
 
@@ -1299,7 +1301,7 @@ Synopsis:
 cd <OraTAPI-home>
 ./bin/conn_mgr.sh -h
 
-usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-n NAME]
+usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-C] [-n NAME]
 
 Database connection manager.
 
@@ -1311,6 +1313,7 @@ options:
   -e, --edit            Edit an existing connection.
   -d, --delete          Delete an existing connection.
   -l, --list            List all connections.
+  -C, --print-creds     If used with --list, includes decrypted credentials.
   -n NAME, --name NAME  Name of the connection.
   -t {dsn,url}, --credential-type {dsn,url}
                         Type of credential to use (default: dsn).
@@ -1320,7 +1323,17 @@ Used to create/edit/delete or store named database connections. Database connect
 NOTE: For OraTAPI, you should not use the -t flag, if you do, you should specify dsn.
 
 ```
-The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive.
+The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive. The `-C/--print-creds` option is only meaningful with `-l/--list`.
+
+Examples:
+
+```bash
+./bin/conn_mgr.sh -l
+./bin/conn_mgr.sh -l -C
+```
+
+Using `-C/--print-creds` causes `conn_mgr` to attempt to decrypt and display the stored username and password for each saved connection. This is intended for local inspection on the machine that created the credential store.
+
 Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
 
 <b>NOTE: The credential store is non-transportable. If you try to use it on a computer on which it was not maintained, the decryption will fail.</b>
@@ -2020,4 +2033,3 @@ This project is licensed under the MIT License (see [LICENSE](LICENSE)).
 
 An additional internal-use license has been granted to Oracle Corporation.
 See [ORACLE_INTERNAL_LICENSE.txt](ORACLE_INTERNAL_LICENSE.txt) for details.
-

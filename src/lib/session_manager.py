@@ -69,7 +69,8 @@ class DBSession(oracledb.Connection):
                     kwargs["config_dir"] = str(wallet_dir)
             else:
                 tns_admin = os.environ.get("TNS_ADMIN")
-                kwargs["config_dir"] = str(tns_admin)
+                if tns_admin:
+                    kwargs["config_dir"] = str(tns_admin)
             # Handle dsn prefixed with 'ldap:' - resolve into full LDAP DSN
             if self.dsn_string and self.dsn_string.lower().startswith("ldap:"):
                 alias = self.dsn_string[5:]

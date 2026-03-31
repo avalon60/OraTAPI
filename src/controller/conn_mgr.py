@@ -23,6 +23,8 @@ def main():
     group.add_argument('-d', '--delete', action='store_true', help="Delete an existing connection.")
     group.add_argument('-l', '--list', action='store_true', help="List all connections.")
 
+    parser.add_argument('-C', '--print-creds', action='store_true',
+                        help="If used with --list, includes decrypted credentials.")
     parser.add_argument('-n', '--name', type=str, help="Name of the connection.")
     parser.add_argument('-t', '--credential-type', type=str, choices=['dsn', 'url'], default='dsn',
                         help="Type of credential to use (default: dsn).")
@@ -33,7 +35,9 @@ def main():
     conn_mgr = ConnectMgr(project_identifier='OraTAPI', credential_type=args.credential_type)
 
     if args.list:
-        conn_mgr.list_connections()
+        conn_mgr.list_connections(inc_creds=args.print_creds)
+    elif args.print_creds:
+        print("Error: --print-creds must be used with --list.")
     elif args.create:
         if not args.name:
             print("The --name option is required for creating a connection.")
