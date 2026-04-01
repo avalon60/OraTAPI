@@ -58,6 +58,9 @@ ora_tapi_csv_dir = resources/config
 pi_columns_csv_dir = resources/config
 
 [api_controls]
+# api_surface defines whether generated API interactions are performed directly against the base table
+# or through the corresponding passthrough view. Valid values table or view.
+api_surface = table
 # API naming properties follow. Set these to the preferred procedure names of the respective APIs
 delete_procname = del
 select_procname = get

@@ -2428,6 +2428,14 @@ class ApiGenerator:
         # Append the package footer
         package_spec += package_footer_template
 
+        # Keep ty_row aligned to the selected API surface without forcing template changes.
+        if self.api_surface == "view":
+            pattern = re.compile(
+                r"^(\s*subtype\s+ty_row\s+is\s+)([a-zA-Z0-9_]+)(%rowtype;)",
+                re.IGNORECASE | re.MULTILINE,
+            )
+            package_spec = pattern.sub(rf"\1{self.api_target_name_lc}\3", package_spec)
+
         return package_spec
 
     def gen_views(self):

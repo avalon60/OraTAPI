@@ -191,34 +191,38 @@ the behaviour, in as much as they shape the code and content of the generated fi
 
 1. Download the oratapi-X.Y.Z.tar.gz artefact to a staging directory. You can obtain the artefacts from the [OraTAPI Releases](https://github.com/avalon60/OraTAPI/releases) page. Ensure not to download one of the two source code files.
 
-   2. Open a Terminal Window and Extract the Contents:
+2. Open a terminal window and extract the contents into a parent directory:
       For macOS / Linux
       ```bash
-      mkdir <path-to-installation-folder>
-      tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
+      mkdir <path-to-parent-folder>
+      tar -xzvf <sdist_file>.tar.gz -C <path-to-parent-folder>
       ```
 
-      For windows:
+      For Windows:
       Open a **Windows PowerShell Terminal** and enter the command:
       ```powershell
-      mkdir <path-to-installation-folder>
-      tar -xzvf <sdist_file>.tar.gz -C <path-to-installation-folder>
+      mkdir <path-to-parent-folder>
+      tar -xzvf <sdist_file>.tar.gz -C <path-to-parent-folder>
       ```
       The tar command should be supplied with Windows PowerShell.    
 
-          NOTE: The source distribution file, includes an `oratapi-<x.y.z>` root folder, you may wish to account for this, when constructing <path-to-installation-folder>.  
-                Renaming the `oratapi-<x.y.z>`directory is entirely a matter of choice.
+      NOTE: The source distribution file contains an `oratapi-<x.y.z>` root folder. After extraction, your installation root will therefore be:
+      `<path-to-parent-folder>/oratapi-<x.y.z>`
+
+      Renaming the extracted `oratapi-<x.y.z>` directory is entirely a matter of choice. If you want to rename it,
+      it is best to do so before running `setup.sh` or `setup.ps1`. If you rename the installation directory later,
+      rerun the relevant setup command from the renamed directory.
 
 3. Complete the Installation:  
    macOS / Linux
    ```bash
-   cd <path-to-installation-folder>
+   cd <path-to-parent-folder>/oratapi-<x.y.z>
    chmod 750 setup.sh
    ./setup.sh
    ```
    Windows PowerShell:
    ```ps1
-   cd <path-to-installation-folder>
+   cd <path-to-parent-folder>\oratapi-<x.y.z>
    .\setup.ps1
    ```
     The Windows command must be run from a Windows PowerShell terminal.  
@@ -324,10 +328,9 @@ OraTAPI can be used via PowerShell or Git Bash.
 
 ## Performing Upgrades
 ### Migrations
-It's worth noting that when you unzip the installation archive file, it creates a directory, whose name is of the form 
-`oratapi-M.m.p`, where the M, m and p, represent the major, minor and patch components of the version. This means 
-that you should be able to locate the archive and unzip it from the same location as you did for previous your installation(s), 
-and it will automatically extract to its own directory.  
+When you unpack the installation archive, it creates a top-level directory named `oratapi-M.m.p`, where `M`, `m`, and `p`
+are the major, minor, and patch version components. In practice, this means you can extract each release into the same
+parent directory and each version will unpack into its own installation directory.  
 
 
 To complete the installation and migrate your previous settings, perform these steps:
@@ -338,7 +341,7 @@ To complete the installation and migrate your previous settings, perform these s
 4. Run `migrate_config` command as per the example below.
 
 ```
-   cd <path-to-installation-folder>
+   cd <path-to-parent-folder>/oratapi-<x.y.z>
    ./bin/migrate_config.sh -o <path_to_old_install_dir>
 ```
 This will result in your old OraTAPI.ini file, CSV files, and templates, being copied to the new installation.  
