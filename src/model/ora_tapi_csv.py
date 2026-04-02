@@ -19,6 +19,7 @@ class CSVManager:
         self.success: bool = True
         self.csv_pathname = csv_pathname
         self.data = {}  # Initialize an empty dictionary for managing CSV data
+        self.dirty = False
         self.init_csv()
         self.read_csv_to_dict()
         atexit.register(self._cleanup)  # Register the cleanup method
@@ -94,6 +95,7 @@ class CSVManager:
 
         if (schema_name_lc, table_name_lc) not in self.data:
             self.data[(schema_name.lower(), table_name.lower())] = default_values.copy()
+            self.dirty = True
 
         entry = self.data[(schema_name_lc, table_name_lc)]
 
@@ -146,6 +148,8 @@ class CSVManager:
             print("Skipping cleanup: invalid headers.")
             self.console_manager.print_console(text="Skipping cleanup: invalid headers.",
                                                msg_level=MsgLvl.warning)
+            return
+        if not self.dirty:
             return
 
         self.console_manager.print_console(text=f"Exiting: Updating CSV control file: {self.csv_pathname.absolute()}",

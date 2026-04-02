@@ -3,7 +3,7 @@
 # Description: Manages the database connection and provides various convenience methods for querying Oracle.
 from time import time_ns
 
-from lib.framework_errors import PLSQLScriptError
+from lib.framework_errors import PLSQLScriptError, DatabaseConnectionError
 from lib.fsutils import project_home
 import os
 import platform
@@ -111,7 +111,29 @@ class DBSession(oracledb.Connection):
 
         except oracledb.DatabaseError as e:
             self.connection_succeeded = False
-            raise e
+            raise self._translate_connection_error(e) from e
+
+    def _translate_connection_error(self, error: oracledb.DatabaseError) -> Exception:
+        """Return a more actionable OraTAPI error for common connection failures."""
+        error_text = str(error)
+
+        if "DPY-4027" in error_text:
+            dsn_display = self.dsn_string or "<not supplied>"
+            tns_admin = os.environ.get("TNS_ADMIN", "")
+            config_dir = tns_admin or "<not set>"
+            message = (
+                "Unable to resolve the database connect identifier.\n"
+                f"Connection DSN/TNS alias: {dsn_display}\n"
+                f"TNS_ADMIN: {config_dir}\n"
+                "OraTAPI is trying to connect using a TNS alias, but Oracle Net configuration is not available to "
+                "this process.\n"
+                "Set TNS_ADMIN to the directory containing tnsnames.ora, use a wallet-backed connection, or switch "
+                "the saved DSN to an Easy Connect string.\n"
+                "If you are running from PyCharm, add TNS_ADMIN to the Run/Debug configuration environment variables."
+            )
+            return DatabaseConnectionError(message)
+
+        return error
 
     def extract_wallet(self, wallet_zip_path: Path) -> Path:
         """

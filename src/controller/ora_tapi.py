@@ -18,6 +18,7 @@ from os import chdir
 from model.ora_tapi_csv import CSVManager
 from model.framework_errors import UnsupportedOption
 from lib.app_utils import get_latest_dist_url, get_latest_version
+from lib.framework_errors import DatabaseConnectionError
 from packaging.version import Version
 
 CONFIG_LOCATION = project_home()/ 'resources' / 'config'
@@ -58,6 +59,12 @@ class CodeManager:
         args_dict = self.view.args_dict
 
         options_dict = copy.deepcopy(args_dict)
+        config_manager = ConfigManager(config_file_path=config_file_path)
+        options_dict["api_surface"] = config_manager.config_value(
+            config_section="api_controls",
+            config_key="api_surface",
+            default="view"
+        )
 
         exec_start_timestamp = current_timestamp()
         self.view.print_console(text=f'{PROG_NAME}: Version: {__version__}',
@@ -72,6 +79,8 @@ class CodeManager:
             value = options_dict[key]
             if key == 'db_password':
                 value = '***************'
+            elif isinstance(value, list):
+                value = ', '.join(str(item) for item in value)
             self.view.print_console(msg_level=MsgLvl.highlight, text=f"{key:<40} = {value}")
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
 
@@ -101,7 +110,7 @@ class CodeManager:
         self.trace = trace
         self.proj_home = project_home()
 
-        self.config_manager = ConfigManager(config_file_path=self.config_file_path)
+        self.config_manager = config_manager
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
                                                     default=str(app_home / 'OraTAPI.csv'))
@@ -234,8 +243,12 @@ class CodeManager:
                                                                 default_value="")
 
         # Database session setup
-        self.db_session: DBSession = DBSession(dsn=self.dsn, user=self.db_username, password=self.db_password,
-                                               wallet_zip_path=wallet_zip_path)
+        try:
+            self.db_session: DBSession = DBSession(dsn=self.dsn, user=self.db_username, password=self.db_password,
+                                                   wallet_zip_path=wallet_zip_path)
+        except DatabaseConnectionError as e:
+            self.view.print_console(msg_level=MsgLvl.error, text=str(e))
+            exit(1)
         self.view.print_console(msg_level=MsgLvl.success, text="Database session established successfully.")
 
         if not self.schema_exists(schema_name=self.table_owner):
@@ -257,6 +270,12 @@ class CodeManager:
                                 msg_level=MsgLvl.success)
 
         self.view.print_console(text=f'  Packages skipped: {results["packages_skipped"]}',
+                                msg_level=MsgLvl.warning)
+
+        self.view.print_console(text=f'UT packages generated: {results["ut_packages_generated"]}',
+                                msg_level=MsgLvl.success)
+
+        self.view.print_console(text=f'  UT packages skipped: {results["ut_packages_skipped"]}',
                                 msg_level=MsgLvl.warning)
 
         self.view.print_console(text=f'   Views generated: {results["views_generated"]}',
@@ -332,6 +351,7 @@ class CodeManager:
         views_generated = 0
         triggers_generated = 0
         ut_packages_generated = 0
+        ut_packages_skipped = 0
 
         schemas = {"Package Owner": self.package_owner,
                    "View Owner": self.view_owner,
@@ -382,15 +402,16 @@ class CodeManager:
 
                 if self.enable_ut_code_generation and package_enabled:
                     self.generate_ut_for_table(table_name)
-                    packages_generated += 1
                     ut_packages_generated += 1
                 else:
-                    packages_skipped += 1
+                    ut_packages_skipped += 1
 
 
         result = {
             "packages_generated": packages_generated,
             "packages_skipped": packages_skipped,
+            "ut_packages_generated": ut_packages_generated,
+            "ut_packages_skipped": ut_packages_skipped,
             "views_generated": views_generated,
             "views_skipped": views_skipped,
             "triggers_generated": triggers_generated,
@@ -600,7 +621,6 @@ class CodeManager:
 
         staging_dir = staging_dir.resolve()
 
-        self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating UT package for table: {table_name_lc.upper()}")
         staging_realpath = staging_dir.resolve()
 
 
@@ -615,7 +635,11 @@ class CodeManager:
         )
         triggers_dict = api_controller.gen_triggers()
         for trigger_file_name, code in triggers_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Generating trigger script for trigger: {trigger_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(
+                msg_level=MsgLvl.info,
+                text=f"      Generating trigger script for trigger: "
+                     f"{trigger_file_name.upper().replace('.SQL', '')} -> {table_name_lc.upper()}"
+            )
             self.view.write_file(staging_dir=staging_realpath, directory=self.trigger_dir, file_name=trigger_file_name,
                                  code=code)
 
@@ -633,7 +657,6 @@ class CodeManager:
 
         staging_dir = staging_dir.resolve()
 
-        self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating UT package for table: {table_name_lc.upper()}")
         staging_realpath = staging_dir.resolve()
 
         api_controller = ApiGenerator(
@@ -648,7 +671,11 @@ class CodeManager:
         views_dict = api_controller.gen_views()
 
         for view_file_name, code in views_dict.items():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"      Generating view script for view: {view_file_name.upper().replace('.SQL', '')}")
+            self.view.print_console(
+                msg_level=MsgLvl.info,
+                text=f"      Generating view script for view: "
+                     f"{view_file_name.upper().replace('.SQL', '')} -> {table_name_lc.upper()}"
+            )
             self.view.write_file(staging_dir=staging_realpath, directory=self.view_dir, file_name=view_file_name,
                                  code=code)
 

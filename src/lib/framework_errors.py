@@ -136,3 +136,11 @@ class PLSQLScriptError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
+
+
+class DatabaseConnectionError(Exception):
+    """Raised when OraTAPI can provide a clearer database connection error than the raw driver exception."""
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
