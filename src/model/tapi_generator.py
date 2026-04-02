@@ -2397,6 +2397,16 @@ class ApiGenerator:
             target_string=package_header_template,
             stab_spaces=self.indent_spaces
         )
+        if self.api_surface == "view":
+            pattern = re.compile(
+                r"^(\s*subtype\s+ty_row\s+is\s+)([^\s;]+)(\s*%rowtype\s*;)",
+                re.IGNORECASE | re.MULTILINE,
+            )
+            package_header_template = pattern.sub(
+                lambda match: f"{match.group(1)}{self.api_target_name_lc}{match.group(3)}",
+                package_header_template,
+                count=1,
+            )
         package_footer_template = inject_values(
             substitutions=self.global_substitutions,
             target_string=package_footer_template,
@@ -2427,14 +2437,6 @@ class ApiGenerator:
 
         # Append the package footer
         package_spec += package_footer_template
-
-        # Keep ty_row aligned to the selected API surface without forcing template changes.
-        if self.api_surface == "view":
-            pattern = re.compile(
-                r"^(\s*subtype\s+ty_row\s+is\s+)([a-zA-Z0-9_]+)(%rowtype;)",
-                re.IGNORECASE | re.MULTILINE,
-            )
-            package_spec = pattern.sub(rf"\1{self.api_target_name_lc}\3", package_spec)
 
         return package_spec
 
