@@ -2,6 +2,7 @@ __author__ = "Clive Bostock"
 __date__ = "2026-04-04"
 __description__ = "Manage OraTAPI configuration profiles."
 
+import re
 import shutil
 import zipfile
 from pathlib import Path
@@ -21,15 +22,27 @@ from lib.fsutils import (
 
 
 class ProfileManager:
+    WINDOWS_RESERVED_PROFILE_NAMES = {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    }
+
     def __init__(self):
         ensure_runtime_home()
 
-    @staticmethod
-    def _validate_profile_name(profile_name: str) -> str:
+    @classmethod
+    def _validate_profile_name(cls, profile_name: str) -> str:
         profile_name = profile_name.strip()
         if not is_valid_dir_name(profile_name):
             raise ValueError(f"Invalid profile name: '{profile_name}'")
         if profile_name in {".", ".."}:
+            raise ValueError(f"Invalid profile name: '{profile_name}'")
+        if re.search(r'[\\/:*?"<>|]', profile_name):
+            raise ValueError(f"Invalid profile name: '{profile_name}'")
+        if profile_name.endswith((" ", ".")):
+            raise ValueError(f"Invalid profile name: '{profile_name}'")
+        if profile_name.upper() in cls.WINDOWS_RESERVED_PROFILE_NAMES:
             raise ValueError(f"Invalid profile name: '{profile_name}'")
         return profile_name
 

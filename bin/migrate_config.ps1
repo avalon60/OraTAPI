@@ -23,11 +23,12 @@ $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PROJECT_DIR = Split-Path -Parent $SCRIPT_DIR
 $BIN_DIR = Join-Path $PROJECT_DIR "bin"
 $CONTROL_DIR = Join-Path $PROJECT_DIR "src\controller"
+$ACTIVATE_SCRIPT = Join-Path $PROJECT_DIR "venv\Scripts\Activate.ps1"
 
 # Activate the virtual environment if the script exists
-if (Test-Path "./venv/Scripts/Activate.ps1") {
+if (Test-Path $ACTIVATE_SCRIPT) {
     Write-Host "Activating the virtual environment..."
-    . ./venv/Scripts/Activate.ps1
+    . $ACTIVATE_SCRIPT
     Write-Host "Virtual environment activated successfully."
 } else {
     Write-Warning "Virtual environment activation script not found. Exiting..."

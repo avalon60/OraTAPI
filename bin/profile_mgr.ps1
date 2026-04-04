@@ -7,9 +7,10 @@ $ENTRY_POINT = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath) + "
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PROJECT_DIR = Split-Path -Parent $SCRIPT_DIR
 $CONTROL_DIR = Join-Path $PROJECT_DIR "src\controller"
+$ACTIVATE_SCRIPT = Join-Path $PROJECT_DIR "venv\Scripts\Activate.ps1"
 
-if (Test-Path "./venv/Scripts/Activate.ps1") {
-    . ./venv/Scripts/Activate.ps1
+if (Test-Path $ACTIVATE_SCRIPT) {
+    . $ACTIVATE_SCRIPT
 }
 
 $PYTHON_INTERPRETER = ""
