@@ -15,7 +15,7 @@ import tarfile
 import re
 from pathlib import Path
 from packaging.version import Version
-from lib.fsutils import project_override_home, runtime_home
+from lib.fsutils import runtime_home
 from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
 import platform
 from lib.config_mgr import compare_config_files
@@ -27,7 +27,7 @@ PROG_NAME = Path(__file__).name
 
 
 def install_home() -> Path:
-    return project_override_home() or runtime_home()
+    return Path(__file__).resolve().parents[2]
 
 
 

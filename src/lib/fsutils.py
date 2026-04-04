@@ -3,8 +3,6 @@ __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Manages the database connection/close."
 
-
-import os
 import platform
 import re
 from contextlib import ExitStack
@@ -12,13 +10,14 @@ from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 import shutil
-from typing import Iterable
 
 
-PROJECT_HOME_ENV = "ORATAPI_PROJECT_HOME"
 RUNTIME_HOME_DIRNAME = "OraTAPI"
 PACKAGE_RESOURCE_ANCHOR = "ora_tapi_package_data"
 _PACKAGE_HOME_STACK = ExitStack()
+DEFAULT_PROFILE_NAME = "default"
+CONFIGS_DIRNAME = "configs"
+ACTIVE_PROFILE_FILENAME = "active_config"
 RUNTIME_REQUIRED_RELATIVE_PATHS = [
     Path("resources/config/OraTAPI.ini"),
     Path("resources/config/pi_columns.csv"),
@@ -63,23 +62,48 @@ def runtime_home() -> Path:
     return Path.home() / RUNTIME_HOME_DIRNAME
 
 
-def _candidate_project_override_homes() -> Iterable[Path]:
-    project_home_env = os.getenv(PROJECT_HOME_ENV, "").strip()
-    if project_home_env:
-        yield Path(project_home_env).expanduser()
-
-    cwd = Path.cwd().resolve()
-    for candidate in (cwd, *cwd.parents):
-        if (candidate / "resources").is_dir() and ((candidate / "src").is_dir() or (candidate / "pyproject.toml").exists()):
-            yield candidate
-            break
+def runtime_configs_home() -> Path:
+    return runtime_home() / CONFIGS_DIRNAME
 
 
-def project_override_home() -> Path | None:
-    for candidate in _candidate_project_override_homes():
-        if candidate.exists():
-            return candidate
-    return None
+def active_profile_pointer_file() -> Path:
+    return runtime_home() / ACTIVE_PROFILE_FILENAME
+
+
+def active_profile_name() -> str:
+    pointer_file = active_profile_pointer_file()
+    if not pointer_file.exists():
+        return DEFAULT_PROFILE_NAME
+
+    profile_name = pointer_file.read_text(encoding="utf-8").strip()
+    return profile_name or DEFAULT_PROFILE_NAME
+
+
+def profile_home(profile_name: str) -> Path:
+    return runtime_configs_home() / profile_name
+
+
+def active_profile_home() -> Path:
+    return profile_home(active_profile_name())
+
+
+def ensure_runtime_home() -> Path:
+    runtime_root = runtime_home()
+    runtime_root.mkdir(parents=True, exist_ok=True)
+    runtime_configs_home().mkdir(parents=True, exist_ok=True)
+    return runtime_root
+
+
+def write_active_profile(profile_name: str) -> None:
+    ensure_runtime_home()
+    active_profile_pointer_file().write_text(profile_name.strip(), encoding="utf-8")
+
+
+def available_profiles() -> list[str]:
+    configs_root = runtime_configs_home()
+    if not configs_root.exists():
+        return []
+    return sorted(path.name for path in configs_root.iterdir() if path.is_dir())
 
 
 @lru_cache(maxsize=1)
@@ -93,14 +117,7 @@ def resolve_path(path_name: str | Path) -> Path:
     if candidate_path.is_absolute():
         return candidate_path
 
-    project_home_dir = project_override_home()
-    search_roots = [root for root in (project_home_dir, runtime_home(), package_home()) if root is not None]
-    for root in search_roots:
-        resolved = root / candidate_path
-        if resolved.exists():
-            return resolved
-
-    return runtime_home() / candidate_path
+    return active_profile_home() / candidate_path
 
 
 def resolve_default_path(path_name: str | Path) -> Path:
@@ -108,20 +125,13 @@ def resolve_default_path(path_name: str | Path) -> Path:
     if candidate_path.is_absolute():
         return candidate_path
 
-    project_home_dir = project_override_home()
-    search_roots = [root for root in (project_home_dir, package_home()) if root is not None]
-    for root in search_roots:
-        resolved = root / candidate_path
-        if resolved.exists():
-            return resolved
-
     return package_home() / candidate_path
 
 
 def missing_runtime_paths() -> list[Path]:
-    runtime_root = runtime_home()
-    return [runtime_root / relative_path for relative_path in RUNTIME_REQUIRED_RELATIVE_PATHS
-            if not (runtime_root / relative_path).exists()]
+    profile_root = active_profile_home()
+    return [profile_root / relative_path for relative_path in RUNTIME_REQUIRED_RELATIVE_PATHS
+            if not (profile_root / relative_path).exists()]
 
 def is_valid_dir_name(directory_name: str) -> bool:
     """
@@ -203,6 +213,8 @@ if __name__ == "__main__":
     dir_name = '?[abc\/?'
     sanitised_dir_name = sanitise_dir_name(directory_name=dir_name)
     print(f"sanitised directory name: {sanitised_dir_name}")
-    print(f'Project Override Home: {project_override_home()}')
     print(f'Runtime Home: {runtime_home()}')
+    print(f'Configs Home: {runtime_configs_home()}')
+    print(f'Active Profile Name: {active_profile_name()}')
+    print(f'Active Profile Home: {active_profile_home()}')
     print(f'Package Home: {package_home()}')

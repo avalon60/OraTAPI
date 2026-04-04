@@ -10,7 +10,7 @@ from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from model.db_objects import TableConstraints
 from lib.session_manager import DBSession
-from lib.fsutils import resolve_path, runtime_home
+from lib.fsutils import active_profile_home, resolve_path
 from datetime import datetime
 from pathlib import Path
 
@@ -24,7 +24,7 @@ from copy import deepcopy
 # The number of spaces for an indent tab is defined in OraTAPI.ini
 IDNT = '%indent_spaces%'
 
-APP_HOME = runtime_home()
+APP_HOME = active_profile_home()
 TEMPLATES_LOCATION = Path("resources") / "templates"
 CONFIG_LOCATION = Path("resources") / "config"
 

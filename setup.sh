@@ -116,8 +116,7 @@ let step=${step}+1
 step_desc="Set executable permissions for shell scripts"
 echo "Step ${step}: ${step_desc}..."
 echo "Setting executable permissions for shell scripts..."
-chmod +x "$BIN_DIR/conn_mgr.sh"
-chmod +x "$BIN_DIR/ora_tapi.sh"
+chmod +x "$BIN_DIR"/*.sh
 
 echo "Setup completed successfully!"
 

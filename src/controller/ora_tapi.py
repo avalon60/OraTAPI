@@ -8,9 +8,9 @@ import time
 
 from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
-from lib.config_mgr import ConfigManager
+from lib.config_mgr import ConfigManager, load_config
 from lib.session_manager import DBSession
-from lib.fsutils import missing_runtime_paths, resolve_path, runtime_home
+from lib.fsutils import active_profile_home, active_profile_name, missing_runtime_paths, resolve_default_path, resolve_path, runtime_home
 from lib.app_utils import current_timestamp, format_elapsed_time
 from lib.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl, MissingParameterError
@@ -40,7 +40,8 @@ def resolve_runtime_relative_path(path_name: Path) -> Path:
 
 def print_runtime_initialisation_message() -> None:
     missing_paths = missing_runtime_paths()
-    print("ERROR: OraTAPI runtime files have not been initialised under ~/OraTAPI.")
+    print(f"ERROR: OraTAPI runtime files have not been initialised for profile '{active_profile_name()}'.")
+    print(f"Active profile directory: {active_profile_home()}")
     print("\nMissing runtime files include:")
     for missing_path in missing_paths[:8]:
         print(f"  - {missing_path}")
@@ -63,6 +64,39 @@ def print_runtime_initialisation_message() -> None:
 def help_requested(argv: list[str] | None = None) -> bool:
     args = sys.argv[1:] if argv is None else argv
     return "-h" in args or "--help" in args
+
+
+def warn_on_default_profile_identity(view: Interactions, config_file_path: Path) -> None:
+    sample_config_path = resolve_default_path(Path("resources") / "config" / "samples" / "OraTAPI.ini.sample")
+    if not sample_config_path.exists():
+        return
+
+    active_config = load_config(config_file_path)
+    sample_config = load_config(sample_config_path)
+    current_profile = active_profile_name()
+    default_matches = []
+
+    checks = (
+        ("project", "default_app_name", "project.default_app_name"),
+        ("copyright", "company_name", "copyright.company_name"),
+    )
+
+    for section, option, label in checks:
+        if not active_config.has_option(section, option) or not sample_config.has_option(section, option):
+            continue
+        if active_config.get(section, option).strip() == sample_config.get(section, option).strip():
+            default_matches.append(label)
+
+    if default_matches:
+        matched_settings = ", ".join(default_matches)
+        view.print_console(
+            msg_level=MsgLvl.warning,
+            text=(
+                f"Profile '{current_profile}' is still using the shipped default values for {matched_settings}. "
+                f"Code is being generated with the defaults. Consider updating these settings for the "
+                f"'{current_profile}' profile configuration."
+            ),
+        )
 
 
 class CodeManager:
@@ -142,9 +176,10 @@ class CodeManager:
         self.ut_staging_dir = Path(options_dict['ut_staging_dir'])
 
         self.trace = trace
-        self.runtime_home = runtime_home()
+        self.runtime_home = active_profile_home()
 
         self.config_manager = config_manager
+        warn_on_default_profile_identity(view=self.view, config_file_path=config_file_path)
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
                                                     default="resources/config")
@@ -229,12 +264,12 @@ class CodeManager:
         self.ut_staging_dir = resolve_runtime_relative_path(self.ut_staging_dir)
 
         if not self.staging_dir.exists():
-            self.view.print_console(msg_level=MsgLvl.error, text=f'TAPI staging directory, "{self.staging_dir}", does not exist - bailing out!')
-            exit(0)
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Creating staging root directory: {self.staging_dir}")
+            self.staging_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.ut_staging_dir.exists() and self.enable_ut_code_generation:
-            self.view.print_console(msg_level=MsgLvl.error, text=f'Unit test staging directory, "{self.ut_staging_dir}", does not exist - bailing out!')
-            exit(0)
+            self.view.print_console(msg_level=MsgLvl.info, text=f"Creating unit test staging root directory: {self.ut_staging_dir}")
+            self.ut_staging_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.staging_dir.is_dir():
             self.view.print_console(msg_level=MsgLvl.error, text=f'TAPI staging pathname provide, "{self.staging_dir}", is not a directory - bailing out!')

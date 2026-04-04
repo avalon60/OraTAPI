@@ -11,23 +11,26 @@ from controller import __version__
 
 import argparse
 import shutil
-from configparser import ConfigParser
 
-from lib.fsutils import resolve_default_path, runtime_home
+from lib.fsutils import profile_home, resolve_default_path, runtime_home, write_active_profile
 from pathlib import Path
 from itertools import chain
 from lib.config_mgr import compare_config_files
 
-CONFIG_LOCATION = runtime_home() / 'resources' / 'config'
-TEMPLATES_LOCATION = runtime_home() / 'resources' / 'templates'
-CONFIG_FILE_PATH = CONFIG_LOCATION / 'OraTAPI.ini'
+BUILTIN_PROFILES = ("basic", "liquibase", "logger", "llogger")
 PROG_NAME = Path(__file__).name
 
-def copy_files(template_category: str, force: bool, templates_only: bool=False) -> None:
+
+def _profile_resources_home(profile_name: str) -> Path:
+    return profile_home(profile_name) / "resources"
+
+
+def copy_files(profile_name: str, template_category: str, force: bool, templates_only: bool=False) -> None:
     """
     Copies `.sample` files from a `samples` subdirectory to target locations, based on the
     template_category, and specific copying rules. Ensures OraTAPI.ini version consistency.
 
+    :param profile_name: The profile to instantiate.
     :param template_category: The template category ("basic", "liquibase", "logger" or "llogger").
     :type template_category: str
     :param force: Whether to overwrite existing files.
@@ -35,8 +38,9 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
     :param templates_only: Only instantiate the sample templates.
     """
     files_copied = 0
-    config_dir = CONFIG_LOCATION
-    templates_dir = TEMPLATES_LOCATION
+    resources_home = _profile_resources_home(profile_name)
+    config_dir = resources_home / 'config'
+    templates_dir = resources_home / 'templates'
     config_dir.mkdir(parents=True, exist_ok=True)
     templates_dir.mkdir(parents=True, exist_ok=True)
 
@@ -47,14 +51,14 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
     if config_sample.exists() and (force or not config_target.exists()) and not templates_only:
         shutil.copyfile(config_sample, config_target)
         files_copied += 1
-        print(f"Copied: {config_sample} -> {config_target.relative_to(runtime_home())}")
+        print(f"[{profile_name}] Copied: {config_sample} -> {config_target.relative_to(runtime_home())}")
 
     csv_sample = resolve_default_path(Path("resources") / "config" / "samples" / "pi_columns.csv.sample")
     csv_target = config_dir / "pi_columns.csv"
     if csv_sample.exists() and ((force and not templates_only) or not csv_target.exists()):
         shutil.copyfile(csv_sample, csv_target)
         files_copied += 1
-        print(f"Copied: {csv_sample} -> {csv_target.relative_to(runtime_home())}")
+        print(f"[{profile_name}] Copied: {csv_sample} -> {csv_target.relative_to(runtime_home())}")
 
     # Directories with special rules
     special_dirs = [
@@ -84,7 +88,7 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
                     files_copied += 1
-                    print(f"Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
+                    print(f"[{profile_name}] Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
 
     # Handle regular directories
     for regular_dir in regular_dirs:
@@ -98,24 +102,36 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
                     files_copied += 1
-                    print(f"Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
-    print(f"{files_copied} files instantiated.")
+                    print(f"[{profile_name}] Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
+    print(f"[{profile_name}] {files_copied} files instantiated.")
     if config_target.exists():
         compare_config_files(config_file_path=config_target, config_sample_file=config_sample)
+
+
+def bootstrap_builtin_profiles(selected_profile: str, force: bool, templates_only: bool = False) -> None:
+    for profile_name in BUILTIN_PROFILES:
+        copy_files(profile_name=profile_name,
+                   template_category=profile_name,
+                   force=force,
+                   templates_only=templates_only)
+    write_active_profile(selected_profile)
+    print(f"Active profile set to: {selected_profile}")
+
 
 def main() -> None:
     """
     Main function to parse arguments and initiate file copying.
     """
     parser = argparse.ArgumentParser(
-        description="Initialise the OraTAPI runtime home under ~/OraTAPI/resources and instantiate a template family.",
+        description="Initialise OraTAPI profiles under ~/OraTAPI/configs and activate the selected built-in profile.",
         epilog=(
             "Template categories:\n"
             "  basic     - No Liquibase directives or logging\n"
             "  liquibase - Generated code includes Liquibase directives\n"
             "  logger    - Generated PL/SQL includes logger logging calls for parameter values and related diagnostics\n"
             "  llogger   - Includes both Liquibase directives and logger logging\n\n"
-            "This command also instantiates the control files OraTAPI.ini and pi_columns.csv.\n"
+            "This command instantiates the control files OraTAPI.ini and pi_columns.csv for profiles basic,\n"
+            "liquibase, logger, and llogger, then points ~/OraTAPI/active_config at the selected profile.\n"
             "For template categories logger and llogger, the logger utility must already be deployed to the database."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -124,7 +140,7 @@ def main() -> None:
         "-t", "--template_category",
         choices=["liquibase", "basic", "logger", "llogger"],
         required=True,
-        help="Template family to instantiate into ~/OraTAPI/resources."
+        help="Built-in profile to activate after bootstrapping all provided profiles."
     )
     parser.add_argument(
         "-T", "--templates_only",
@@ -146,7 +162,7 @@ def main() -> None:
 
     print(f"{PROG_NAME}: OraTAPI config utility version: {__version__}")
     print('OraTAPI quick config started...')
-    copy_files(args.template_category, args.force, templates_only=args.templates_only)
+    bootstrap_builtin_profiles(args.template_category, args.force, templates_only=args.templates_only)
     print('OraTAPI quick config complete.')
 
 

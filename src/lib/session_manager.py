@@ -444,7 +444,7 @@ def try_init_thick_mode(verbose:bool = False, lib_dir: Path = None) -> bool:
         fallback_dir = str(resolve_path("oracle_client"))
         if os.path.isdir(fallback_dir) and _looks_like_instant_client(fallback_dir):
             client_dir = fallback_dir
-            source = "resolve_path(oracle_client)"
+            source = "active profile oracle_client"
         else:
             if verbose:
                 print(f"{INFO} No valid Oracle Instant Client found — falling back to thin mode")

@@ -7,9 +7,9 @@ from pathlib import Path
 from lib.app_utils import text_to_boolean
 import csv
 from view.console_display import MsgLvl, ConsoleMgr
+from lib.fsutils import resolve_path
 
-app_home = Path(__file__).resolve().parent.parent
-config_path = app_home / 'config' / 'OraTAPI.ini'
+config_path = resolve_path(Path("resources") / "config" / "OraTAPI.ini")
 CSV_HEADERS = ["Schema Name", "Table Name", "Domain", "Packages Enabled", "Views Enabled", "Triggers Enabled"]
 
 

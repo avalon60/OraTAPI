@@ -148,21 +148,31 @@ The runtime home created by `quick_config` looks similar to this:
 
 ```
 ~/OraTAPI
-├── resources
-│   ├── config
-│   │   ├── OraTAPI.csv
-│   │   ├── OraTAPI.ini
-│   │   └── pi_columns.csv
-│   └── templates
-│       ├── column_expressions
-│       ├── misc
-│       ├── packages
-│       └── ut_packages
+├── active_config
+├── configs
+│   ├── basic
+│   │   └── resources
+│   │       ├── config
+│   │       │   ├── OraTAPI.csv
+│   │       │   ├── OraTAPI.ini
+│   │       │   └── pi_columns.csv
+│   │       └── templates
+│   │           ├── column_expressions
+│   │           ├── misc
+│   │           ├── packages
+│   │           └── ut_packages
+│   ├── liquibase
+│   ├── logger
+│   └── llogger
 ├── staging
 └── ut_staging
 ```
 
-The packaged defaults remain in the installation, but OraTAPI reads and writes user-owned runtime files from `~/OraTAPI`. The key take-away is that the active `OraTAPI.ini`, CSV files, and instantiated `.tpt` templates live in `~/OraTAPI/resources`, not in the installation directory.
+The packaged defaults remain in the installation, but OraTAPI reads and writes user-owned runtime files from `~/OraTAPI`. The active profile is determined by the plain-text file `~/OraTAPI/active_config`, whose content is simply the selected profile name. The active `OraTAPI.ini`, CSV files, and instantiated `.tpt` templates therefore live under `~/OraTAPI/configs/<active-profile>/resources`, not in the installation directory.
+
+If `~/OraTAPI/active_config` does not yet exist, OraTAPI defaults to a profile named `default`.
+
+The profile model allows you to maintain multiple named OraTAPI configurations side by side. For example, you might keep one profile for basic generation, one for Liquibase-enabled output, and one for logger-based templates. Profiles can also be used to support different project requirements, where each project needs its own configuration, template customisations, and control-file settings. Switching profiles updates only `~/OraTAPI/active_config`; it does not copy files or rely on symbolic links.
 
 ## Installation
 
@@ -205,7 +215,7 @@ The packaged defaults remain in the installation, but OraTAPI reads and writes u
     The Windows command must be run from a Windows PowerShell terminal.  
 
 ## Post Installation
-The next step is to initialise the runtime home at `~/OraTAPI`. OraTAPI will not generate code until the runtime config and templates have been instantiated. The `quick_config` tool copies the packaged defaults into `~/OraTAPI/resources` and materialises the chosen template family. Several options are available:
+The next step is to initialise the runtime home at `~/OraTAPI`. OraTAPI will not generate code until the runtime config and templates have been instantiated. The `quick_config` tool bootstraps the built-in profiles under `~/OraTAPI/configs`, copies the packaged defaults into each profile's `resources` directory, and points `~/OraTAPI/active_config` at the selected built-in profile. Several options are available:
 
 - Basic
 - Liquibase
@@ -234,16 +244,14 @@ Assuming we were to configure for "Liquibase with Logger", the output should loo
 ```
 $ ./bin/quick_config.sh -t llogger
 OraTAPI quick config started...
-Copied: /path/to/install/resources/config/samples/OraTAPI.ini.sample -> resources/config/OraTAPI.ini
-Copied: /path/to/install/resources/templates/column_expressions/inserts/samples/updated_on.tpt.sample -> resources/templates/column_expressions/inserts/updated_on.tpt
-Copied: /path/to/install/resources/templates/misc/view/samples/view.llogger.sample -> resources/templates/misc/view/view.tpt
-Copied: /path/to/install/resources/templates/packages/procedures/samples/select.llogger.sample -> resources/templates/packages/procedures/select.tpt
+[basic] Copied: /path/to/install/resources/config/samples/OraTAPI.ini.sample -> configs/basic/resources/config/OraTAPI.ini
+[logger] Copied: /path/to/install/resources/templates/packages/procedures/samples/select.logger.sample -> configs/logger/resources/templates/packages/procedures/select.tpt
+[llogger] Copied: /path/to/install/resources/templates/misc/view/samples/view.llogger.sample -> configs/llogger/resources/templates/misc/view/view.tpt
 ...
-23 files instantiated.
+Active profile set to: llogger
 OraTAPI quick config complete.
 ```
-The destination paths shown above are relative to `~/OraTAPI`.
-Note that in this example, we are opting for the "Liquibase with Logger" templates.  
+The destination paths shown above are relative to `~/OraTAPI`. `quick_config` instantiates all four built-in profiles (`basic`, `liquibase`, `logger`, `llogger`) and then activates the one selected with `-t`.  
 
 If OraTAPI reports that the runtime files have not yet been initialised, use one of these commands:
 
@@ -279,16 +287,17 @@ The full command synopsis is:
 ```
 usage: quick_config.py [-h] -t {liquibase,basic,logger,llogger} [-T] [-f]
 
-Copy template files based on template category.
+Initialise OraTAPI profiles under ~/OraTAPI/configs and activate the selected built-in profile.
 
 options:
   -h, --help            show this help message and exit
   -t {liquibase,basic,logger,llogger}, --template_category {liquibase,basic,logger,llogger}
-                        Specify the template category ('liquibase' or 'basic').
+                        Built-in profile to activate after bootstrapping all provided profiles.
   -T, --templates_only  Only instantiate templates (Do not overwrite control files).
   -f, --force           Overwrite existing files.
 
-This also instantiates the control files: OraTAPI.ini, pi_columns.csv
+This also instantiates the control files OraTAPI.ini and pi_columns.csv for the built-in profiles basic,
+liquibase, logger, and llogger, then points ~/OraTAPI/active_config at the selected profile.
 ```
 Note that the `-T/--templates_only` can be used in conjunction with the `-f/--force option`, to re-instantiate the templates.
 This may be useful if you have started configuring your control files, but wish to switch to a different template set 
@@ -314,15 +323,15 @@ To complete the installation and migrate your previous settings, perform these s
 1. Download the new release of OraTAPI
 2. Unpack as outlined previously.
 3. Run the `setup` command as outlined previously
-4. Run `migrate_config` command as per the example below.
+4. Run `profile_mgr` to migrate the old install into a named profile.
 
 ```
    cd <path-to-parent-folder>/oratapi-<x.y.z>
-   ./bin/migrate_config.sh -o <path_to_old_install_dir>
+   ./bin/profile_mgr.sh --migrate-old <path_to_old_install_dir> migrated_profile
 ```
-This will result in your old OraTAPI.ini file, CSV files, and templates being copied into the new runtime home under `~/OraTAPI`.  
+This will result in your old OraTAPI.ini file, CSV files, and templates being copied into `~/OraTAPI/configs/migrated_profile`. After migration, `profile_mgr` prompts whether to activate the migrated profile.
 
-Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
+Note that there is also a `profile_mgr.ps1` command for Windows PowerShell.
 
 If new config settings are introduced, then you will get feedback from the migration tool. It will list any new 
 OraTAPI.ini sections that you have missing as well as any properties. In addition, it will inform you if there are 
@@ -331,49 +340,45 @@ any obsolete entries. You can view the settings in context by looking at the res
 Any previously configured named database connections (see [Connection Manager](#connection-manager)) are preserved since they are located under the directory 
 $HOME/.OraTAPI.  
 
-The synopsis for the `migrate_config` command is:
+The synopsis for the `profile_mgr` command is:
 
 ```
-usage: migrate_config.py [-h] (-o OLD_INSTALL_DIR | -e <export_zip_path> | -i <import_zip_path>)
+usage: profile_mgr.py [-h] (-l | -s | -c PROFILE | -C SOURCE TARGET | -d PROFILE | -a PROFILE | -e PROFILE ZIP_PATH | -i ZIP_PATH | -m OLD_INSTALL_DIR TARGET_PROFILE)
 
-Migrate, export, or import OraTAPI configuration and template files.
+Manage OraTAPI configuration profiles stored under ~/OraTAPI/configs.
 
 options:
   -h, --help            show this help message and exit
-  -o OLD_INSTALL_DIR, --old_install_dir OLD_INSTALL_DIR
-                        Specify the old OraTAPI installation directory.
-  -e <export_zip_path>, --export <export_zip_path>
-                        Export resources to a ZIP file.
-  -i <import_zip_path>, --import_resources <import_zip_path>
-                        Import resources from a ZIP file.
+  -l, --list            List available profiles.
+  -s, --show-active     Show the active profile.
+  -c PROFILE, --create PROFILE
+                        Create a new profile by cloning the active profile.
+  -C SOURCE TARGET, --copy SOURCE TARGET
+                        Copy an existing profile.
+  -d PROFILE, --delete PROFILE
+                        Delete a profile.
+  -a PROFILE, --activate PROFILE
+                        Activate a profile.
+  -e PROFILE ZIP_PATH, --export PROFILE ZIP_PATH
+                        Export a profile to a ZIP file.
+  -i ZIP_PATH, --import-profile ZIP_PATH
+                        Import a profile from a ZIP file.
+  -m OLD_INSTALL_DIR TARGET_PROFILE, --migrate-old OLD_INSTALL_DIR TARGET_PROFILE
+                        Migrate a legacy install tree into a named profile.
 ```
-Hopefully you will have noticed that `migrate_config`, also has export / import options. 
-You can use this to back-up / restore or transport settings. These also constitute an alternative to 
-using the `-o / --old_install_dir` option, since you can take an export of your old configuration, 
-and import from the export file into your new runtime home.
+You can use `profile_mgr` to back up, restore, or transport named profiles. Export and import work on one profile per ZIP archive. If the imported profile already exists, OraTAPI prompts before overwrite and then prompts again to decide whether to activate the imported profile.
 
 Example export:
 ```
-$ bin/migrate_config.sh --export /tmp/mig.zip
-OraTAPI config migration started...
-Exported resources to /tmp/mig.zip
-OraTAPI operation complete.
+$ ./bin/profile_mgr.sh --export logger /tmp/logger-profile.zip
+Exported profile 'logger' to /tmp/logger-profile.zip
 ```
 
 Example import:
 ```
-$ bin/migrate_config.sh --import /tmp/mig.zip
-OraTAPI config migration started...
-Imported resources from /tmp/mig.zip
-Updated version in ~/OraTAPI/resources/config/OraTAPI.ini to 1.1.19.
-
-Checking for OraTAPI.ini updates/obsolescence...
-
-No config changes introduced with release.
-
-OraTAPI.ini checks complete.
-
-OraTAPI operation complete.
+$ ./bin/profile_mgr.sh --import-profile /tmp/logger-profile.zip
+Imported profile 'logger' from /tmp/logger-profile.zip
+Activate profile 'logger'? [y/N]:
 ```
 
 ---
@@ -596,7 +601,7 @@ schema, and the triggers in the core schema.
 
 
 
-Remember that when these flags are not provided, the defaults are retrieved from `~/OraTAPI/resources/config/OraTAPI.ini`.
+Remember that when these flags are not provided, the defaults are retrieved from the active profile's `OraTAPI.ini` file at `~/OraTAPI/configs/<active-profile>/resources/config/OraTAPI.ini`.
 
 #### Explicitly Specifying Credentials
 In the previous examples, we relied on the `OraTAPI` connection manager, in as much as we were using the `--conn_name` 
@@ -673,8 +678,7 @@ The OraTAPI.ini file is made up of named sections. The sections are denoted by s
 section name is enclosed. Within each section is one or more properties, used to control the behaviour in one way or 
 another, of the `ora_tapi` command.  
 
-As a reminder, the active file is located at `~/OraTAPI/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
-initialises settings, based upon the contents of this file.  
+As a reminder, the active file is located at `~/OraTAPI/configs/<active-profile>/resources/config/OraTAPI.ini`. When OraTAPI starts up, it reads `~/OraTAPI/active_config` to determine which profile is active, and then initialises settings from that profile's configuration file.  
 
 Here we cover the various sections and properties.
 ---
@@ -958,13 +962,14 @@ trigger_dir = trigger
 # Set the view_dir property to have any triggers generated from the view templates.
 view_dir = view
 
-# Set the directory pathname to locate the OraTAPI.csv file. If unset it is assumed to be located under
-# ~/OraTAPI/resources/config. This file is used to fine control which files should be generated.
+# Set the directory pathname to locate the OraTAPI.csv file. Relative paths are resolved from the active
+# profile home, so resources/config means ~/OraTAPI/configs/<active-profile>/resources/config.
+# This file is used to fine control which files should be generated.
 ora_tapi_csv_dir = resources/config
 
 # Set the path to the OraTAPI pi_columns.csv file. This CSV file is used to flag columns as personal information.
-# Such columns are not logged when using the llogger format templates. Relative paths are resolved with precedence:
-# project override, then ~/OraTAPI, then packaged defaults.
+# Such columns are not logged when using the llogger format templates. Relative paths are resolved from the active
+# profile home, so resources/config means ~/OraTAPI/configs/<active-profile>/resources/config.
 pi_columns_csv_dir = resources/config
 
 [api_controls]
@@ -1068,10 +1073,10 @@ The OraTAPI.ini file has been covered in the previous sections. Here we look at 
 Fine-grained control over which files can or cannot be updated, is implemented via the OraTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
-location as `~/OraTAPI/resources/config`. The supplied OraTAPI.ini sample,
+location as the active profile's `resources/config` directory, i.e. `~/OraTAPI/configs/<active-profile>/resources/config`. The supplied OraTAPI.ini sample,
 sets this location to `resources/config`.  
 
-The OraTAPI.csv file is not provided at installation time. It is instantiated into `~/OraTAPI/resources/config` by `quick_config`, and then created and populated further as you run `ora_tapi`. The file contents should be maintained as a spreadsheet, but 
+The OraTAPI.csv file is not provided at installation time. It is instantiated into the active profile area under `~/OraTAPI/configs/<active-profile>/resources/config` by `quick_config`, and then created and populated further as you run `ora_tapi`. The file contents should be maintained as a spreadsheet, but 
 ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
 
 Each row represents a schema / table. The following 
@@ -1097,6 +1102,9 @@ to the %table_domain_lc% substitution string in the templates.
 
 #### PI (Personal Information) Columns & Logging
 If you wish to avoid logging PI data, you can leverage the pi_columns.csv file to achieve this.  
+Like `OraTAPI.ini` and `OraTAPI.csv`, `pi_columns.csv` is maintained per profile under
+`~/OraTAPI/configs/<active-profile>/resources/config/pi_columns.csv`, so different profiles can carry different PI
+column rules.
 This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
 
 The file contains the following columns:
