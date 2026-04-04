@@ -15,7 +15,7 @@ import tarfile
 import re
 from pathlib import Path
 from packaging.version import Version
-from lib.fsutils import project_home
+from lib.fsutils import project_override_home, runtime_home
 from lib.app_utils import get_latest_version, get_latest_dist_url, download_file
 import platform
 from lib.config_mgr import compare_config_files
@@ -24,6 +24,10 @@ import markdown
 from bs4 import BeautifulSoup
 
 PROG_NAME = Path(__file__).name
+
+
+def install_home() -> Path:
+    return project_override_home() or runtime_home()
 
 
 
@@ -80,9 +84,9 @@ def upgrade_files(upgrade_dir: Path) -> None:
     :param upgrade_dir: Path to the upgrade directory.
     """
     files_upgraded = 0
-    current_resources = project_home() / 'resources'
+    current_resources = install_home() / 'resources'
     upgrade_resources = upgrade_dir / 'resources'
-    root_install_dir = project_home()
+    root_install_dir = install_home()
 
     # Upgrade config samples
     config_samples_dir = upgrade_resources / "config" / "samples"
@@ -182,7 +186,7 @@ def extract_tarball(tarball_path: Path, extract_to: Path) -> Path:
         unpacked_root = extract_to / root_dir_name
 
         # Safety check: Prevent overwriting the current installation directory
-        current_installation_dir = project_home()
+        current_installation_dir = install_home()
         if unpacked_root == current_installation_dir:
             raise RuntimeError(
                 f"Extraction aborted! The tarball root directory ({unpacked_root}) matches the current installation directory. "
@@ -205,7 +209,7 @@ def set_setup_perms():
 
     # Select the appropriate setup script based on the OS
     if not is_windows:
-        setup_script = project_home() / 'setup.sh'
+        setup_script = install_home() / 'setup.sh'
 
         # Adjust file permissions (chmod 750)
         print(f"Adjusting permissions for: {setup_script}")

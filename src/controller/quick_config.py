@@ -13,13 +13,13 @@ import argparse
 import shutil
 from configparser import ConfigParser
 
-from lib.fsutils import project_home
+from lib.fsutils import resolve_default_path, runtime_home
 from pathlib import Path
 from itertools import chain
 from lib.config_mgr import compare_config_files
 
-CONFIG_LOCATION = project_home() / 'resources' / 'config'
-TEMPLATES_LOCATION = project_home() / 'resources' / 'templates'
+CONFIG_LOCATION = runtime_home() / 'resources' / 'config'
+TEMPLATES_LOCATION = runtime_home() / 'resources' / 'templates'
 CONFIG_FILE_PATH = CONFIG_LOCATION / 'OraTAPI.ini'
 PROG_NAME = Path(__file__).name
 
@@ -37,22 +37,24 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
     files_copied = 0
     config_dir = CONFIG_LOCATION
     templates_dir = TEMPLATES_LOCATION
+    config_dir.mkdir(parents=True, exist_ok=True)
+    templates_dir.mkdir(parents=True, exist_ok=True)
 
     # Handle the config directory
-    config_sample = config_dir / "samples" / "OraTAPI.ini.sample"
+    config_sample = resolve_default_path(Path("resources") / "config" / "samples" / "OraTAPI.ini.sample")
     config_target = config_dir / "OraTAPI.ini"
 
     if config_sample.exists() and (force or not config_target.exists()) and not templates_only:
         shutil.copyfile(config_sample, config_target)
         files_copied += 1
-        print(f"Copied: {config_sample.relative_to(project_home())} -> {config_target.relative_to(project_home())}")
+        print(f"Copied: {config_sample} -> {config_target.relative_to(runtime_home())}")
 
-    csv_sample = config_dir / "samples" / "pi_columns.csv.sample"
+    csv_sample = resolve_default_path(Path("resources") / "config" / "samples" / "pi_columns.csv.sample")
     csv_target = config_dir / "pi_columns.csv"
-    if config_sample.exists() and ((force and not templates_only) or not csv_target.exists()):
+    if csv_sample.exists() and ((force and not templates_only) or not csv_target.exists()):
         shutil.copyfile(csv_sample, csv_target)
         files_copied += 1
-        print(f"Copied: {csv_sample.relative_to(project_home())} -> {csv_target.relative_to(project_home())}")
+        print(f"Copied: {csv_sample} -> {csv_target.relative_to(runtime_home())}")
 
     # Directories with special rules
     special_dirs = [
@@ -73,44 +75,56 @@ def copy_files(template_category: str, force: bool, templates_only: bool=False) 
 
     # Handle special directories
     for special_dir in special_dirs:
-        samples_dir = special_dir / "samples"
+        relative_special_dir = special_dir.relative_to(templates_dir)
+        samples_dir = resolve_default_path(Path("resources") / "templates" / relative_special_dir / "samples")
         if samples_dir.exists():
+            special_dir.mkdir(parents=True, exist_ok=True)
             for sample_file in samples_dir.glob("*.sample"):
                 target_file = special_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
                     files_copied += 1
-                    print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
+                    print(f"Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
 
     # Handle regular directories
     for regular_dir in regular_dirs:
-        samples_dir = regular_dir / "samples"
+        relative_regular_dir = regular_dir.relative_to(templates_dir)
+        samples_dir = resolve_default_path(Path("resources") / "templates" / relative_regular_dir / "samples")
         if samples_dir.exists():
+            regular_dir.mkdir(parents=True, exist_ok=True)
             for sample_file in chain(samples_dir.glob(f"*.{template_category}.sample"),
                                      samples_dir.glob("*.common.sample")):
-                # Your code here
-
-                # Your code here
-
                 target_file = regular_dir / sample_file.stem
                 if force or not target_file.with_suffix(".tpt").exists():
                     shutil.copyfile(sample_file, target_file.with_suffix(".tpt"))
                     files_copied += 1
-                    print(f"Copied: {sample_file.relative_to(project_home())} -> {target_file.with_suffix('.tpt').relative_to(project_home())}")
+                    print(f"Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
     print(f"{files_copied} files instantiated.")
-    compare_config_files(config_file_path=config_target, config_sample_file=config_sample)
+    if config_target.exists():
+        compare_config_files(config_file_path=config_target, config_sample_file=config_sample)
 
 def main() -> None:
     """
     Main function to parse arguments and initiate file copying.
     """
-    parser = argparse.ArgumentParser(description="Copy template files based on template category.",
-                                     epilog=" This also instantiates the control files: OraTAPI.ini, pi_columns.csv")
+    parser = argparse.ArgumentParser(
+        description="Initialise the OraTAPI runtime home under ~/OraTAPI/resources and instantiate a template family.",
+        epilog=(
+            "Template categories:\n"
+            "  basic     - No Liquibase directives or logging\n"
+            "  liquibase - Generated code includes Liquibase directives\n"
+            "  logger    - Generated PL/SQL includes logger logging calls for parameter values and related diagnostics\n"
+            "  llogger   - Includes both Liquibase directives and logger logging\n\n"
+            "This command also instantiates the control files OraTAPI.ini and pi_columns.csv.\n"
+            "For template categories logger and llogger, the logger utility must already be deployed to the database."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
         "-t", "--template_category",
         choices=["liquibase", "basic", "logger", "llogger"],
         required=True,
-        help="Specify the template category ('liquibase' or 'basic')."
+        help="Template family to instantiate into ~/OraTAPI/resources."
     )
     parser.add_argument(
         "-T", "--templates_only",

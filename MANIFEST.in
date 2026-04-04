@@ -20,6 +20,7 @@ exclude resources/**/*.ini
 
 # Include Python source files
 recursive-include src *.py
+recursive-include src/ora_tapi_package_data/resources *
 
 # Include bin directory files
 include bin/*.*

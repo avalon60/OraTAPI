@@ -1,0 +1,13 @@
+
+%STAB%-- Parent tables: %fk_tables_lc%
+%STAB%procedure setup_all
+%STAB%is
+%STAB%begin
+%STAB%%STAB%null;
+%STAB%end setup_all;
+
+%STAB%procedure setup_each
+%STAB%is
+%STAB%begin
+%STAB%%STAB%null;
+%STAB%end setup_each;

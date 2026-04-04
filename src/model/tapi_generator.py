@@ -7,7 +7,7 @@ __description__ = "Generates the API code."
 import copy
 import re
 
-from lib.fsutils import project_home
+from lib.fsutils import resolve_path, runtime_home
 from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from lib.session_manager import DBSession
@@ -25,9 +25,9 @@ from model.pi_csv import PIColumnsManager
 # The number of spaces for an indent tab, is defined in OraTAPI.ini
 IDNT = '%indent_spaces%'
 
-APP_HOME = project_home()
-TEMPLATES_LOCATION = APP_HOME / 'resources' / 'templates'
-CONFIG_LOCATION = APP_HOME / 'resources' / 'config'
+APP_HOME = runtime_home()
+TEMPLATES_LOCATION = Path("resources") / "templates"
+CONFIG_LOCATION = Path("resources") / "config"
 
 # Get the current date
 date_now = datetime.now()
@@ -147,12 +147,10 @@ class ApiGenerator:
         :param options_dict: The dictionary of our command line options.
         :param trace: Enables trace/debug output when set to True.
         """
-        self.proj_home = project_home()  # project_home returns a Path object
-        proj_config_file = CONFIG_LOCATION/ 'OraTAPI.ini'
-        pi_csv_file_path = CONFIG_LOCATION / 'pi_columns.csv'
-        self.column_expressions_dir = TEMPLATES_LOCATION / 'column_expressions'
-        self.view_template_dir =  TEMPLATES_LOCATION / 'misc' / 'view'
-        self.trigger_template_dir =  TEMPLATES_LOCATION / 'misc' / 'trigger'
+        proj_config_file = resolve_path(CONFIG_LOCATION / 'OraTAPI.ini')
+        self.column_expressions_dir = resolve_path(TEMPLATES_LOCATION / 'column_expressions')
+        self.view_template_dir = resolve_path(TEMPLATES_LOCATION / 'misc' / 'view')
+        self.trigger_template_dir = resolve_path(TEMPLATES_LOCATION / 'misc' / 'trigger')
         self.options_dict = deepcopy(options_dict)
         self.config_manager = config_manager
         self.table_owner = table_owner
@@ -269,13 +267,14 @@ class ApiGenerator:
 
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
-                                                    default=str(APP_HOME / 'OraTAPI.csv'))
-        ora_tapi_csv_dir = Path(ora_tapi_csv_dir)
+                                                    default="resources/config")
+        ora_tapi_csv_dir = resolve_path(ora_tapi_csv_dir)
         self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv',
                                       config_file_path=self.config_manager.config_file_path,
                                       cleanup=False)
 
         pi_csv_file_path = Path(pi_columns_csv_dir) / 'pi_columns.csv'
+        pi_csv_file_path = resolve_path(pi_csv_file_path)
         self.pi_column_manager = PIColumnsManager(pi_columns_csv_path=pi_csv_file_path)
         self.view_name_suffix_lc = self.view_name_suffix.lower()
         # Populate self.global_substitutions with the .ini file contents.
@@ -915,8 +914,7 @@ class ApiGenerator:
         # Define the template file path
         template_name = str(template_name).replace(".tpt", "")
         template_name += ".tpt"
-        proj_templates = self.proj_home / TEMPLATES_LOCATION /  template_category / template_type
-        template_path = proj_templates / template_name
+        template_path = resolve_path(TEMPLATES_LOCATION / template_category / template_type / template_name)
 
         try:
             # Read the template file

@@ -1,0 +1,25 @@
+%procedure_signature%
+
+%STAB%%STAB%l_scope           %logger_logs%.scope%type    := gc_unit_prefix || '%delete_procname%';
+%STAB%%STAB%l_params          %logger_pkg%.tab_param;
+
+%STAB%begin
+
+%STAB%%STAB%-- We don't log any CLOB parameters here.
+%STAB%%STAB%%logger_params_append_lc%
+%STAB%%STAB%logger.log('START', l_scope, null, l_params);
+
+%STAB%%STAB%  delete
+%STAB%%STAB%%STAB% from %table_name_lc%
+%STAB%%STAB%%STAB%where
+%STAB%%STAB%%STAB%%STAB%%key_predicates_string_lc%
+%STAB%%STAB%%returning_clause_lc%;
+
+%STAB%%STAB%logger.log('END', l_scope);
+
+%STAB%exception
+%STAB%%STAB%when others then
+%STAB%%STAB%%STAB%%logger_pkg%.log_error('Unhandled exception ', l_scope, null, l_params);
+%STAB%%STAB%%STAB%raise;
+
+%STAB%end %procedure_name%;

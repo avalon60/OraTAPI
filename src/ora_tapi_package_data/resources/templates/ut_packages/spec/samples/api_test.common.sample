@@ -1,0 +1,4 @@
+%STAB%-- Test the %table_name_lc% %api_type_lc%
+%STAB%--%test
+%STAB%--%displayname(Verify %api_type_desc% for %table_desc_title% API functionality [%tapi_pkg_name_prefix%%table_owner_lc%.%table_name_lc%%tapi_pkg_name_postfix%.%procedure_basename_lc%])
+%STAB%procedure test_%procedure_name%;

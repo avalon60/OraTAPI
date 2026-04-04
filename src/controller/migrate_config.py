@@ -16,7 +16,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from lib.config_mgr import compare_config_files
 
-from lib.fsutils import project_home
+from lib.fsutils import resolve_default_path, runtime_home
 
 PROG_NAME = Path(__file__).name
 
@@ -26,7 +26,7 @@ def export_resources(export_path: Path) -> None:
 
     :param export_path: Path to the export ZIP file.
     """
-    resources_dir = project_home() / "resources"
+    resources_dir = runtime_home() / "resources"
     with zipfile.ZipFile(export_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for file in resources_dir.rglob('*'):
             if "samples" in file.parts:
@@ -42,12 +42,13 @@ def import_resources(import_path: Path) -> None:
 
     :param import_path: Path to the import ZIP file.
     """
-    resources_dir = project_home() / "resources"
+    resources_dir = runtime_home() / "resources"
+    resources_dir.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(import_path, 'r') as zipf:
         zipf.extractall(resources_dir)
     print(f"Imported resources from {import_path}")
 
-    config_sample = resources_dir / "config" / "samples" / "OraTAPI.ini.sample"
+    config_sample = resolve_default_path(Path("resources") / "config" / "samples" / "OraTAPI.ini.sample")
     config_target = resources_dir / "config" / "OraTAPI.ini"
     compare_config_files(config_sample_file=config_sample, config_file_path=config_target)
 
@@ -59,13 +60,15 @@ def migrate_files(previous_install_dir: Path) -> None:
     :param previous_install_dir: Path to the previous installation directory.
     """
     files_migrated = 0
-    new_install_resources = project_home() / 'resources'
+    new_install_resources = runtime_home() / 'resources'
     config_dir = new_install_resources / 'config'
     templates_dir = new_install_resources / 'templates'  # Corrected to the new path
     previous_install_resources = previous_install_dir / 'resources'
+    config_dir.mkdir(parents=True, exist_ok=True)
+    templates_dir.mkdir(parents=True, exist_ok=True)
 
     # Handle the config directory
-    config_sample = config_dir / "samples" / "OraTAPI.ini.sample"
+    config_sample = resolve_default_path(Path("resources") / "config" / "samples" / "OraTAPI.ini.sample")
     previous_config_dir = previous_install_resources / "config"
     previous_install_config_file = previous_config_dir / "OraTAPI.ini"
     config_target = config_dir / "OraTAPI.ini"
@@ -117,7 +120,7 @@ def migrate_files(previous_install_dir: Path) -> None:
                 shutil.copy2(tpt_file, target_file)
                 files_migrated += 1
                 print(
-                    f"Migrated: {tpt_file.relative_to(previous_install_dir)} -> {target_file.relative_to(project_home())}")
+                    f"Migrated: {tpt_file.relative_to(previous_install_dir)} -> {target_file.relative_to(runtime_home())}")
 
     print(f"Total files migrated: {files_migrated}")
 

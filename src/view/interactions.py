@@ -9,11 +9,11 @@ from pathlib import Path
 
 from model.framework_errors import InvalidParameter
 from view.console_display import MsgLvl, ConsoleMgr
-from lib.fsutils import project_home
+from lib.fsutils import resolve_path, runtime_home
 import os
 import getpass
 
-proj_home = project_home()
+proj_home = runtime_home()
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
@@ -113,7 +113,7 @@ class Interactions:
 
         parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name).")
 
-        help_text = f"Directory for staging area. Default: {proj_home}/{default_ut_staging_dir}"
+        help_text = f"Directory for staging area. Default: {proj_home}/{default_staging_dir}"
         parser.add_argument('-g', '--staging_dir', type=Path, default=default_staging_dir,
                             help=help_text)
 
@@ -193,8 +193,7 @@ if __name__ == "__main__":
     class DummyController:
         pass
 
-    proj_home = project_home()
-    config_file_path = proj_home / "resources" / "config" / "OraTAPI.ini"
+    config_file_path = resolve_path(Path("resources") / "config" / "OraTAPI.ini")
 
     try:
         interactions = Interactions(controller=DummyController(), config_file_path=config_file_path)
@@ -204,4 +203,3 @@ if __name__ == "__main__":
         # argparse will call sys.exit() for -h or missing arguments.
         # Catch this to avoid abrupt termination in some environments.
         pass
-

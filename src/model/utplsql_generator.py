@@ -10,7 +10,7 @@ from lib.config_mgr import ConfigManager
 from model.db_objects import Table
 from model.db_objects import TableConstraints
 from lib.session_manager import DBSession
-from lib.fsutils import project_home
+from lib.fsutils import resolve_path, runtime_home
 from datetime import datetime
 from pathlib import Path
 
@@ -24,9 +24,9 @@ from copy import deepcopy
 # The number of spaces for an indent tab is defined in OraTAPI.ini
 IDNT = '%indent_spaces%'
 
-APP_HOME = project_home()
-TEMPLATES_LOCATION = APP_HOME / 'resources' / 'templates'
-CONFIG_LOCATION = APP_HOME / 'resources' / 'config'
+APP_HOME = runtime_home()
+TEMPLATES_LOCATION = Path("resources") / "templates"
+CONFIG_LOCATION = Path("resources") / "config"
 
 # Get the current date
 date_now = datetime.now()
@@ -51,8 +51,7 @@ class UtPLSQLGenerator:
         :param options_dict: The dictionary of our command line options.
         :param trace: Enables trace/debug output when set to True.
         """
-        self.proj_home = project_home()  # project_home returns a Path object
-        proj_config_file = CONFIG_LOCATION/ 'OraTAPI.ini'
+        proj_config_file = resolve_path(CONFIG_LOCATION / 'OraTAPI.ini')
 
         self.options_dict = deepcopy(options_dict)
         self.config_manager = config_manager
@@ -139,20 +138,18 @@ class UtPLSQLGenerator:
 
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                             config_key='ora_tapi_csv_dir',
-                                                            default=str(APP_HOME / 'OraTAPI.csv'))
+                                                            default="resources/config")
 
         auto_maintained_cols = self.config_manager.config_value(config_section='api_controls',
                                                             config_key='auto_maintained_cols',
-                                                            default=str(APP_HOME / 'OraTAPI.csv'))
+                                                            default="")
         self.auto_maintained_cols = auto_maintained_cols.replace(' ','').upper().split(',')
 
         row_vers_column_name = self.config_manager.config_value(config_section='api_controls',
                                                             config_key='row_vers_column_name',
-                                                            default=str(APP_HOME / 'OraTAPI.csv'))
+                                                            default="")
 
-
-
-        ora_tapi_csv_dir = Path(ora_tapi_csv_dir)
+        ora_tapi_csv_dir = resolve_path(ora_tapi_csv_dir)
         self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv',
                                       config_file_path=self.config_manager.config_file_path,
                                       cleanup=False)
@@ -600,8 +597,7 @@ class UtPLSQLGenerator:
         # Define the template file path
         template_name = str(template_name).replace(".tpt", "")
         template_name += ".tpt"
-        proj_templates = self.proj_home / TEMPLATES_LOCATION /  template_category / template_type
-        template_path = proj_templates / template_name
+        template_path = resolve_path(TEMPLATES_LOCATION / template_category / template_type / template_name)
 
         try:
             # Read the template file

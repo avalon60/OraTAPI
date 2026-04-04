@@ -4,28 +4,124 @@ __date__ = "2024-11-09"
 __description__ = "Manages the database connection/close."
 
 
-import re
-import platform
 import os
+import platform
+import re
+from contextlib import ExitStack
+from functools import lru_cache
+from importlib import resources
 from pathlib import Path
 import shutil
-
-# Get the real path of the current script
-real_path = Path(__file__).resolve()
-
-# We assume that our project is based on the <project-root>/src/package paradigm.
-# Traverse back based on the known project structure.
-project_home_dir = real_path
-while project_home_dir.name != "src" and project_home_dir != project_home_dir.parent:
-    project_home_dir = project_home_dir.parent
-    # Make sure we get the parent of the `src` directory
-    if project_home_dir.name == "src" or project_home_dir.name in ('venv', '.venv'):
-        project_home_dir = project_home_dir.parent
-        break
+from typing import Iterable
 
 
-def project_home() -> Path:
-    return project_home_dir
+PROJECT_HOME_ENV = "ORATAPI_PROJECT_HOME"
+RUNTIME_HOME_DIRNAME = "OraTAPI"
+PACKAGE_RESOURCE_ANCHOR = "ora_tapi_package_data"
+_PACKAGE_HOME_STACK = ExitStack()
+RUNTIME_REQUIRED_RELATIVE_PATHS = [
+    Path("resources/config/OraTAPI.ini"),
+    Path("resources/config/pi_columns.csv"),
+    Path("resources/templates/column_expressions/inserts/created_by.tpt"),
+    Path("resources/templates/column_expressions/inserts/created_on.tpt"),
+    Path("resources/templates/column_expressions/inserts/updated_by.tpt"),
+    Path("resources/templates/column_expressions/inserts/updated_on.tpt"),
+    Path("resources/templates/column_expressions/inserts/row_version.tpt"),
+    Path("resources/templates/column_expressions/updates/created_by.tpt"),
+    Path("resources/templates/column_expressions/updates/created_on.tpt"),
+    Path("resources/templates/column_expressions/updates/updated_by.tpt"),
+    Path("resources/templates/column_expressions/updates/updated_on.tpt"),
+    Path("resources/templates/column_expressions/updates/row_version.tpt"),
+    Path("resources/templates/misc/trigger/table_name_biu.tpt"),
+    Path("resources/templates/misc/view/view.tpt"),
+    Path("resources/templates/packages/body/package_header.tpt"),
+    Path("resources/templates/packages/body/package_footer.tpt"),
+    Path("resources/templates/packages/spec/package_header.tpt"),
+    Path("resources/templates/packages/spec/package_footer.tpt"),
+    Path("resources/templates/packages/procedures/insert.tpt"),
+    Path("resources/templates/packages/procedures/select.tpt"),
+    Path("resources/templates/packages/procedures/update.tpt"),
+    Path("resources/templates/packages/procedures/delete.tpt"),
+    Path("resources/templates/packages/procedures/upsert.tpt"),
+    Path("resources/templates/packages/procedures/merge.tpt"),
+    Path("resources/templates/ut_packages/body/package_header.tpt"),
+    Path("resources/templates/ut_packages/body/package_footer.tpt"),
+    Path("resources/templates/ut_packages/body/before.tpt"),
+    Path("resources/templates/ut_packages/body/after.tpt"),
+    Path("resources/templates/ut_packages/body/api_test.tpt"),
+    Path("resources/templates/ut_packages/body/constraint_test.tpt"),
+    Path("resources/templates/ut_packages/spec/package_header.tpt"),
+    Path("resources/templates/ut_packages/spec/package_footer.tpt"),
+    Path("resources/templates/ut_packages/spec/before.tpt"),
+    Path("resources/templates/ut_packages/spec/after.tpt"),
+    Path("resources/templates/ut_packages/spec/api_test.tpt"),
+    Path("resources/templates/ut_packages/spec/constraint_test.tpt"),
+]
+
+
+def runtime_home() -> Path:
+    return Path.home() / RUNTIME_HOME_DIRNAME
+
+
+def _candidate_project_override_homes() -> Iterable[Path]:
+    project_home_env = os.getenv(PROJECT_HOME_ENV, "").strip()
+    if project_home_env:
+        yield Path(project_home_env).expanduser()
+
+    cwd = Path.cwd().resolve()
+    for candidate in (cwd, *cwd.parents):
+        if (candidate / "resources").is_dir() and ((candidate / "src").is_dir() or (candidate / "pyproject.toml").exists()):
+            yield candidate
+            break
+
+
+def project_override_home() -> Path | None:
+    for candidate in _candidate_project_override_homes():
+        if candidate.exists():
+            return candidate
+    return None
+
+
+@lru_cache(maxsize=1)
+def package_home() -> Path:
+    traversable = resources.files(PACKAGE_RESOURCE_ANCHOR)
+    return Path(_PACKAGE_HOME_STACK.enter_context(resources.as_file(traversable)))
+
+
+def resolve_path(path_name: str | Path) -> Path:
+    candidate_path = Path(path_name).expanduser()
+    if candidate_path.is_absolute():
+        return candidate_path
+
+    project_home_dir = project_override_home()
+    search_roots = [root for root in (project_home_dir, runtime_home(), package_home()) if root is not None]
+    for root in search_roots:
+        resolved = root / candidate_path
+        if resolved.exists():
+            return resolved
+
+    return runtime_home() / candidate_path
+
+
+def resolve_default_path(path_name: str | Path) -> Path:
+    candidate_path = Path(path_name)
+    if candidate_path.is_absolute():
+        return candidate_path
+
+    project_home_dir = project_override_home()
+    search_roots = [root for root in (project_home_dir, package_home()) if root is not None]
+    for root in search_roots:
+        resolved = root / candidate_path
+        if resolved.exists():
+            return resolved
+
+    return package_home() / candidate_path
+
+
+def missing_runtime_paths() -> list[Path]:
+    runtime_root = runtime_home()
+    return [runtime_root / relative_path for relative_path in RUNTIME_REQUIRED_RELATIVE_PATHS
+            if not (runtime_root / relative_path).exists()]
 
 def is_valid_dir_name(directory_name: str) -> bool:
     """
@@ -107,4 +203,6 @@ if __name__ == "__main__":
     dir_name = '?[abc\/?'
     sanitised_dir_name = sanitise_dir_name(directory_name=dir_name)
     print(f"sanitised directory name: {sanitised_dir_name}")
-    print(f'Project Home: {project_home()}')
+    print(f'Project Override Home: {project_override_home()}')
+    print(f'Runtime Home: {runtime_home()}')
+    print(f'Package Home: {package_home()}')

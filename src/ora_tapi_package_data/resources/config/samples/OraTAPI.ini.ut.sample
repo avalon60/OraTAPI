@@ -1,0 +1,194 @@
+# Example of an config file tailored for unit test code generation.
+[project]
+default_app_name = Human Resources
+
+[copyright]
+# company_name: Modify company name to reflect your company
+company_name = Clive`s Software Emporium
+# copyright_year: set to a static year or the word current, to reflect the date the TAPI was generated.
+copyright_year = current
+
+[behaviour]
+# skip_on_missing_table: If set to true and a specified table is not found, then report the table as missing
+# but continue processing. If set to false, and error is reported and processing is terminated. Only pertinent
+# when using the -t/--table_names argument.
+skip_on_missing_table = true
+
+# skip_on_missing_pk: If set to true, tables without a primary key are skipped. Note if you set this to false,
+# the generated API will require some work!
+skip_on_missing_pk = true
+
+# Set enable_tapis_when_ut_enabled to true, to enable generation of TAPI, View and Trigger code when the
+# enable_ut_code_generation, in the ut_controls section, is also set to true.
+enable_tapis_when_ut_enabled = false
+
+# Set check_github_for_updates to true to enable checks for newer versions of OraTAPI, otherwise set to false.
+check_github_for_updates = true
+
+[formatting]
+indent_spaces = 3
+
+[file_controls]
+# The root location where the generated files are to be written. A simple directory name is assumed to be located
+# below the OraTAPI root folder. Full path-names are permissible.
+default_staging_dir = staging
+
+# Unit Tests package staging area.
+default_ut_staging_dir = ${file_controls:default_staging_dir}
+
+# The file extension properties are appended to the respective files.
+body_file_ext = .sql
+spec_file_ext = .sql
+
+# spec_dir/body_dir: these define the locations where the package specification and package body files are to be
+# written. Simple names (no slashes) are assumed to below the install home directory of OraTAPI.
+spec_dir = package_spec
+body_dir = package_body
+# Set the trigger_dir property to have any triggers generated from the trigger templates.
+trigger_dir = trigger
+# Set the view_dir property to have any triggers generated from the view templates.
+view_dir = view
+
+# Set the directory pathname to locate the OraTAPI.csv file. If unset it is assumed to be located under the OraTAPI
+# install directory. This file is used to fine control which files should be generated.
+ora_tapi_csv_dir = resources/config
+
+# Set the path to the OraTAPI pi_columns.csv file. This CSV file is used to flag columns as personal information.
+# Such columns are not logged when using the llogger format templates.
+pi_columns_csv_dir = resources/config
+
+[api_controls]
+# api_surface defines whether generated API interactions are performed directly against the base table
+# or through the corresponding passthrough view. Valid values table or view.
+api_surface = table
+# API naming properties follow. Set these to the preferred procedure names of the respective APIs
+delete_procname = del
+select_procname = get
+insert_procname = ins
+merge_procname  = mrg
+update_procname = upd
+upsert_procname = ups
+
+# col_auto_maintain_method: Set to `trigger` or `expression`, it is assumed that your table triggers
+# are to manage the modification of the columns. However, if set to `expression`, you must define a column expression
+# for each of the named columns.
+col_auto_maintain_method = trigger
+
+# auto_maintained_cols is a comma separated list of columns which are not to be set by the TAPI parameters.
+# These are columns typically auto-maintained by triggers or column expressions. As such they are not included in APIs
+# responsible for data modifications. However they are included in select API return parameters.
+auto_maintained_cols = created_by, created_on, updated_by, updated_on
+
+# row_vers_column_name: For optimistic locking (optional). Name the optimistic column name.
+# Leave empty or comment out, if not implemented. Update TAPIs, return this as an "out" parameter.
+row_vers_column_name = row_version
+
+# signature_types: One of more comma separated values. Valid values: rowtype, coltype. Default is rowtype.
+# coltype causes parameter signatures with a parameter for each table column, for the select, insert, update and
+# merge APIs. rowtype, causes signatures based on primary keys and a table rowtype.
+signature_types = rowtype, coltype
+
+# include_defaults: Set to true, to have parameter defaults included to insert APIs,
+# reflect those in the data dictionary.
+include_defaults = true
+
+# noop_column_string: If set, parameter defaults for non-key column parameters are defined as <no_column_op_string>.
+# If the default is detected, then the column value in the database is preserved. This provides a mechanism of
+# avoiding to pass all parameters unnecessarily. This only applies to the "coltype" signature types (see the
+# signature_types property). Set to auto, to have a (static) generated, enhanced GUID (42 characters in total) Set to
+# dynamic to have the NOOP character string (partly, by sys_guid()) dynamically generated on a per-session basis.
+# The noop_column_string property only comes into play, for update API, update procedure signatures and statements.
+# noop_column_string = auto
+# noop_column_string = #NO~OP#
+noop_column_string =
+
+# default_api_types: Specifies the default of which APIs to include to the package.
+# Comma separated - must be one or more of insert, select, update, delete, upsert, merge.
+# default_api_types = insert, select, update, delete, upsert, merge
+default_api_types = insert, select, delete
+
+# The parameters influence the generated name packages.
+# The default package name format is <table_name_lc>_tapi
+tapi_pkg_name_prefix = ut_
+tapi_pkg_name_postfix = _tapi
+
+# return_pk_columns: If set to true, causes primary/unique keys to be in/out parameters. Returning the values.
+# This applies to APIs which modify data.
+return_pk_columns = true
+return_ak_columns = false
+# Include p_commit boolean parameter (in). Should be set to true or false. Typically this would be set to false.
+include_commit = true
+
+# utPLSQL controls follow
+[ut_controls]
+# Set enable_ut_code_generation = true, to generate starter code for utPLSQL testing packages.
+enable_ut_code_generation = true
+
+# The %suite annotation string - change to suit requirements
+ut_suite = utAppSuite
+
+# Update ut_product_code, to effect the suitepath first component (before the dot)- change to suit requirements
+ut_prod_code = utproduct
+
+# If ut_prod_sub_domain_code is set to auto_table, then the first characters in the table name, before the first underscore
+# are assumed. When set to auto_schema, then the first characters in the schema name, before the first underscore
+# are assumed. Otherwise this is assumed to be the value provided.
+ut_prod_sub_domain_code = auto_schema
+
+
+# The following parameters influence the generated name packages.
+# Typically we would set to something like:
+#      ut_pkg_name_prefix = ut_
+#      ut_pkg_name_postfix = _tapi
+ut_pkg_name_prefix = ut_
+ut_pkg_name_postfix = _tapi
+
+# Define the expected --throws codes. Set to 0 to disable any of these.
+# Expected --throws() code for primary/unique key tests
+ut_uk_test_throws = dup_val_on_index
+
+# Expected --throws() code for parent key not found foreign key key tests
+ut_parent_fk_test_throws = -02291
+
+# Expected --throws() code for check constraints tests
+ut_cc_test_throws = -02290
+
+# Expected --throws() code for not null check constraints tests
+ut_nn_test_throws = -01400
+
+[logger]
+# If you have not set up synonyms, we need prefix with the schema where logger is installed.
+# By default we assume logger_user. If you have run create_logger_synonyms.sql, you don't need to
+# prefix these. If these are absent, defaults are assumed to be `logger` and `logger_logs`. The `llogger` sample
+# templates take advantage of these settings.
+logger_pkg = logger
+logger_logs = logger_logs
+
+[schemas]
+# Set default owners. These can be overridden on the command line.
+# default_table_owner can be overridden using the -to / --table_owner argument.
+default_table_owner = hr
+
+# default_package_owner can be overridden using the -po / --package_owner argument.
+default_package_owner = unit_test
+
+# default_view_owner can be overridden using the -vo / --view_owner argument.
+default_view_owner = hr
+
+# default_trigger_owner can be overridden using the -to / --trigger_owner argument.
+default_trigger_owner = hr
+
+[misc]
+# The view_name_suffix is appended to the end of the derived view name
+view_name_suffix = _v
+
+[console]
+# Console text colours
+info_colour = white
+warn_colour = bold yellow
+err_colour = bold red
+crit_colour = bold red
+high_colour = bold blue
+success_colour = bold green
+# Set colour_console to false, to disable colour output.
+colour_console = true

@@ -61,6 +61,9 @@ classifiers = [
 ]
 
 # Specify the package directory
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -69,14 +72,7 @@ where = ["src"]
 
 # Include additional resources
 [tool.setuptools.package-data]
-"*" = [ "resources/config/.ini.sample",
-        "resources/templates/column_expressions/.tpt.sample",
-        "resources/templates/updates/.tpt.sample",
-        "resources/templates/misc/trigger/.tpt.sample",
-        "resources/templates/misc/view/.tpt.sample",
-        "resources/templates/packages/body/.tpt.sample",
-        "resources/templates/packages/procedures/.tpt.sample",
-        "resources/templates/packages/spec/.tpt.sample", ]
+"ora_tapi_package_data" = ["resources/**/*"]
 
 
 # Declare scripts as dynamic
@@ -87,4 +83,3 @@ dynamic = ["scripts"]
 conn_mgr = "controller.conn_mgr:main"
 ora_tapi = "controller.ora_tapi:main"
 quick_config = "controller.quick_config:main"
-

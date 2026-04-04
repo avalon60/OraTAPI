@@ -4,7 +4,7 @@
 from time import time_ns
 
 from lib.framework_errors import PLSQLScriptError, DatabaseConnectionError
-from lib.fsutils import project_home
+from lib.fsutils import resolve_path
 import os
 import platform
 import oracledb
@@ -441,10 +441,10 @@ def try_init_thick_mode(verbose:bool = False, lib_dir: Path = None) -> bool:
     if client_dir and os.path.isdir(client_dir) and _looks_like_instant_client(client_dir):
         source = "ORACLE_IC_HOME"
     else:
-        fallback_dir = os.path.join(project_home(), "oracle_client")
+        fallback_dir = str(resolve_path("oracle_client"))
         if os.path.isdir(fallback_dir) and _looks_like_instant_client(fallback_dir):
             client_dir = fallback_dir
-            source = f"<project_home>/oracle_client"
+            source = "resolve_path(oracle_client)"
         else:
             if verbose:
                 print(f"{INFO} No valid Oracle Instant Client found — falling back to thin mode")

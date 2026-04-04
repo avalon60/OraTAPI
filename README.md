@@ -122,7 +122,12 @@ you should preferably download Python 3.11.
 
 ### Familiarisation with the Layout
 
-The file system layout for an OraTAPI installation, looks similar to what we see here:
+OraTAPI now uses two locations:
+
+- The installation directory, which contains the executables, Python modules, setup scripts, and packaged default resources.
+- The runtime home, `~/OraTAPI`, which contains the user-instantiated configuration, CSV control files, templates, and default staging directories.
+
+The installation layout looks similar to what we see here:
 
 ```
 ora_tapi.1.1.19
@@ -135,6 +140,14 @@ ora_tapi.1.1.19
 │   ├── ora_tapi.sh
 │   ├── quick_config.ps1
 │   └── quick_config.sh
+├── setup.ps1
+└── setup.sh
+
+```
+The runtime home created by `quick_config` looks similar to this:
+
+```
+~/OraTAPI
 ├── resources
 │   ├── config
 │   │   ├── OraTAPI.csv
@@ -142,50 +155,14 @@ ora_tapi.1.1.19
 │   │   └── pi_columns.csv
 │   └── templates
 │       ├── column_expressions
-│       │   ├── inserts
-│       │   │   ├── created_by.tpt
-│       │   │   ├── created_on.tpt
-│       │   │   ├── row_version.tpt
-│       │   │   ├── updated_by.tpt
-│       │   │   └── updated_on.tpt
-│       │   └── updates
-│       │       ├── created_by.tpt
-│       │       ├── created_on.tpt
-│       │       ├── row_version.tpt
-│       │       ├── updated_by.tpt
-│       │       └── updated_on.tpt
 │       ├── misc
-│       │   ├── trigger
-│       │   │   └── table_name_biu.tpt
-│       │   └── view
-│       │       └── view.tpt
-│       └── packages
-│           ├── body
-│           │   ├── package_footer.tpt
-│           │   └── package_header.tpt
-│           ├── procedures
-│           │   ├── delete.tpt
-│           │   ├── insert.tpt
-│           │   ├── merge.tpt
-│           │   ├── select.tpt
-│           │   ├── update.tpt
-│           │   └── upsert.tpt
-│           └── spec
-│               ├── package_footer.tpt
-│               └── package_header.tpt
-├── setup.ps1
-└── setup.sh
-
+│       ├── packages
+│       └── ut_packages
+├── staging
+└── ut_staging
 ```
-For simplicity some subdirectories have been omitted, but these aren't particularly important right now. However, it's 
-worth mentioning that sample (template) configuration files are provided and leveraged during setup. They are not shown, as they 
-would clutter the display. These are implemented as subdirectories within the various `resources/templates` and 
-`resources/config` subdirectories. For example the `resources/templates/packages/body` and 
-`resources/templates/packages/spec` directories, each have a `samples` subdirectory.
 
-The key take-away from the above (no, not Quattro Formaggi;) is the config directory which is where the OraTAPI.ini is located, as well as a couple 
-of CSV files which are all used to influence the behaviour of OraTAPI. The various template files `.tpt` also influence 
-the behaviour, in as much as they shape the code and content of the generated files.
+The packaged defaults remain in the installation, but OraTAPI reads and writes user-owned runtime files from `~/OraTAPI`. The key take-away is that the active `OraTAPI.ini`, CSV files, and instantiated `.tpt` templates live in `~/OraTAPI/resources`, not in the installation directory.
 
 ## Installation
 
@@ -228,10 +205,7 @@ the behaviour, in as much as they shape the code and content of the generated fi
     The Windows command must be run from a Windows PowerShell terminal.  
 
 ## Post Installation
-The next step is to configure the `OraTAPI.ini` file and your template files. Samples of these files are provided, and 
-you could navigate through the various directories to manually instantiate all your files by copying the samples to the 
-required file names and directories. However, a `quick_config` tool is available to help you set up more quickly. Several 
-options are available to choose from:
+The next step is to initialise the runtime home at `~/OraTAPI`. OraTAPI will not generate code until the runtime config and templates have been instantiated. The `quick_config` tool copies the packaged defaults into `~/OraTAPI/resources` and materialises the chosen template family. Several options are available:
 
 - Basic
 - Liquibase
@@ -240,7 +214,7 @@ options are available to choose from:
 
 The respective parameters passed need to be in lowercase (`basic`, `liquibase`, `logger`, `llogger`).
 
-If you opt for the `llogger` templates, you will need to install the [PLSQL logging utility](https://github.com/OraOpenSource/Logger).  
+If you opt for the `llogger` templates, you will need to install the [PL/SQL logging utility](https://github.com/OraOpenSource/Logger).  
 
 Here we are configuring for Liquibase.  
 
@@ -258,35 +232,37 @@ Here we are configuring for Liquibase.
 Assuming we were to configure for "Liquibase with Logger", the output should look similar to this:
 
 ```
-$ bin/quick_config.sh -t llogger
+$ ./bin/quick_config.sh -t llogger
 OraTAPI quick config started...
-Copied: resources/config/samples/OraTAPI.ini.sample -> resources/config/OraTAPI.ini
-Copied: resources/templates/column_expressions/inserts/samples/updated_on.tpt.sample -> resources/templates/column_expressions/inserts/updated_on.tpt
-Copied: resources/templates/column_expressions/inserts/samples/updated_by.tpt.sample -> resources/templates/column_expressions/inserts/updated_by.tpt
-Copied: resources/templates/column_expressions/inserts/samples/created_by.tpt.sample -> resources/templates/column_expressions/inserts/created_by.tpt
-Copied: resources/templates/column_expressions/inserts/samples/created_on.tpt.sample -> resources/templates/column_expressions/inserts/created_on.tpt
-Copied: resources/templates/column_expressions/inserts/samples/row_version.tpt.sample -> resources/templates/column_expressions/inserts/row_version.tpt
-Copied: resources/templates/column_expressions/updates/samples/updated_on.tpt.sample -> resources/templates/column_expressions/updates/updated_on.tpt
-Copied: resources/templates/column_expressions/updates/samples/updated_by.tpt.sample -> resources/templates/column_expressions/updates/updated_by.tpt
-Copied: resources/templates/column_expressions/updates/samples/created_by.tpt.sample -> resources/templates/column_expressions/updates/created_by.tpt
-Copied: resources/templates/column_expressions/updates/samples/created_on.tpt.sample -> resources/templates/column_expressions/updates/created_on.tpt
-Copied: resources/templates/column_expressions/updates/samples/row_version.tpt.sample -> resources/templates/column_expressions/updates/row_version.tpt
-Copied: resources/templates/misc/trigger/samples/table_name_biu.llogger.sample -> resources/templates/misc/trigger/table_name_biu.tpt
-Copied: resources/templates/misc/view/samples/view.llogger.sample -> resources/templates/misc/view/view.tpt
-Copied: resources/templates/packages/body/samples/package_footer.llogger.sample -> resources/templates/packages/body/package_footer.tpt
-Copied: resources/templates/packages/body/samples/package_header.llogger.sample -> resources/templates/packages/body/package_header.tpt
-Copied: resources/templates/packages/spec/samples/package_footer.llogger.sample -> resources/templates/packages/spec/package_footer.tpt
-Copied: resources/templates/packages/spec/samples/package_header.llogger.sample -> resources/templates/packages/spec/package_header.tpt
-Copied: resources/templates/packages/procedures/samples/insert.llogger.sample -> resources/templates/packages/procedures/insert.tpt
-Copied: resources/templates/packages/procedures/samples/merge.llogger.sample -> resources/templates/packages/procedures/merge.tpt
-Copied: resources/templates/packages/procedures/samples/delete.llogger.sample -> resources/templates/packages/procedures/delete.tpt
-Copied: resources/templates/packages/procedures/samples/update.llogger.sample -> resources/templates/packages/procedures/update.tpt
-Copied: resources/templates/packages/procedures/samples/upsert.llogger.sample -> resources/templates/packages/procedures/upsert.tpt
-Copied: resources/templates/packages/procedures/samples/select.llogger.sample -> resources/templates/packages/procedures/select.tpt
+Copied: /path/to/install/resources/config/samples/OraTAPI.ini.sample -> resources/config/OraTAPI.ini
+Copied: /path/to/install/resources/templates/column_expressions/inserts/samples/updated_on.tpt.sample -> resources/templates/column_expressions/inserts/updated_on.tpt
+Copied: /path/to/install/resources/templates/misc/view/samples/view.llogger.sample -> resources/templates/misc/view/view.tpt
+Copied: /path/to/install/resources/templates/packages/procedures/samples/select.llogger.sample -> resources/templates/packages/procedures/select.tpt
+...
 23 files instantiated.
 OraTAPI quick config complete.
 ```
+The destination paths shown above are relative to `~/OraTAPI`.
 Note that in this example, we are opting for the "Liquibase with Logger" templates.  
+
+If OraTAPI reports that the runtime files have not yet been initialised, use one of these commands:
+
+```bash
+./bin/quick_config.sh -t <template-category>
+```
+
+```powershell
+.\bin\quick_config.ps1 -t <template-category>
+```
+
+Valid template categories are:
+
+1. `basic`     - No Liquibase directives or logging
+2. `liquibase` - Generated code includes Liquibase directives
+3. `logger`    - Generated PL/SQL includes logger logging calls for parameter values and related diagnostics
+4. `llogger`   - Includes both Liquibase directives and logger logging
+
+For options `logger` and `llogger`, the logger utility must already be deployed to the database.
 
 To underscore the point, you should either specify `-t basic`, `-t liquibase`,  `-t logger` or `-t llogger`. Optionally, specify `--template_category` 
 instead of `-t`.  
@@ -344,7 +320,7 @@ To complete the installation and migrate your previous settings, perform these s
    cd <path-to-parent-folder>/oratapi-<x.y.z>
    ./bin/migrate_config.sh -o <path_to_old_install_dir>
 ```
-This will result in your old OraTAPI.ini file, CSV files, and templates, being copied to the new installation.  
+This will result in your old OraTAPI.ini file, CSV files, and templates being copied into the new runtime home under `~/OraTAPI`.  
 
 Note that there is also a `migrate_config.ps1` command for Windows PowerShell.
 
@@ -374,7 +350,7 @@ options:
 Hopefully you will have noticed that `migrate_config`, also has export / import options. 
 You can use this to back-up / restore or transport settings. These also constitute an alternative to 
 using the `-o / --old_install_dir` option, since you can take an export of your old configuration, 
-and import from the export file to your new installation.
+and import from the export file into your new runtime home.
 
 Example export:
 ```
@@ -389,7 +365,7 @@ Example import:
 $ bin/migrate_config.sh --import /tmp/mig.zip
 OraTAPI config migration started...
 Imported resources from /tmp/mig.zip
-Updated version in resources/config/OraTAPI.ini to 1.1.19.
+Updated version in ~/OraTAPI/resources/config/OraTAPI.ini to 1.1.19.
 
 Checking for OraTAPI.ini updates/obsolescence...
 
@@ -554,10 +530,10 @@ options:
   -d DSN, --dsn DSN     Database data source name (TNS name).
   -g STAGING_DIR, --staging_dir STAGING_DIR
                         Directory for staging area. Default:
-                        /home/clive/PycharmProjects/OraTAPI/ut_staging
+                        /home/clive/OraTAPI/staging
   -G UT_STAGING_DIR, --ut_staging_dir UT_STAGING_DIR
                         Directory for unit tests staging area. Default:
-                        /home/clive/PycharmProjects/OraTAPI/ut_staging
+                        /home/clive/OraTAPI/ut_staging
   -u DB_USERNAME, --db_username DB_USERNAME
                         Database connection username.
   -p DB_PASSWORD, --db_password DB_PASSWORD
@@ -599,7 +575,7 @@ Run OraTAPI from the command line with the desired options.
 In the following examples, we are assuming that we are running with a macOS/Linux type environment. For Windows 
 PowerShell, you need to assume the commands have a `.ps1` extension, instead of `.sh`.  
 
-The examples also assume that you have navigated to the root install directory of OraTAPI.
+The examples also assume that you have navigated to the installation directory of OraTAPI.
 
 #### Basic Example
 ```bash
@@ -620,7 +596,7 @@ schema, and the triggers in the core schema.
 
 
 
-Remember that when these flags are not provided, the defaults are retrieved from the `resources/config/OraTAPI.ini` file.
+Remember that when these flags are not provided, the defaults are retrieved from `~/OraTAPI/resources/config/OraTAPI.ini`.
 
 #### Explicitly Specifying Credentials
 In the previous examples, we relied on the `OraTAPI` connection manager, in as much as we were using the `--conn_name` 
@@ -647,8 +623,8 @@ In this example, we assume that the dev-db is a TNS Names entry.
 | `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
 | `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
 | `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
-| `-g`, `--staging_dir` | Directory for the staging area.(Default is based on OraTAPI install location)                   | `<OraTAPI-HOME>/staging` |
-| `-G`, `--ut_staging_dir` | Directory for the Unit Test staging area.(Default is based on OraTAPI install location)      | `<OraTAPI-HOME>/staging` |
+| `-g`, `--staging_dir` | Directory for the staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/staging` |
+| `-G`, `--ut_staging_dir` | Directory for the Unit Test staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/ut_staging` |
 | `-p`, `--db_password`      | Database password.                                                                         |                          |
 | `-po`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
 | `-t`, `--table_names`      | A space separated list of table names.                                                      | All tables               |
@@ -697,7 +673,7 @@ The OraTAPI.ini file is made up of named sections. The sections are denoted by s
 section name is enclosed. Within each section is one or more properties, used to control the behaviour in one way or 
 another, of the `ora_tapi` command.  
 
-As a reminder, the file is located as `<OraTAPI_HOME/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
+As a reminder, the active file is located at `~/OraTAPI/resources/config/OraTAPI.ini`. When OraTAPI starts up, it 
 initialises settings, based upon the contents of this file.  
 
 Here we cover the various sections and properties.
@@ -740,7 +716,11 @@ Here we cover the various sections and properties.
 #### [file_controls]
 - **default_staging_dir**: Specifies the root directory where the generated files will be written.
   - Example: `default_staging_dir = /u02/projects/demo/staging`
-  - **Purpose**: Defines the folder where all generated files will be placed. The default location is `staging` and is located directly below the OraTAPI installation root folder. You can specify a pathname relative to the OraTAPI installation root folder, or a full pathname. This can be overridden at runtime, using the `-g/--staging_dir` argument.
+  - **Purpose**: Defines the folder where all generated files will be placed. The default location is `staging`, which resolves to `~/OraTAPI/staging`. You can specify a pathname relative to `~/OraTAPI`, or a full pathname. This can be overridden at runtime, using the `-g/--staging_dir` argument.
+
+- **default_ut_staging_dir**: Specifies the root directory where generated utPLSQL files will be written.
+  - Example: `default_ut_staging_dir = ut_staging`
+  - **Purpose**: Defines the default unit-test staging folder. The default location is `ut_staging`, which resolves to `~/OraTAPI/ut_staging`. You can specify a pathname relative to `~/OraTAPI`, or a full pathname. This can be overridden at runtime using the `-G/--ut_staging_dir` argument.
   
   Sub-directories are created at run-time, as required, to host the generated code. The names of the sub-directories are configurable (read on).
   
@@ -767,11 +747,11 @@ Here we cover the various sections and properties.
 
 - **ora_tapi_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `ora_tapi_csv_dir = resources/config`
-  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain_lc%) to be configured.
+  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. Relative paths are resolved with precedence of project override, then `~/OraTAPI`, then packaged defaults. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain_lc%) to be configured.
 
 - **pi_columns_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `pi_columns_csv_dir = resources/config`
-  - **Purpose**: Used to control which columns should be omitted from parameter logging when the `llogger` templates are active. This is provided to avoid PI (personal information) columns being logged.
+  - **Purpose**: Used to control which columns should be omitted from parameter logging when the `llogger` templates are active. Relative paths are resolved with precedence of project override, then `~/OraTAPI`, then packaged defaults. This is provided to avoid PI (personal information) columns being logged.
 ---
 
 #### [api_controls]
@@ -960,14 +940,17 @@ indent_spaces = 3
 
 [file_controls]
 # The root location where the generated files are to be written. A simple directory name is assumed to be located
-# below the OraTAPI root folder. Full path-names are permissible.
+# below ~/OraTAPI. Full path-names are permissible.
 default_staging_dir = staging
+
+# Unit Tests package staging area. Relative paths are also resolved below ~/OraTAPI.
+default_ut_staging_dir = ut_staging
 # The file extension properties are appended to the respective files.
 body_file_ext = .sql
 spec_file_ext = .sql
 
 # spec_dir/body_dir: these define the locations where the package specification and package body files are to be
-# written. Simple names (no slashes) are assumed to below the install home directory of OraTAPI.
+# written. Simple names (no slashes) are assumed to be below the staging directory.
 spec_dir = package_spec
 body_dir = package_body
 # Set the trigger_dir property to have any triggers generated from the trigger templates.
@@ -975,12 +958,13 @@ trigger_dir = trigger
 # Set the view_dir property to have any triggers generated from the view templates.
 view_dir = view
 
-# Set the directory pathname to locate the OraTAPI.csv file. If unset it is assumed to be located under the OraTAPI
-# install directory. This file is used to fine control which files should be generated.
+# Set the directory pathname to locate the OraTAPI.csv file. If unset it is assumed to be located under
+# ~/OraTAPI/resources/config. This file is used to fine control which files should be generated.
 ora_tapi_csv_dir = resources/config
 
 # Set the path to the OraTAPI pi_columns.csv file. This CSV file is used to flag columns as personal information.
-# Such columns are not logged when using the llogger format templates.
+# Such columns are not logged when using the llogger format templates. Relative paths are resolved with precedence:
+# project override, then ~/OraTAPI, then packaged defaults.
 pi_columns_csv_dir = resources/config
 
 [api_controls]
@@ -1084,11 +1068,10 @@ The OraTAPI.ini file has been covered in the previous sections. Here we look at 
 Fine-grained control over which files can or cannot be updated, is implemented via the OraTAPI.csv file. The location of 
 this file is determined via the `ora_tapi_csv_dir` property, which resides in the `file_controls` section of the 
 `OraTAPI.ini` file. If the associated property is unset, `ora_tapi` will assume its 
-location as the root folder of the OraTAPI installation. The supplied OraTAPI.ini sample,
+location as `~/OraTAPI/resources/config`. The supplied OraTAPI.ini sample,
 sets this location to `resources/config`.  
 
-The OraTAPI.csv file is not provided at installation time. Rather, it is created and populated 
-on you run your first run of the  `ora_tapi` command. The file contents should be maintained as a spreadsheet, but 
+The OraTAPI.csv file is not provided at installation time. It is instantiated into `~/OraTAPI/resources/config` by `quick_config`, and then created and populated further as you run `ora_tapi`. The file contents should be maintained as a spreadsheet, but 
 ensure that it is saved as a CSV file when exporting it from the spreadsheet application.
 
 Each row represents a schema / table. The following 

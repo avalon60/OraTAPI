@@ -3,42 +3,76 @@ __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
 from controller import __version__
 import copy
+import sys
 import time
 
 from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_mgr import ConfigManager
 from lib.session_manager import DBSession
-from lib.fsutils import project_home
+from lib.fsutils import missing_runtime_paths, resolve_path, runtime_home
 from lib.app_utils import current_timestamp, format_elapsed_time
 from lib.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl, MissingParameterError
 from pathlib import Path
-from os import chdir
 from model.ora_tapi_csv import CSVManager
 from model.framework_errors import UnsupportedOption
 from lib.app_utils import get_latest_dist_url, get_latest_version
 from lib.framework_errors import DatabaseConnectionError
 from packaging.version import Version
 
-CONFIG_LOCATION = project_home()/ 'resources' / 'config'
+CONFIG_LOCATION = Path("resources") / "config"
 
 RUN_ID = int(time.time())
-DEFAULT_STAGING = "staging"
-
 prog_bin = Path(__file__).resolve().parent
-app_home = project_home()
 
 PROG_NAME = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
 
+
+def resolve_runtime_relative_path(path_name: Path) -> Path:
+    expanded_path = Path(path_name).expanduser()
+    if expanded_path.is_absolute():
+        return expanded_path
+    return runtime_home() / expanded_path
+
+
+def print_runtime_initialisation_message() -> None:
+    missing_paths = missing_runtime_paths()
+    print("ERROR: OraTAPI runtime files have not been initialised under ~/OraTAPI.")
+    print("\nMissing runtime files include:")
+    for missing_path in missing_paths[:8]:
+        print(f"  - {missing_path}")
+    if len(missing_paths) > 8:
+        print(f"  - ... and {len(missing_paths) - 8} more")
+
+    print("\nPlease run one of the following commands to initialise the runtime files:")
+    print("  Linux / macOS:")
+    print("    ./bin/quick_config.sh -t <template-category>")
+    print("  Windows:")
+    print("    .\\bin\\quick_config.ps1 -t <template-category>")
+    print("\nValid template categories: basic, liquibase, logger, llogger")
+    print("\n1.  basic     - No Liquibase directives or logging")
+    print("2.  liquibase - Generated code includes Liquibase directives")
+    print("3.  logger    - Generated PL/SQL includes logger logging calls for logging parameter values etc.")
+    print("4.  llogger   - Include Liquibase and logger logging (2 + 3)")
+    print("\nNOTE: For options 3 and 4, you must have the logger utility deployed to the database.")
+
+
+def help_requested(argv: list[str] | None = None) -> bool:
+    args = sys.argv[1:] if argv is None else argv
+    return "-h" in args or "--help" in args
+
+
 class CodeManager:
     """PLSQL code generation manager class"""
     def __init__(self, trace: bool = False):
-        proj_home = project_home()  # project_home returns a Path object
-        chdir(proj_home)
-        config_file_path = CONFIG_LOCATION / 'OraTAPI.ini'
+        if missing_runtime_paths() and not help_requested():
+            print_runtime_initialisation_message()
+            exit(1)
+
+        config_file_path = resolve_path(CONFIG_LOCATION / 'OraTAPI.ini')
         if not config_file_path.exists():
             print(f'ERROR: Unable to locate config file: {config_file_path}')
             print(f'This is possibly due to an incomplete installation. Did you run the quick config command?')
@@ -108,13 +142,13 @@ class CodeManager:
         self.ut_staging_dir = Path(options_dict['ut_staging_dir'])
 
         self.trace = trace
-        self.proj_home = project_home()
+        self.runtime_home = runtime_home()
 
         self.config_manager = config_manager
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
-                                                    default=str(app_home / 'OraTAPI.csv'))
-        ora_tapi_csv_dir = Path(ora_tapi_csv_dir)
+                                                    default="resources/config")
+        ora_tapi_csv_dir = resolve_path(ora_tapi_csv_dir)
 
         self.csv_manager = CSVManager(csv_pathname=ora_tapi_csv_dir / 'OraTAPI.csv', config_file_path=config_file_path)
 
@@ -191,11 +225,8 @@ class CodeManager:
         elif self.col_auto_maintain_method == 'trigger':
             self.view.print_console(msg_level=MsgLvl.info, text=f"Auto-maintained columns are maintained by column trigger.")
 
-        if self.staging_dir == DEFAULT_STAGING:
-            self.staging_dir = app_home / self.staging_dir
-
-        if self.ut_staging_dir == DEFAULT_STAGING:
-            self.ut_staging_dir = app_home / self.staging_dir
+        self.staging_dir = resolve_runtime_relative_path(self.staging_dir)
+        self.ut_staging_dir = resolve_runtime_relative_path(self.ut_staging_dir)
 
         if not self.staging_dir.exists():
             self.view.print_console(msg_level=MsgLvl.error, text=f'TAPI staging directory, "{self.staging_dir}", does not exist - bailing out!')
