@@ -13,6 +13,7 @@ from lib.fsutils import (
     active_profile_home,
     active_profile_name,
     available_profiles,
+    configured_active_profile_name,
     ensure_runtime_home,
     is_valid_dir_name,
     profile_home,
@@ -218,7 +219,7 @@ class ProfileManager:
         self._prompt_activate_profile(target_profile)
 
     def list_profiles(self) -> None:
-        current_profile = active_profile_name()
+        current_profile = configured_active_profile_name()
         profiles = available_profiles()
         if not profiles:
             print("No OraTAPI profiles found.")
@@ -230,7 +231,11 @@ class ProfileManager:
             print(f"{marker} {profile_name}")
 
     def show_active_profile(self) -> None:
-        profile_name = active_profile_name()
+        profile_name = configured_active_profile_name()
+        if not profile_name:
+            raise FileNotFoundError(
+                "No active profile is configured. Run quick_config, or use profile_mgr -a <profile>."
+            )
         print(f"Active profile: {profile_name}")
         print(f"Profile directory: {self._profile_path(profile_name)}")
 
@@ -245,14 +250,20 @@ class ProfileManager:
         if target_path.exists():
             raise FileExistsError(f"Profile '{profile_name}' already exists.")
 
+        current_profile = configured_active_profile_name()
+        if not current_profile:
+            raise FileNotFoundError(
+                "No active profile is configured. Run quick_config first, or activate an existing profile with profile_mgr -a <profile>."
+            )
+
         source_path = active_profile_home()
         if not source_path.exists():
             raise FileNotFoundError(
-                f"Active profile '{active_profile_name()}' does not exist. Run quick_config first."
+                f"Active profile '{current_profile}' does not exist. Run quick_config first."
             )
 
         shutil.copytree(source_path, target_path)
-        print(f"Created profile '{profile_name}' from active profile '{active_profile_name()}'.")
+        print(f"Created profile '{profile_name}' from active profile '{current_profile}'.")
 
     def copy_profile(self, source_profile: str, target_profile: str) -> None:
         source_profile = self._ensure_profile_exists(source_profile).name
@@ -267,7 +278,8 @@ class ProfileManager:
 
     def delete_profile(self, profile_name: str) -> None:
         profile_name = self._validate_profile_name(profile_name)
-        if profile_name == active_profile_name():
+        current_profile = configured_active_profile_name()
+        if current_profile and profile_name == current_profile:
             raise ValueError("Cannot delete the active profile.")
 
         profile_path = self._profile_path(profile_name)

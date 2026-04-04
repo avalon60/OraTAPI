@@ -170,7 +170,7 @@ The runtime home created by `quick_config` looks similar to this:
 
 The packaged defaults remain in the installation, but OraTAPI reads and writes user-owned runtime files from `~/OraTAPI`. The active profile is determined by the plain-text file `~/OraTAPI/active_config`, whose content is simply the selected profile name. The active `OraTAPI.ini`, CSV files, and instantiated `.tpt` templates therefore live under `~/OraTAPI/configs/<active-profile>/resources`, not in the installation directory.
 
-If `~/OraTAPI/active_config` does not yet exist, OraTAPI defaults to a profile named `default`.
+If `~/OraTAPI/active_config` does not yet exist, OraTAPI stops with setup guidance. If no profiles exist yet, it tells you to run `quick_config`. If profile directories already exist, it tells you to activate one with `profile_mgr`.
 
 The profile model allows you to maintain multiple named OraTAPI configurations side by side. For example, you might keep one profile for basic generation, one for Liquibase-enabled output, and one for logger-based templates. Profiles can also be used to support different project requirements, where each project needs its own configuration, template customisations, and control-file settings. Switching profiles updates only `~/OraTAPI/active_config`; it does not copy files or rely on symbolic links.
 
@@ -751,11 +751,19 @@ Here we cover the various sections and properties.
 
 - **ora_tapi_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `ora_tapi_csv_dir = resources/config`
-  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. Relative paths are resolved with precedence of project override, then `~/OraTAPI`, then packaged defaults. This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain_lc%) to be configured.
+  - **Purpose**: Used to control which files should be generated based on the CSV configuration file. OraTAPI resolves this setting as follows:
+    1. If you supply an absolute path, OraTAPI uses that exact location.
+    2. If you supply a relative path such as `resources/config`, OraTAPI resolves it under the active profile home, for example `~/OraTAPI/configs/<active-profile>/resources/config`.
+    3. Packaged defaults are not used as a live fallback during generation. They are the source files that `quick_config` copies into `~/OraTAPI/configs/<active-profile>/resources/...` when a profile is bootstrapped.
+    This allows fine grain control of which files should be generated and written/overwritten. New file entries are automatically added when tables are processed and no corresponding entry is found. In addition this also allows table domains (%table_domain_lc%) to be configured.
 
 - **pi_columns_csv_dir**: Defines the directory for the OraTAPI CSV file.
   - Example: `pi_columns_csv_dir = resources/config`
-  - **Purpose**: Used to control which columns should be omitted from parameter logging when the `llogger` templates are active. Relative paths are resolved with precedence of project override, then `~/OraTAPI`, then packaged defaults. This is provided to avoid PI (personal information) columns being logged.
+  - **Purpose**: Used to control which columns should be omitted from parameter logging when the `llogger` templates are active. OraTAPI resolves this setting as follows:
+    1. If you supply an absolute path, OraTAPI uses that exact location.
+    2. If you supply a relative path such as `resources/config`, OraTAPI resolves it under the active profile home, for example `~/OraTAPI/configs/<active-profile>/resources/config`.
+    3. Packaged defaults are not used as a live fallback during generation. They are copied into the active profile when you run `quick_config`.
+    This is provided to avoid PI (personal information) columns being logged.
 ---
 
 #### [api_controls]

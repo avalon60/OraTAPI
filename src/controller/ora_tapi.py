@@ -10,7 +10,16 @@ from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_mgr import ConfigManager, load_config
 from lib.session_manager import DBSession
-from lib.fsutils import active_profile_home, active_profile_name, missing_runtime_paths, resolve_default_path, resolve_path, runtime_home
+from lib.fsutils import (
+    active_profile_home,
+    active_profile_name,
+    available_profiles,
+    configured_active_profile_name,
+    missing_runtime_paths,
+    resolve_default_path,
+    resolve_path,
+    runtime_home,
+)
 from lib.app_utils import current_timestamp, format_elapsed_time
 from lib.user_security import UserSecurity
 from view.interactions import Interactions, MsgLvl, MissingParameterError
@@ -39,8 +48,31 @@ def resolve_runtime_relative_path(path_name: Path) -> Path:
 
 
 def print_runtime_initialisation_message() -> None:
+    configured_profile = configured_active_profile_name()
+    if not configured_profile:
+        print("ERROR: No active OraTAPI profile is configured.")
+        profiles = available_profiles()
+        if profiles:
+            print("\nAvailable profiles:")
+            for profile_name in profiles:
+                print(f"  - {profile_name}")
+            print("\nPlease activate one of the existing profiles with:")
+            print("  Linux / macOS:")
+            print("    ./bin/profile_mgr.sh -a <profile-name>")
+            print("  Windows:")
+            print("    .\\bin\\profile_mgr.ps1 -a <profile-name>")
+        else:
+            print("\nNo OraTAPI profiles were found under ~/OraTAPI/configs.")
+            print("Please run one of the following commands to create and activate the built-in profiles:")
+            print("  Linux / macOS:")
+            print("    ./bin/quick_config.sh -t <template-category>")
+            print("  Windows:")
+            print("    .\\bin\\quick_config.ps1 -t <template-category>")
+            print("\nValid template categories: basic, liquibase, logger, llogger")
+        return
+
     missing_paths = missing_runtime_paths()
-    print(f"ERROR: OraTAPI runtime files have not been initialised for profile '{active_profile_name()}'.")
+    print(f"ERROR: OraTAPI runtime files have not been initialised for profile '{configured_profile}'.")
     print(f"Active profile directory: {active_profile_home()}")
     print("\nMissing runtime files include:")
     for missing_path in missing_paths[:8]:
@@ -102,7 +134,7 @@ def warn_on_default_profile_identity(view: Interactions, config_file_path: Path)
 class CodeManager:
     """PLSQL code generation manager class"""
     def __init__(self, trace: bool = False):
-        if missing_runtime_paths() and not help_requested():
+        if not help_requested() and (not configured_active_profile_name() or missing_runtime_paths()):
             print_runtime_initialisation_message()
             exit(1)
 

@@ -15,7 +15,6 @@ import shutil
 RUNTIME_HOME_DIRNAME = "OraTAPI"
 PACKAGE_RESOURCE_ANCHOR = "ora_tapi_package_data"
 _PACKAGE_HOME_STACK = ExitStack()
-DEFAULT_PROFILE_NAME = "default"
 CONFIGS_DIRNAME = "configs"
 ACTIVE_PROFILE_FILENAME = "active_config"
 RUNTIME_REQUIRED_RELATIVE_PATHS = [
@@ -70,13 +69,22 @@ def active_profile_pointer_file() -> Path:
     return runtime_home() / ACTIVE_PROFILE_FILENAME
 
 
-def active_profile_name() -> str:
+def configured_active_profile_name() -> str | None:
     pointer_file = active_profile_pointer_file()
     if not pointer_file.exists():
-        return DEFAULT_PROFILE_NAME
+        return None
 
     profile_name = pointer_file.read_text(encoding="utf-8").strip()
-    return profile_name or DEFAULT_PROFILE_NAME
+    return profile_name or None
+
+
+def active_profile_name() -> str:
+    profile_name = configured_active_profile_name()
+    if not profile_name:
+        raise FileNotFoundError(
+            "No active OraTAPI profile is configured. Run quick_config, or use profile_mgr to activate a profile."
+        )
+    return profile_name
 
 
 def profile_home(profile_name: str) -> Path:
@@ -215,6 +223,7 @@ if __name__ == "__main__":
     print(f"sanitised directory name: {sanitised_dir_name}")
     print(f'Runtime Home: {runtime_home()}')
     print(f'Configs Home: {runtime_configs_home()}')
-    print(f'Active Profile Name: {active_profile_name()}')
-    print(f'Active Profile Home: {active_profile_home()}')
+    print(f'Configured Active Profile Name: {configured_active_profile_name()}')
+    if configured_active_profile_name():
+        print(f'Active Profile Home: {active_profile_home()}')
     print(f'Package Home: {package_home()}')
