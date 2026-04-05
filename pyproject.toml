@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oratapi"
-version = "2.2.0"
+version = "2.3.0"
 license = "MIT"
 license-files = ["LICENSE", "ORACLE_INTERNAL_LICENSE.txt"]
 description = "Oracle Table API Generator Application"
