@@ -253,7 +253,7 @@ class CodeManager:
                                                                      config_key='tapi_pkg_name_prefix',
                                                                      default='')
 
-        self.tapi_pkg_name_postfix = self.config_manager.config_value(config_section='ut_controls',
+        self.tapi_pkg_name_postfix = self.config_manager.config_value(config_section='api_controls',
                                                                       config_key='tapi_pkg_name_postfix',
                                                                       default='_tapi')
 
@@ -261,7 +261,7 @@ class CodeManager:
                                                                    config_key='ut_pkg_name_prefix',
                                                                    default='')
 
-        self.ut_pkg_name_postfix = self.config_manager.config_value(config_section='api_controls',
+        self.ut_pkg_name_postfix = self.config_manager.config_value(config_section='ut_controls',
                                                                     config_key='ut_pkg_name_postfix',
                                                                     default='_tapi')
 
