@@ -218,7 +218,7 @@ def zip_directory(zip_source_dir: Path, zip_file_name, destination_dir: Path = N
 
 if __name__ == "__main__":
 
-    dir_name = '?[abc\/?'
+    dir_name = "?[abc/?"
     sanitised_dir_name = sanitise_dir_name(directory_name=dir_name)
     print(f"sanitised directory name: {sanitised_dir_name}")
     print(f'Runtime Home: {runtime_home()}')
