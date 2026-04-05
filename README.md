@@ -151,6 +151,8 @@ The runtime home created by `quick_config` looks similar to this:
 ├── active_config
 ├── configs
 │   ├── basic
+│   │   ├── created_version.md
+│   │   ├── purpose.md
 │   │   └── resources
 │   │       ├── config
 │   │       │   ├── OraTAPI.csv
@@ -173,6 +175,13 @@ The packaged defaults remain in the installation, but OraTAPI reads and writes u
 If `~/OraTAPI/active_config` does not yet exist, OraTAPI stops with setup guidance. If no profiles exist yet, it tells you to run `quick_config`. If profile directories already exist, it tells you to activate one with `profile_mgr`.
 
 The profile model allows you to maintain multiple named OraTAPI configurations side by side. For example, you might keep one profile for basic generation, one for Liquibase-enabled output, and one for logger-based templates. Profiles can also be used to support different project requirements, where each project needs its own configuration, template customisations, and control-file settings. Switching profiles updates only `~/OraTAPI/active_config`; it does not copy files or rely on symbolic links.
+
+Each profile may also contain two optional metadata files at the profile root:
+
+- `purpose.md`: A one-line description of the profile's intended purpose.
+- `created_version.md`: The OraTAPI version recorded when the profile was created, bootstrapped, or migrated.
+
+These values are shown by `profile_mgr --list` and `profile_mgr --show-active`. If either metadata file is missing, the value is reported as `Unknown`.
 
 ## Installation
 
@@ -343,7 +352,9 @@ $HOME/.OraTAPI.
 The synopsis for the `profile_mgr` command is:
 
 ```
-usage: profile_mgr.py [-h] (-l | -s | -c PROFILE | -C SOURCE TARGET | -d PROFILE | -a PROFILE | -e PROFILE ZIP_PATH | -i ZIP_PATH | -m OLD_INSTALL_DIR TARGET_PROFILE)
+usage: profile_mgr.py [-h]
+                      (-l | -s | -c PROFILE | -C SOURCE TARGET | -d PROFILE | -a PROFILE | -P PROFILE PURPOSE | -e PROFILE ZIP_PATH | -i ZIP_PATH | -m OLD_INSTALL_DIR TARGET_PROFILE)
+                      [-p PURPOSE_TEXT]
 
 Manage OraTAPI configuration profiles stored under ~/OraTAPI/configs.
 
@@ -359,14 +370,29 @@ options:
                         Delete a profile.
   -a PROFILE, --activate PROFILE
                         Activate a profile.
+  -P PROFILE PURPOSE, --set-purpose PROFILE PURPOSE
+                        Set or replace the one-line purpose text for a profile.
   -e PROFILE ZIP_PATH, --export PROFILE ZIP_PATH
                         Export a profile to a ZIP file.
   -i ZIP_PATH, --import-profile ZIP_PATH
                         Import a profile from a ZIP file.
   -m OLD_INSTALL_DIR TARGET_PROFILE, --migrate-old OLD_INSTALL_DIR TARGET_PROFILE
                         Migrate a legacy install tree into a named profile.
+  -p PURPOSE_TEXT, --purpose PURPOSE_TEXT
+                        Purpose text to store with a newly created, copied,
+                        imported, or migrated profile.
 ```
 You can use `profile_mgr` to back up, restore, or transport named profiles. Export and import work on one profile per ZIP archive. If the imported profile already exists, OraTAPI prompts before overwrite and then prompts again to decide whether to activate the imported profile.
+
+The `-p/--purpose` option can be used with `--create`, `--copy`, `--import-profile`, and `--migrate-old` to set a one-line profile description as part of the operation. Use `-P/--set-purpose` to add or replace the purpose text for an existing profile. Profile listings and `--show-active` also display the recorded creation version from `created_version.md`. If either metadata file is absent, the value is shown as `Unknown`.
+
+Example list output:
+```
+$ ./bin/profile_mgr.sh --list
+OraTAPI profiles:
+  basic (created with 2.0.1; purpose: Built-in profile for standard OraTAPI generation without Liquibase directives or logger calls.)
+* logger (created with Unknown; purpose: Unknown)
+```
 
 Example export:
 ```
@@ -376,7 +402,7 @@ Exported profile 'logger' to /tmp/logger-profile.zip
 
 Example import:
 ```
-$ ./bin/profile_mgr.sh --import-profile /tmp/logger-profile.zip
+$ ./bin/profile_mgr.sh --import-profile /tmp/logger-profile.zip --purpose "Client A reporting profile"
 Imported profile 'logger' from /tmp/logger-profile.zip
 Activate profile 'logger'? [y/N]:
 ```

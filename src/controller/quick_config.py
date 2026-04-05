@@ -16,8 +16,15 @@ from lib.fsutils import profile_home, resolve_default_path, runtime_home, write_
 from pathlib import Path
 from itertools import chain
 from lib.config_mgr import compare_config_files
+from lib.profile_manager import ProfileManager
 
 BUILTIN_PROFILES = ("basic", "liquibase", "logger", "llogger")
+BUILTIN_PROFILE_PURPOSES = {
+    "basic": "Built-in profile for standard OraTAPI generation without Liquibase directives or logger calls.",
+    "liquibase": "Built-in profile for OraTAPI generation with Liquibase directives.",
+    "logger": "Built-in profile for OraTAPI generation with logger-based diagnostics.",
+    "llogger": "Built-in profile for OraTAPI generation with Liquibase directives and logger-based diagnostics.",
+}
 PROG_NAME = Path(__file__).name
 
 
@@ -109,11 +116,17 @@ def copy_files(profile_name: str, template_category: str, force: bool, templates
 
 
 def bootstrap_builtin_profiles(selected_profile: str, force: bool, templates_only: bool = False) -> None:
+    profile_manager = ProfileManager(current_version=__version__)
     for profile_name in BUILTIN_PROFILES:
         copy_files(profile_name=profile_name,
                    template_category=profile_name,
                    force=force,
                    templates_only=templates_only)
+        profile_manager._write_profile_metadata(
+            profile_home(profile_name),
+            purpose_text=BUILTIN_PROFILE_PURPOSES.get(profile_name),
+            preserve_existing=True,
+        )
     write_active_profile(selected_profile)
     print(f"Active profile set to: {selected_profile}")
 

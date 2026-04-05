@@ -11,7 +11,6 @@ from posixpath import normpath
 from lib.config_mgr import compare_config_files
 from lib.fsutils import (
     active_profile_home,
-    active_profile_name,
     available_profiles,
     configured_active_profile_name,
     ensure_runtime_home,
@@ -23,14 +22,17 @@ from lib.fsutils import (
 
 
 class ProfileManager:
+    PURPOSE_FILENAME = "purpose.md"
+    CREATED_VERSION_FILENAME = "created_version.md"
     WINDOWS_RESERVED_PROFILE_NAMES = {
         "CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     }
 
-    def __init__(self):
+    def __init__(self, current_version: str | None = None):
         ensure_runtime_home()
+        self.current_version = current_version
 
     @classmethod
     def _validate_profile_name(cls, profile_name: str) -> str:
@@ -55,6 +57,75 @@ class ProfileManager:
     def _confirm_action(message: str) -> bool:
         response = input(f"{message} [y/N]: ").strip().lower()
         return response in {"y", "yes"}
+
+    @staticmethod
+    def _purpose_path(profile_path: Path) -> Path:
+        return profile_path / ProfileManager.PURPOSE_FILENAME
+
+    @staticmethod
+    def _created_version_path(profile_path: Path) -> Path:
+        return profile_path / ProfileManager.CREATED_VERSION_FILENAME
+
+    @staticmethod
+    def _normalise_purpose(purpose_text: str | None) -> str | None:
+        if purpose_text is None:
+            return None
+        purpose_text = re.sub(r"\s+", " ", purpose_text.strip())
+        return purpose_text or None
+
+    def _read_profile_metadata(self, profile_path: Path) -> tuple[str | None, str | None]:
+        purpose_path = self._purpose_path(profile_path)
+        created_version_path = self._created_version_path(profile_path)
+        purpose = purpose_path.read_text(encoding="utf-8").strip() if purpose_path.exists() else None
+        created_version = (
+            created_version_path.read_text(encoding="utf-8").strip() if created_version_path.exists() else None
+        )
+        return purpose or None, created_version or None
+
+    def _write_profile_metadata(
+        self,
+        profile_path: Path,
+        purpose_text: str | None = None,
+        created_version: str | None = None,
+        preserve_existing: bool = False,
+    ) -> None:
+        purpose_path = self._purpose_path(profile_path)
+        created_version_path = self._created_version_path(profile_path)
+        normalised_purpose = self._normalise_purpose(purpose_text)
+
+        if normalised_purpose is not None:
+            purpose_path.write_text(normalised_purpose + "\n", encoding="utf-8")
+        elif not preserve_existing and purpose_path.exists():
+            purpose_path.unlink()
+
+        version_to_write = created_version if created_version is not None else self.current_version
+        if version_to_write and (not preserve_existing or not created_version_path.exists()):
+            created_version_path.write_text(version_to_write.strip() + "\n", encoding="utf-8")
+
+    def _describe_profile_line(self, profile_name: str, current_profile: str | None) -> str:
+        profile_path = self._profile_path(profile_name)
+        purpose, created_version = self._read_profile_metadata(profile_path)
+        marker = "*" if profile_name == current_profile else " "
+        details = [
+            f"created with {created_version or 'Unknown'}",
+            f"purpose: {purpose or 'Unknown'}",
+        ]
+        suffix = f" ({'; '.join(details)})"
+        return f"{marker} {profile_name}{suffix}"
+
+    def ensure_profile_metadata(
+        self,
+        profile_name: str,
+        purpose_text: str | None = None,
+        created_version: str | None = None,
+        preserve_existing: bool = True,
+    ) -> None:
+        self._write_profile_metadata(
+            self._profile_path(profile_name),
+            purpose_text=purpose_text,
+            created_version=created_version,
+            preserve_existing=preserve_existing,
+        )
 
     def _ensure_profile_exists(self, profile_name: str) -> Path:
         profile_name = self._validate_profile_name(profile_name)
@@ -126,7 +197,7 @@ class ProfileManager:
 
         print(f"Exported profile '{profile_name}' to {export_path}")
 
-    def import_profile(self, import_path: Path) -> None:
+    def import_profile(self, import_path: Path, purpose_text: str | None = None) -> None:
         import_path = Path(import_path).expanduser()
         profile_name = self._archive_profile_name(import_path)
         target_path = self._prepare_target_profile(profile_name)
@@ -142,6 +213,17 @@ class ProfileManager:
                 with zip_file.open(member, "r") as source_file, destination_path.open("wb") as target_file:
                     shutil.copyfileobj(source_file, target_file)
 
+        if purpose_text is not None:
+            _, existing_version = self._read_profile_metadata(target_path)
+            self._write_profile_metadata(
+                target_path,
+                purpose_text=purpose_text,
+                created_version=existing_version,
+                preserve_existing=True,
+            )
+        else:
+            self._write_profile_metadata(target_path, preserve_existing=True)
+
         print(f"Imported profile '{profile_name}' from {import_path}")
         config_sample = resolve_default_path(Path("resources") / "config" / "samples" / "OraTAPI.ini.sample")
         config_target = target_path / "resources" / "config" / "OraTAPI.ini"
@@ -149,7 +231,7 @@ class ProfileManager:
             compare_config_files(config_sample_file=config_sample, config_file_path=config_target)
         self._prompt_activate_profile(profile_name)
 
-    def migrate_old_install(self, old_install_dir: Path, target_profile: str) -> None:
+    def migrate_old_install(self, old_install_dir: Path, target_profile: str, purpose_text: str | None = None) -> None:
         old_install_dir = Path(old_install_dir).expanduser()
         if not old_install_dir.exists():
             raise FileNotFoundError(f"Old install directory '{old_install_dir}' does not exist.")
@@ -215,6 +297,8 @@ class ProfileManager:
                     print(f"Migrated: {tpt_file.relative_to(old_install_dir)} -> {target_file.relative_to(target_path)}")
 
         print(f"Total files migrated: {files_migrated}")
+        default_purpose = f"Migrated from legacy install {old_install_dir.name}."
+        self._write_profile_metadata(target_path, purpose_text=purpose_text or default_purpose)
         compare_config_files(config_sample_file=config_sample, config_file_path=config_target)
         self._prompt_activate_profile(target_profile)
 
@@ -227,8 +311,7 @@ class ProfileManager:
 
         print("OraTAPI profiles:")
         for profile_name in profiles:
-            marker = "*" if profile_name == current_profile else " "
-            print(f"{marker} {profile_name}")
+            print(self._describe_profile_line(profile_name, current_profile))
 
     def show_active_profile(self) -> None:
         profile_name = configured_active_profile_name()
@@ -238,13 +321,16 @@ class ProfileManager:
             )
         print(f"Active profile: {profile_name}")
         print(f"Profile directory: {self._profile_path(profile_name)}")
+        purpose, created_version = self._read_profile_metadata(self._profile_path(profile_name))
+        print(f"Created with OraTAPI version: {created_version or 'Unknown'}")
+        print(f"Purpose: {purpose or 'Unknown'}")
 
     def activate_profile(self, profile_name: str) -> None:
         profile_name = self._ensure_profile_exists(profile_name).name
         write_active_profile(profile_name)
         print(f"Activated profile: {profile_name}")
 
-    def create_profile(self, profile_name: str) -> None:
+    def create_profile(self, profile_name: str, purpose_text: str | None = None) -> None:
         profile_name = self._validate_profile_name(profile_name)
         target_path = self._profile_path(profile_name)
         if target_path.exists():
@@ -263,9 +349,11 @@ class ProfileManager:
             )
 
         shutil.copytree(source_path, target_path)
+        source_purpose, _ = self._read_profile_metadata(source_path)
+        self._write_profile_metadata(target_path, purpose_text=purpose_text if purpose_text is not None else source_purpose)
         print(f"Created profile '{profile_name}' from active profile '{current_profile}'.")
 
-    def copy_profile(self, source_profile: str, target_profile: str) -> None:
+    def copy_profile(self, source_profile: str, target_profile: str, purpose_text: str | None = None) -> None:
         source_profile = self._ensure_profile_exists(source_profile).name
         target_profile = self._validate_profile_name(target_profile)
         source_path = self._profile_path(source_profile)
@@ -274,7 +362,27 @@ class ProfileManager:
             raise FileExistsError(f"Profile '{target_profile}' already exists.")
 
         shutil.copytree(source_path, target_path)
+        source_purpose, _ = self._read_profile_metadata(source_path)
+        self._write_profile_metadata(target_path, purpose_text=purpose_text if purpose_text is not None else source_purpose)
         print(f"Copied profile '{source_profile}' to '{target_profile}'.")
+
+    def set_profile_purpose(self, profile_name: str, purpose_text: str | None) -> None:
+        profile_path = self._ensure_profile_exists(profile_name)
+        created_version = self._read_profile_metadata(profile_path)[1]
+        normalised_purpose = self._normalise_purpose(purpose_text)
+        if normalised_purpose:
+            self._write_profile_metadata(
+                profile_path,
+                purpose_text=normalised_purpose,
+                created_version=created_version,
+                preserve_existing=True,
+            )
+            print(f"Updated purpose for profile '{profile_path.name}'.")
+        else:
+            purpose_path = self._purpose_path(profile_path)
+            if purpose_path.exists():
+                purpose_path.unlink()
+            print(f"Cleared purpose for profile '{profile_path.name}'.")
 
     def delete_profile(self, profile_name: str) -> None:
         profile_name = self._validate_profile_name(profile_name)
