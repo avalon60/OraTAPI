@@ -102,16 +102,11 @@ class ProfileManager:
         if version_to_write and (not preserve_existing or not created_version_path.exists()):
             created_version_path.write_text(version_to_write.strip() + "\n", encoding="utf-8")
 
-    def _describe_profile_line(self, profile_name: str, current_profile: str | None) -> str:
+    def _profile_display_row(self, profile_name: str, current_profile: str | None) -> tuple[str, str, str, str]:
         profile_path = self._profile_path(profile_name)
         purpose, created_version = self._read_profile_metadata(profile_path)
         marker = "*" if profile_name == current_profile else " "
-        details = [
-            f"created with {created_version or 'Unknown'}",
-            f"purpose: {purpose or 'Unknown'}",
-        ]
-        suffix = f" ({'; '.join(details)})"
-        return f"{marker} {profile_name}{suffix}"
+        return marker, profile_name, created_version or "Unknown", purpose or "Unknown"
 
     def ensure_profile_metadata(
         self,
@@ -310,8 +305,32 @@ class ProfileManager:
             return
 
         print("OraTAPI profiles:")
-        for profile_name in profiles:
-            print(self._describe_profile_line(profile_name, current_profile))
+        rows = [self._profile_display_row(profile_name, current_profile) for profile_name in profiles]
+        active_width = max(len("Active"), max(len(row[0]) for row in rows))
+        profile_width = max(len("Profile"), max(len(row[1]) for row in rows))
+        version_width = max(len("Created With"), max(len(row[2]) for row in rows))
+
+        header = (
+            f"{'Active':<{active_width}}  "
+            f"{'Profile':<{profile_width}}  "
+            f"{'Created With':<{version_width}}  "
+            f"Purpose"
+        )
+        divider = (
+            f"{'-' * active_width}  "
+            f"{'-' * profile_width}  "
+            f"{'-' * version_width}  "
+            f"{'-' * len('Purpose')}"
+        )
+        print(header)
+        print(divider)
+        for active_marker, profile_name, created_version, purpose in rows:
+            print(
+                f"{active_marker:<{active_width}}  "
+                f"{profile_name:<{profile_width}}  "
+                f"{created_version:<{version_width}}  "
+                f"{purpose}"
+            )
 
     def show_active_profile(self) -> None:
         profile_name = configured_active_profile_name()
@@ -319,11 +338,32 @@ class ProfileManager:
             raise FileNotFoundError(
                 "No active profile is configured. Run quick_config, or use profile_mgr -a <profile>."
             )
-        print(f"Active profile: {profile_name}")
-        print(f"Profile directory: {self._profile_path(profile_name)}")
-        purpose, created_version = self._read_profile_metadata(self._profile_path(profile_name))
-        print(f"Created with OraTAPI version: {created_version or 'Unknown'}")
-        print(f"Purpose: {purpose or 'Unknown'}")
+        active_marker, _, created_version, purpose = self._profile_display_row(profile_name, profile_name)
+        profile_path = self._profile_path(profile_name)
+        active_width = len("Active")
+        profile_width = max(len("Profile"), len(profile_name))
+        version_width = max(len("Created With"), len(created_version))
+
+        print("Active profile:")
+        print(
+            f"{'Active':<{active_width}}  "
+            f"{'Profile':<{profile_width}}  "
+            f"{'Created With':<{version_width}}  "
+            f"Purpose"
+        )
+        print(
+            f"{'-' * active_width}  "
+            f"{'-' * profile_width}  "
+            f"{'-' * version_width}  "
+            f"{'-' * len('Purpose')}"
+        )
+        print(
+            f"{active_marker:<{active_width}}  "
+            f"{profile_name:<{profile_width}}  "
+            f"{created_version:<{version_width}}  "
+            f"{purpose}"
+        )
+        print(f"Profile directory: {profile_path}")
 
     def activate_profile(self, profile_name: str) -> None:
         profile_name = self._ensure_profile_exists(profile_name).name
