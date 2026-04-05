@@ -32,11 +32,18 @@ def get_latest_dist_url(repo_owner: str, repo_name: str) -> str:
 
     if response.status_code == 200:
         data = response.json()
-        version = data.get("tag_name")  # e.g., "v1.4.20"
+        tag_name = data.get("tag_name", "")  # e.g., "v1.4.20"
+        version = tag_name[1:] if tag_name.startswith("v") else tag_name
+        expected_asset_name = f"oratapi-{version}.tar.gz"
+
         for asset in data.get("assets", []):
-            if asset["name"].startswith("oratapi-") and asset["name"].endswith(".tar.gz"):
-                return asset["browser_download_url"]  # Return the download URL for the tarball
-        return f"Version: {version} (No .tar.gz file found)"
+            if asset.get("name") == expected_asset_name:
+                return asset["browser_download_url"]
+
+        return (
+            f"Version: {tag_name} (No matching tar.gz asset found. "
+            f"Expected asset name: {expected_asset_name})"
+        )
     else:
         return f"Failed to fetch latest release. HTTP Status: {response.status_code}"
 
