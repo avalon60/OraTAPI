@@ -172,9 +172,13 @@ class CodeManager:
         self.view.print_console(text=f'{PROG_NAME}: Run Id: {RUN_ID} started at: {exec_start_timestamp}',
                                 msg_level=MsgLvl.highlight)
         epoc_start_ts = int(time.time())
-        self.view.print_console(text=f'{PROG_NAME}: Command line parameters:-',
+        self.view.print_console(text=f'{PROG_NAME}: Key parameters:-',
                                 msg_level=MsgLvl.highlight)
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
+        self.view.print_console(
+            msg_level=MsgLvl.highlight,
+            text=f"{'active_profile':<40} = {active_profile_name()}"
+        )
         for key in sorted(options_dict.keys()):  # Sort the keys
             value = options_dict[key]
             if key == 'db_password':
