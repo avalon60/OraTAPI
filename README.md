@@ -117,13 +117,13 @@ from [here](https://github.com/avalon60/OraTAPI/tree/develop?tab=readme-ov-file#
 ## Preinstallation
 ### Preparing the Environment
 
-In order to make OraTAPI installable, you need Python 3.10 or 3.11.  
+In order to make OraTAPI installable, you need Python 3.10, 3.11, 3.12, or 3.13.  
 On macOS, you can install Python using:  
 
-`brew install python@3.11` # Install Python 3.11 - safer choice.
+`brew install python@3.11` # Install Python 3.11 - safe choice.
 
 On Windows, ensure that you obtain Python from: https://www.python.org/downloads/windows/
-you should preferably download Python 3.11. 
+you should preferably download Python 3.11, 3.12, or 3.13. 
 
 ### Development Environment
 
@@ -229,7 +229,7 @@ These values are shown by `profile_mgr --list` and `profile_mgr --show-active`. 
 
 ## Installation
 
-The preferred installation model is now wheel-first. Install OraTAPI into a Python 3.10 or 3.11 virtual environment and run the installed console scripts from that environment.
+The preferred installation model is now wheel-first. Install OraTAPI into a Python 3.10, 3.11, 3.12, or 3.13 virtual environment and run the installed console scripts from that environment.
 
 ### Preferred: install from wheel
 

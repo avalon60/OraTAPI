@@ -9,7 +9,7 @@ description = "Oracle Table API Generator Application"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Clive Bostock" }]
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.14"
 keywords = [
     "python",
     "oracle",
@@ -55,11 +55,17 @@ dependencies = [
 
 [project.scripts]
 conn_mgr = "oratapi.controller.conn_mgr:main"
+"conn-mgr" = "oratapi.controller.conn_mgr:main"
 migrate_config = "oratapi.controller.migrate_config:main"
+"migrate-config" = "oratapi.controller.migrate_config:main"
 ora_tapi = "oratapi.controller.ora_tapi:main"
+"ora-tapi" = "oratapi.controller.ora_tapi:main"
 profile_mgr = "oratapi.controller.profile_mgr:main"
+"profile-mgr" = "oratapi.controller.profile_mgr:main"
 quick_config = "oratapi.controller.quick_config:main"
+"quick-config" = "oratapi.controller.quick_config:main"
 update_ora_tapi = "oratapi.controller.update_ora_tapi:main"
+"update-ora-tapi" = "oratapi.controller.update_ora_tapi:main"
 
 [project.urls]
 Repository = "https://github.com/avalon60/OraTAPI"

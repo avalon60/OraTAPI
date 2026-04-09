@@ -27,3 +27,6 @@ venv/
 .venv/
 
 memory-bank.zip
+gen_asv.bat
+gen_asv.sh
+.python-version
