@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oratapi"
 version = "2.4.1"
+requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE", "ORACLE_INTERNAL_LICENSE.txt"]
 description = "Oracle Table API Generator Application"
@@ -66,6 +67,15 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.poetry]
+packages = [
+    { include = "controller", from = "src" },
+    { include = "lib", from = "src" },
+    { include = "model", from = "src" },
+    { include = "ora_tapi_package_data", from = "src" },
+    { include = "view", from = "src" }
+]
 
 [project.urls]
 "Repository" = "https://github.com/avalon60/OraTAPI"

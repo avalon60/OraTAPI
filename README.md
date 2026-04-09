@@ -95,10 +95,16 @@ OraTAPI is a versatile tool that offers the following configurable options:
 - **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be securely stored and used transparently.  
 
 ### Limitations
-Connection via LDAP or Wallets is only supported via thick client. To configure thick client, either:
+LDAP-based connections require thick mode.
 
-- Place the basic [Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client/downloads.html) in an oracle_client folder, directly below the root OraTAPI directory.
-- Set and export the ORACLE_IC_HOME shell variable, to point to the Instant Client location.
+Wallet-based connections can work in thin mode, but if the target database requires Oracle Native Network Encryption
+or checksumming, you must use thick mode with Oracle Instant Client.
+
+To configure thick mode, OraTAPI can use any of the following:
+
+- Pass `--oracle-client-dir <instant-client-dir>` to `ora_tapi` for the current run.
+- Set and export the `ORACLE_IC_HOME` shell variable to point to the Instant Client location.
+- Place the basic [Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client/downloads.html) in an `oracle_client` folder under the active profile directory, for example `~/OraTAPI/configs/<active-profile>/oracle_client`.
 ---
 
 ### Documentation
@@ -110,7 +116,7 @@ from [here](https://github.com/avalon60/OraTAPI/tree/develop?tab=readme-ov-file#
 ## Preinstallation
 ### Preparing the Environment
 
-In order to make OraTAPI installable, you need to ensure that you have Python 3.10 or 3.11 installed.  
+In order to make OraTAPI installable, you need Python 3.9 or later. Python 3.11 or 3.12 is recommended.  
 On macOS, you can install Python using:  
 
 `brew install python3` # Install the latest version
@@ -118,7 +124,7 @@ On macOS, you can install Python using:
 `brew install python@3.11` # Install Python 3.11 - safer choice.
 
 On Windows, ensure that you obtain Python from: https://www.python.org/downloads/windows/
-you should preferably download Python 3.11. 
+you should preferably download Python 3.11 or 3.12. 
 
 ### Familiarisation with the Layout
 
@@ -223,6 +229,31 @@ These values are shown by `profile_mgr --list` and `profile_mgr --show-active`. 
    ```
     The Windows command must be run from a Windows PowerShell terminal.  
 
+### Development Checkout
+
+If you cloned the Git repository and want a local development environment instead of installing from a release archive:
+
+1. Clone the repository and open it in your editor or IDE.
+2. Create the in-project virtual environment with Poetry:
+
+   ```powershell
+   poetry config virtualenvs.in-project true --local
+   poetry install
+   ```
+
+   This creates `.venv` in the project root.
+
+   Do not run `poetry install --with dev` for this repository. There is currently no `dev` dependency group.
+
+3. In PyCharm, set the interpreter to:
+
+   ```text
+   <repo>\.venv\Scripts\python.exe
+   ```
+
+If PyCharm still shows stale package information after `poetry install` has completed, recreate the interpreter entry
+or invalidate the IDE caches. The command-line environment created by Poetry is the source of truth.
+
 ## Post Installation
 The next step is to initialise the runtime home at `~/OraTAPI`. OraTAPI will not generate code until the runtime config and templates have been instantiated. The `quick_config` tool bootstraps the built-in profiles under `~/OraTAPI/configs`, copies the packaged defaults into each profile's `resources` directory, and points `~/OraTAPI/active_config` at the selected built-in profile. Several options are available:
 
@@ -314,6 +345,42 @@ to that originally chosen, assuming that you don't wish to reset your bespoke co
 
 Finally, ensure that you have access to an Oracle database and configure your `TNS` entries or connection settings. 
 You should test your connection to the database, via SQLcl or SQL Developer, before attempting with OraTAPI.
+
+### Using Oracle Instant Client
+
+If you need to work with the database via encrypted Oracle Net connections, for example when the target environment
+requires Oracle Native Network Encryption, checksumming, LDAP-based resolution, or a wallet-backed connection that
+depends on thick mode, then you will need to install Oracle Instant Client.
+
+Download the Basic Oracle Instant Client package for your operating system from:
+
+`https://www.oracle.com/database/technologies/instant-client/downloads.html`
+
+After downloading, extract the archive to a directory on your machine. OraTAPI can then use that Instant Client in
+any of the following ways, listed in precedence order:
+
+1. For the current run only, pass:
+
+   ```bash
+   bin/ora_tapi.sh --oracle-client-dir /path/to/instantclient_23_8 -c dev_db
+   ```
+
+   Windows PowerShell:
+
+   ```powershell
+   .\bin\ora_tapi.ps1 --oracle-client-dir C:\Oracle\instantclient_23_8 -c dev_db
+   ```
+
+2. For all profiles on the current machine, set the `ORACLE_IC_HOME` environment variable to the Instant Client
+   directory.
+
+3. For one OraTAPI profile only, place the Instant Client under:
+
+   ```text
+   ~/OraTAPI/configs/<active-profile>/oracle_client
+   ```
+
+OraTAPI attempts to use the sources above in that order. If none is configured, it falls back to thin mode.
 
 
 NOTES:   
@@ -541,10 +608,12 @@ cd <OraTAPI-home>
 ./bin/ora_tapi.sh -h
 
 usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN]
-                   [-g STAGING_DIR] [-G UT_STAGING_DIR] [-u DB_USERNAME]
-                   [-p DB_PASSWORD] [-To TABLE_OWNER] [-po PACKAGE_OWNER]
-                   [-to TRIGGER_OWNER] [-vo VIEW_OWNER] [-t TABLE_NAMES]
-                   [-T API_TYPES] [-U UT_API_TYPES]
+                   [--oracle-client-dir ORACLE_CLIENT_DIR] [-g STAGING_DIR]
+                   [-G UT_STAGING_DIR] [-u DB_USERNAME] [-p DB_PASSWORD]
+                   [-To TABLE_OWNER] [-po PACKAGE_OWNER] [-to TRIGGER_OWNER]
+                   [-vo VIEW_OWNER] [-t TABLE_NAMES [TABLE_NAMES ...]]
+                   [-T API_TYPES [API_TYPES ...]]
+                   [-U UT_API_TYPES [UT_API_TYPES ...]]
 
 Oracle Table API Generator
 
@@ -559,12 +628,15 @@ options:
                         Database connection name (created via OraTAPI
                         connection manager).
   -d DSN, --dsn DSN     Database data source name (TNS name).
+  --oracle-client-dir ORACLE_CLIENT_DIR
+                        Path to an Oracle Instant Client directory to use for
+                        this run.
   -g STAGING_DIR, --staging_dir STAGING_DIR
                         Directory for staging area. Default:
-                        /home/clive/OraTAPI/staging
+                        /home/clive/OraTAPI/<configured-staging-dir>
   -G UT_STAGING_DIR, --ut_staging_dir UT_STAGING_DIR
                         Directory for unit tests staging area. Default:
-                        /home/clive/OraTAPI/ut_staging
+                        /home/clive/OraTAPI/<configured-ut-staging-dir>
   -u DB_USERNAME, --db_username DB_USERNAME
                         Database connection username.
   -p DB_PASSWORD, --db_password DB_PASSWORD
@@ -581,17 +653,15 @@ options:
   -vo VIEW_OWNER, --view_owner VIEW_OWNER
                         The schema in which to place the generated views.
                         Default: aut
-  -t TABLE_NAMES, --table_names TABLE_NAMES
-                        Comma separated list of table names. Default: all
-  -T API_TYPES, --api_types API_TYPES
-                        Comma-separated list of API types. Valid options:
-                        insert, select, update, upsert, delete, merge.
-                        (Default setting: insert, select, update, delete)
-  -U UT_API_TYPES, --ut_api_types UT_API_TYPES
-                        Comma-separated list of unit test API types. Valid
-                        options: insert, select, update, upsert, delete,
-                        merge. (Default setting: insert, select, update,
-                        delete)
+  -t TABLE_NAMES [TABLE_NAMES ...], --table_names TABLE_NAMES [TABLE_NAMES ...]
+                        A space separated list of table names. Default: all
+  -T API_TYPES [API_TYPES ...], --api_types API_TYPES [API_TYPES ...]
+                        Space-separated list of API types. Valid options:
+                        insert, select, update, upsert, delete or merge.
+  -U UT_API_TYPES [UT_API_TYPES ...], --ut_api_types UT_API_TYPES [UT_API_TYPES ...]
+                        Space-separated list of unit test API types. Valid
+                        options: insert, select, update, upsert, delete or
+                        merge.
 
 The majority of defaults can be changed via the OraTAPI.ini file.
 ```
@@ -610,16 +680,23 @@ The examples also assume that you have navigated to the installation directory o
 
 #### Basic Example
 ```bash
-bin/ora_tapi.sh --table_owner HR --table_names employees,departments --conn_name dev_db --tapi_author cbostock
+bin/ora_tapi.sh --table_owner HR --table_names employees departments --conn_name dev_db --tapi_author cbostock
 ```
 Using the terse flags, this is equivalent to:
 ```bash
-bin/ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock
+bin/ora_tapi.sh -To HR -t employees departments -c dev_db -a cbostock
 ```
+If you need to force thick mode for a specific run, for example when a target environment requires Oracle Native
+Network Encryption or checksumming, add `--oracle-client-dir`:
+
+```bash
+bin/ora_tapi.sh --oracle-client-dir /opt/oracle/instantclient_23_8 -To HR -t employees departments -c dev_db
+```
+
 #### More Advanced Example
 Here we want to override the default target schemas for the packages, views, and triggers:
 ```bash
-bin/ora_tapi.sh -To HR -t employees,departments -c dev_db -a cbostock -po logic -to core -vo logic
+bin/ora_tapi.sh -To HR -t employees departments -c dev_db -a cbostock -po logic -to core -vo logic
 ```
 
 Based on this last example, the DDL statements in the generated scripts will place the packages and views in the logic 
@@ -641,7 +718,7 @@ If we don't want to use a named connection, the alternative is to specify:
 
 Taking the basic example, we can modify this to:
 ```bash
-ora_tapi.sh -To HR -t employees,departments -a cbostock -u cbostock -p <my_password> -d dev-db
+ora_tapi.sh -To HR -t employees departments -a cbostock -u cbostock -p <my_password> -d dev-db
 ```
 In this example, we assume that the dev-db is a TNS Names entry.  
 
@@ -654,6 +731,7 @@ In this example, we assume that the dev-db is a TNS Names entry.
 | `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
 | `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
 | `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
+| `--oracle-client-dir`      | Oracle Instant Client directory to use for the current run.                                |                          |
 | `-g`, `--staging_dir` | Directory for the staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/staging` |
 | `-G`, `--ut_staging_dir` | Directory for the Unit Test staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/ut_staging` |
 | `-p`, `--db_password`      | Database password.                                                                         |                          |
@@ -1322,6 +1400,9 @@ This allows you to:
 - List existing connections with decrypted credentials
 
 The Add and Update options cause the `conn_mgr` to enter an interactive dialog mode.
+
+When creating or editing a saved connection, you may optionally provide a wallet ZIP path. OraTAPI extracts the
+wallet to a temporary directory at runtime and uses the aliases from that wallet's `tnsnames.ora`.
 
 Synopsis:
 

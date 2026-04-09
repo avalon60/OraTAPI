@@ -9,7 +9,7 @@ import time
 from model.tapi_generator import ApiGenerator, inject_values
 from model.utplsql_generator import UtPLSQLGenerator
 from lib.config_mgr import ConfigManager, load_config
-from lib.session_manager import DBSession
+from lib.session_manager import DBSession, try_init_thick_mode
 from lib.fsutils import (
     active_profile_home,
     active_profile_name,
@@ -208,6 +208,7 @@ class CodeManager:
         self.table_owner_lc = self.table_owner.lower()
         self.table_names = options_dict['table_names']
         self.conn_name = options_dict['conn_name']
+        self.oracle_client_dir = options_dict.get('oracle_client_dir')
         self.staging_dir = Path(options_dict['staging_dir'])
         self.ut_staging_dir = Path(options_dict['ut_staging_dir'])
 
@@ -343,6 +344,22 @@ class CodeManager:
             wallet_zip_path = user_security.connection_property(connection_name=self.conn_name,
                                                                 property_key="wallet_zip_path",
                                                                 default_value="")
+
+        oracle_client_dir = None
+        if self.oracle_client_dir:
+            oracle_client_dir = Path(self.oracle_client_dir).expanduser().resolve()
+
+        try_init_thick_mode(verbose=True, lib_dir=oracle_client_dir)
+        self.view.print_console(msg_level=MsgLvl.info, text=DBSession.get_client_mode_info())
+        if wallet_zip_path and DBSession.is_thick_mode() is False:
+            self.view.print_console(
+                msg_level=MsgLvl.warning,
+                text=(
+                    "Wallet connection is running in thin mode. If the target database requires Oracle Native "
+                    "Network Encryption or checksumming, configure an Oracle Instant Client via ORACLE_IC_HOME "
+                    "or place it under the active profile as 'oracle_client'."
+                ),
+            )
 
         # Database session setup
         try:

@@ -113,6 +113,9 @@ class Interactions:
 
         parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name).")
 
+        parser.add_argument('--oracle-client-dir', type=Path,
+                            help="Path to an Oracle Instant Client directory to use for this run.")
+
         help_text = f"Directory for staging area. Default: {proj_home}/{default_staging_dir}"
         parser.add_argument('-g', '--staging_dir', type=Path, default=default_staging_dir,
                             help=help_text)

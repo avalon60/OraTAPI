@@ -53,6 +53,7 @@ class DBSession(oracledb.Connection):
             if wallet_path:
                 wallet_dir = self.extract_wallet(wallet_path)
                 os.environ["TNS_ADMIN"] = str(wallet_dir)
+                kwargs["config_dir"] = str(wallet_dir)
                 # for item in wallet_dir.iterdir():
                 #    print(item)
 
@@ -61,12 +62,13 @@ class DBSession(oracledb.Connection):
 
                 if oracledb.is_thin_mode():
                     oracledb.defaults.thick_mode_dsn_passthrough = False
-                    params = oracledb.ConnectParams()
+                    params = oracledb.ConnectParams(
+                        config_dir=str(wallet_dir),
+                        wallet_location=str(wallet_dir),
+                    )
                     params.parse_connect_string(self.dsn_string)
-                    params.set(wallet_location=str(wallet_dir))
                     kwargs["params"] = params
-                else:
-                    kwargs["config_dir"] = str(wallet_dir)
+                    kwargs.pop("dsn", None)
             else:
                 tns_admin = os.environ.get("TNS_ADMIN")
                 if tns_admin:
