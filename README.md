@@ -12,6 +12,7 @@ Version 2.4.1
     - [Documentation](#documentation)
   - [Preinstallation](#preinstallation)
     - [Preparing the Environment](#preparing-the-environment)
+    - [Development Environment](#development-environment)
     - [Familiarisation with the Layout](#familiarisation-with-the-layout)
   - [Installation](#installation)
   - [Post Installation](#post-installation)
@@ -116,40 +117,77 @@ from [here](https://github.com/avalon60/OraTAPI/tree/develop?tab=readme-ov-file#
 ## Preinstallation
 ### Preparing the Environment
 
-In order to make OraTAPI installable, you need Python 3.9 or later. Python 3.11 or 3.12 is recommended.  
+In order to make OraTAPI installable, you need Python 3.10 or 3.11.  
 On macOS, you can install Python using:  
-
-`brew install python3` # Install the latest version
 
 `brew install python@3.11` # Install Python 3.11 - safer choice.
 
 On Windows, ensure that you obtain Python from: https://www.python.org/downloads/windows/
-you should preferably download Python 3.11 or 3.12. 
+you should preferably download Python 3.11. 
+
+### Development Environment
+
+OraTAPI uses two different workflows:
+
+- Development uses Poetry for dependency management, virtual environment management, and lock-file maintenance.
+- Deployment is now wheel-first. The packaged `.tar.gz` together with `setup.sh` or `setup.ps1` remains available only for the legacy extracted-install model.
+
+If you are contributing to OraTAPI or running it directly from a working copy, use Poetry:
+
+```bash
+poetry config virtualenvs.in-project true --local
+poetry install --with dev --sync
+```
+
+This creates a project-local `.venv` by default. The shell wrappers under `bin/` now detect either `venv` or `.venv`, so working-copy execution remains straightforward:
+
+```bash
+./bin/ora_tapi.sh -h
+./bin/quick_config.sh -t basic
+```
+
+On Windows PowerShell:
+
+```powershell
+.\bin\ora_tapi.ps1 -h
+.\bin\quick_config.ps1 -t basic
+```
+
+For development maintenance tasks:
+
+```bash
+./utils/build-e.sh
+./utils/freeze.sh
+./utils/package.sh
+```
+
+These now map to Poetry operations:
+
+- `build-e` runs `poetry install --sync`
+- `freeze` exports `requirements.txt` from `poetry.lock`
+- `package.sh` exports `requirements.txt` and then builds the source distribution archive
+
+Poetry is required only on the development machine. It is not required on the target system when installing from a packaged release.
 
 ### Familiarisation with the Layout
 
 OraTAPI now uses two locations:
 
-- The installation directory, which contains the executables, Python modules, setup scripts, and packaged default resources.
+- The installed package location inside the Python environment. In the preferred wheel/PyPI model this is read-only and contains the Python modules, packaged default resources, and console-script entry points.
 - The runtime home, `~/OraTAPI`, which contains the user-instantiated configuration, CSV control files, templates, and default staging directories.
 
-The installation layout looks similar to what we see here:
+In the wheel-first model, you typically interact with OraTAPI through the installed console scripts:
 
+```text
+ora_tapi
+quick_config
+profile_mgr
+conn_mgr
+update_ora_tapi
 ```
-ora_tapi.1.1.19
-├── bin
-│   ├── conn_mgr.ps1
-│   ├── conn_mgr.sh
-│   ├── migrate_config.ps1
-│   ├── migrate_config.sh
-│   ├── ora_tapi.ps1
-│   ├── ora_tapi.sh
-│   ├── quick_config.ps1
-│   └── quick_config.sh
-├── setup.ps1
-└── setup.sh
 
-```
+If you are developing from a working copy, or using an extracted legacy install, the `bin/` wrappers remain available.
+
 The runtime home created by `quick_config` looks similar to this:
 
 ```
@@ -191,43 +229,50 @@ These values are shown by `profile_mgr --list` and `profile_mgr --show-active`. 
 
 ## Installation
 
-1. Download the oratapi-X.Y.Z.tar.gz artefact to a staging directory. You can obtain the artefacts from the [OraTAPI Releases](https://github.com/avalon60/OraTAPI/releases) page. Ensure not to download one of the two source code files.
+The preferred installation model is now wheel-first. Install OraTAPI into a Python 3.10 or 3.11 virtual environment and run the installed console scripts from that environment.
 
-2. Open a terminal window and extract the contents into a parent directory:
-      For macOS / Linux
-      ```bash
-      mkdir <path-to-parent-folder>
-      tar -xzvf <sdist_file>.tar.gz -C <path-to-parent-folder>
-      ```
+### Preferred: install from wheel
 
-      For Windows:
-      Open a **Windows PowerShell Terminal** and enter the command:
-      ```powershell
-      mkdir <path-to-parent-folder>
-      tar -xzvf <sdist_file>.tar.gz -C <path-to-parent-folder>
-      ```
-      The tar command should be supplied with Windows PowerShell.    
+1. Create and activate a virtual environment.
 
-      NOTE: The source distribution file contains an `oratapi-<x.y.z>` root folder. After extraction, your installation root will therefore be:
-      `<path-to-parent-folder>/oratapi-<x.y.z>`
-
-      Renaming the extracted `oratapi-<x.y.z>` directory is entirely a matter of choice. If you want to rename it,
-      it is best to do so before running `setup.sh` or `setup.ps1`. If you rename the installation directory later,
-      rerun the relevant setup command from the renamed directory.
-
-3. Complete the Installation:  
    macOS / Linux
    ```bash
-   cd <path-to-parent-folder>/oratapi-<x.y.z>
-   chmod 750 setup.sh
-   ./setup.sh
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
-   Windows PowerShell:
-   ```ps1
-   cd <path-to-parent-folder>\oratapi-<x.y.z>
-   .\setup.ps1
+
+   Windows PowerShell
+   ```powershell
+   py -3.11 -m venv .venv
+   .\.venv\Scripts\Activate.ps1
    ```
-    The Windows command must be run from a Windows PowerShell terminal.  
+
+2. Install OraTAPI from a built wheel or from PyPI when published.
+
+   From a local release artefact:
+   ```bash
+   pip install dist/oratapi-<x.y.z>-py3-none-any.whl
+   ```
+
+   From PyPI:
+   ```bash
+   pip install oratapi
+   ```
+
+3. Confirm the console scripts are available:
+
+   ```bash
+   ora_tapi --help
+   quick_config --help
+   profile_mgr --help
+   conn_mgr --help
+   ```
+
+Poetry is not required on the target system for wheel installation.
+
+### Legacy: extracted source distribution install
+
+The packaged `.tar.gz` source distribution and `setup.sh` / `setup.ps1` are still available for the legacy extracted-install model. That path remains supported for now, but it is no longer the preferred deployment method.
 
 ### Development Checkout
 
@@ -238,12 +283,10 @@ If you cloned the Git repository and want a local development environment instea
 
    ```powershell
    poetry config virtualenvs.in-project true --local
-   poetry install
+   poetry install --with dev --sync
    ```
 
    This creates `.venv` in the project root.
-
-   Do not run `poetry install --with dev` for this repository. There is currently no `dev` dependency group.
 
 3. In PyCharm, set the interpreter to:
 
@@ -266,27 +309,22 @@ The respective parameters passed need to be in lowercase (`basic`, `liquibase`, 
 
 If you opt for the `llogger` templates, you will need to install the [PL/SQL logging utility](https://github.com/OraOpenSource/Logger).  
 
-Here we are configuring for Liquibase.  
+Here we are configuring for Liquibase:
 
-   macOS / Linux
-   ```bash
-   cd <path-to-installation-folder>
-   ./bin/quick_config.sh -t liquibase
-   ```
-   Windows PowerShell:
-   ```ps1
-   cd <path-to-installation-folder>
-   .\bin\quick_config.ps1 -t liquibase
-   ```
+```bash
+quick_config -t liquibase
+```
+
+If you are working from a source checkout or extracted legacy install, the equivalent wrapper scripts remain available under `bin/`.
 
 Assuming we were to configure for "Liquibase with Logger", the output should look similar to this:
 
 ```
-$ ./bin/quick_config.sh -t llogger
+$ quick_config -t llogger
 OraTAPI quick config started...
-[basic] Copied: /path/to/install/resources/config/samples/OraTAPI.ini.sample -> configs/basic/resources/config/OraTAPI.ini
-[logger] Copied: /path/to/install/resources/templates/packages/procedures/samples/select.logger.sample -> configs/logger/resources/templates/packages/procedures/select.tpt
-[llogger] Copied: /path/to/install/resources/templates/misc/view/samples/view.llogger.sample -> configs/llogger/resources/templates/misc/view/view.tpt
+[basic] Copied: /path/to/site-packages/oratapi/ora_tapi_package_data/resources/config/OraTAPI.ini.sample -> configs/basic/resources/config/OraTAPI.ini
+[logger] Copied: /path/to/site-packages/oratapi/ora_tapi_package_data/resources/templates/packages/procedures/samples/select.logger.sample -> configs/logger/resources/templates/packages/procedures/select.tpt
+[llogger] Copied: /path/to/site-packages/oratapi/ora_tapi_package_data/resources/templates/misc/view/samples/view.llogger.sample -> configs/llogger/resources/templates/misc/view/view.tpt
 ...
 Active profile set to: llogger
 OraTAPI quick config complete.
@@ -296,11 +334,11 @@ The destination paths shown above are relative to `~/OraTAPI`. `quick_config` in
 If OraTAPI reports that the runtime files have not yet been initialised, use one of these commands:
 
 ```bash
-./bin/quick_config.sh -t <template-category>
+quick_config -t <template-category>
 ```
 
 ```powershell
-.\bin\quick_config.ps1 -t <template-category>
+quick_config -t <template-category>
 ```
 
 Valid template categories are:
@@ -319,8 +357,7 @@ If you run the command more than once, it will have no effect. This is to preven
 customisations to the configuration. However, you can force an overwriting, by adding the `-f/--force` flag. Example:
 
    ```bash
-   cd <path-to-installation-folder>
-   ./bin/quick_config.sh -t liquibase --force
+   quick_config -t liquibase --force
    ```
 
 The full command synopsis is:
@@ -389,29 +426,23 @@ OraTAPI can be used via PowerShell or Git Bash.
 
 ## Performing Upgrades
 ### Migrations
-When you unpack the installation archive, it creates a top-level directory named `oratapi-M.m.p`, where `M`, `m`, and `p`
-are the major, minor, and patch version components. In practice, this means you can extract each release into the same
-parent directory and each version will unpack into its own installation directory.  
+Wheel-first upgrades should normally be handled by installing a newer package version into the environment, for example:
 
-
-To complete the installation and migrate your previous settings, perform these steps:
-
-1. Download the new release of OraTAPI
-2. Unpack as outlined previously.
-3. Run the `setup` command as outlined previously
-4. Run `profile_mgr` to migrate the old install into a named profile.
-
+```bash
+pip install --upgrade oratapi
 ```
-   cd <path-to-parent-folder>/oratapi-<x.y.z>
-   ./bin/profile_mgr.sh --migrate-old <path_to_old_install_dir> migrated_profile
+
+If you are migrating from an older extracted install tree, use `profile_mgr` to migrate the old runtime content into a named profile:
+
+```bash
+profile_mgr --migrate-old <path_to_old_install_dir> migrated_profile
 ```
+
 This will result in your old OraTAPI.ini file, CSV files, and templates being copied into `~/OraTAPI/configs/migrated_profile`. After migration, `profile_mgr` prompts whether to activate the migrated profile.
-
-Note that there is also a `profile_mgr.ps1` command for Windows PowerShell.
 
 If new config settings are introduced, then you will get feedback from the migration tool. It will list any new 
 OraTAPI.ini sections that you have missing as well as any properties. In addition, it will inform you if there are 
-any obsolete entries. You can view the settings in context by looking at the resources/config/samples/ORATapi.ini.sample file.  
+any obsolete entries. You can view the current shipped settings in context by looking at the packaged `OraTAPI.ini.sample` file.  
 
 Any previously configured named database connections (see [Connection Manager](#connection-manager)) are preserved since they are located under the directory 
 $HOME/.OraTAPI.  
@@ -455,7 +486,7 @@ The `-p/--purpose` option can be used with `--create`, `--copy`, `--import-profi
 
 Example list output:
 ```
-$ ./bin/profile_mgr.sh --list
+$ profile_mgr --list
 OraTAPI profiles:
   basic (created with 2.0.1; purpose: Built-in profile for standard OraTAPI generation without Liquibase directives or logger calls.)
 * logger (created with Unknown; purpose: Unknown)
@@ -463,29 +494,28 @@ OraTAPI profiles:
 
 Example export:
 ```
-$ ./bin/profile_mgr.sh --export logger /tmp/logger-profile.zip
+$ profile_mgr --export logger /tmp/logger-profile.zip
 Exported profile 'logger' to /tmp/logger-profile.zip
 ```
 
 Example import:
 ```
-$ ./bin/profile_mgr.sh --import-profile /tmp/logger-profile.zip --purpose "Client A reporting profile"
+$ profile_mgr --import-profile /tmp/logger-profile.zip --purpose "Client A reporting profile"
 Imported profile 'logger' from /tmp/logger-profile.zip
 Activate profile 'logger'? [y/N]:
 ```
 
 ---
 ### In-situ upgrades
-The ability to perform in-situ upgrades is introduced with OraTAPI 1.4.24. This provides a much simpler and more 
-convenient method of applying updates to your installation. 
+The `update_ora_tapi` command belongs to the legacy extracted-install model, where OraTAPI updates a writable installation tree in place. It is not the preferred upgrade mechanism for wheel or PyPI installations.
 
-To perform an update, the `update_ora_tapi` command is introduced. This command resides in the `bin` directory, below 
-the root folder of where OraTAPI is installed. You can run this command in two ways. If you have a tarball of an OraTAPI 
-release, you can point the command at the tarball, and it will prompt for confirmation, before updating OraTAPI.
+For wheel-first installs, upgrade with `pip install --upgrade oratapi`.
+
+`update_ora_tapi` remains relevant only if you are still using an extracted install tree. In that legacy mode you can run it in two ways. If you have a tarball of an OraTAPI release, you can point the command at the tarball, and it will prompt for confirmation before updating OraTAPI.
 
 Example:
 ```
-$ bin/update_ora_tapi.sh -t ../oratapi-1.4.25.tar.gz
+$ update_ora_tapi -t ../oratapi-1.4.25.tar.gz
 update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.24
 OraTAPI upgrade started...
 Current OraTAPI version: 1.4.24
@@ -501,7 +531,7 @@ check if a newer version exists, and it will print out a warning message, inform
 available. You can then have the `update_ora_tapi` download the latest release, and have it apply it to your 
 installation.
 ```
-$ bin/update_ora_tapi.sh -s /tmp
+$ update_ora_tapi -s /tmp
 update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.24
 OraTAPI upgrade started...
 Current OraTAPI version: 1.4.24
@@ -517,8 +547,8 @@ Press 'y' and enter to proceed:
 ```
 Extracting /tmp/oratapi-1.4.24.tar.gz to /tmp...
 Extraction complete. Root unpacked directory: /tmp/oratapi-1.4.24
-Upgraded: /tmp/oratapi-1.4.24/resources/config/samples/OraTAPI.ini.sample -> resources/config/OraTAPI.ini.sample
-Upgraded: /tmp/oratapi-1.4.24/resources/config/samples/pi_columns.csv.sample -> resources/config/pi_columns.csv.sample
+Upgraded: /tmp/oratapi-1.4.24/resources/config/OraTAPI.ini.sample -> resources/config/OraTAPI.ini.sample
+Upgraded: /tmp/oratapi-1.4.24/resources/config/pi_columns.csv.sample -> resources/config/pi_columns.csv.sample
 ...
 Upgraded: /tmp/oratapi-1.4.24/setup.ps1 -> /home/clive/PycharmProjects/stage/oratapi/setup.ps1
 Upgraded: /tmp/oratapi-1.4.24/LICENSE -> /home/clive/PycharmProjects/stage/oratapi/LICENSE
@@ -535,7 +565,7 @@ NOTE: Irrespective of which option you choose to use, you must then run the `set
 Command Synopsis:
 
 ```
-bin/update_ora_tapi.sh -h
+update_ora_tapi -h
 update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.22
 OraTAPI upgrade started...
 usage: update_ora_tapi.py [-h] (-t TARBALL | -s STAGING_DIR)
@@ -582,30 +612,26 @@ sections, which are used to categorise their purpose. Section names are enclosed
 irrespective of which section it belongs to.
 
 ### Command-line Tools
-Launching the command line tools, varies slightly depending on your target operating system. There are two tools that you will need to work with, `conn_mgr` and `ora_tapi`. The latter of these will be used more frequently.
+In the preferred wheel/PyPI model, the command-line tools are installed as console scripts into the Python environment. There are two tools that you will need to work with most often, `conn_mgr` and `ora_tapi`. The latter of these will be used more frequently.
 
 In respect of the `conn_mgr` tool (see [Connection Manager](#connection-manager)), this is used to securely store 
 database connections (credentials and DSNs). Such connections are named and can be used in conjunction with the 
 `-c/--conn_name` option of the `ora_tapi` command. This is a secure alternative to specifying the `-u/--db_username`, 
 `-p/--db_password` and `-d/--dsn` options.
 
-The following launcher commands are provided:
+The primary launch commands are:
 
-#### Windows:
-- ora_tapi.ps1
-- conn_mgr.ps1
+- `ora_tapi`
+- `conn_mgr`
+- `quick_config`
+- `profile_mgr`
 
-#### macOS / Linux:
-- ora_tapi.sh
-- conn_mgr.sh
+If you are running from a source checkout or extracted legacy install, equivalent wrapper scripts remain available under `bin/`.
 
-These are located in the `<OraTAPI-Home>/bin` directory. 
-
-To get command line help, you can simply type something like:
+To get command line help, you can simply type:
 
 ```
-cd <OraTAPI-home>
-./bin/ora_tapi.sh -h
+ora_tapi -h
 
 usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN]
                    [--oracle-client-dir ORACLE_CLIENT_DIR] [-g STAGING_DIR]
@@ -673,30 +699,27 @@ Oracle `ALL_` data dictionary views.
 Run OraTAPI from the command line with the desired options.
 
 ### Examples
-In the following examples, we are assuming that we are running with a macOS/Linux type environment. For Windows 
-PowerShell, you need to assume the commands have a `.ps1` extension, instead of `.sh`.  
-
-The examples also assume that you have navigated to the installation directory of OraTAPI.
+The following examples assume that OraTAPI has been installed into an active virtual environment and the console scripts are on `PATH`.
 
 #### Basic Example
 ```bash
-bin/ora_tapi.sh --table_owner HR --table_names employees departments --conn_name dev_db --tapi_author cbostock
+ora_tapi --table_owner HR --table_names employees departments --conn_name dev_db --tapi_author cbostock
 ```
 Using the terse flags, this is equivalent to:
 ```bash
-bin/ora_tapi.sh -To HR -t employees departments -c dev_db -a cbostock
+ora_tapi -To HR -t employees departments -c dev_db -a cbostock
 ```
 If you need to force thick mode for a specific run, for example when a target environment requires Oracle Native
 Network Encryption or checksumming, add `--oracle-client-dir`:
 
 ```bash
-bin/ora_tapi.sh --oracle-client-dir /opt/oracle/instantclient_23_8 -To HR -t employees departments -c dev_db
+ora_tapi --oracle-client-dir /opt/oracle/instantclient_23_8 -To HR -t employees departments -c dev_db
 ```
 
 #### More Advanced Example
 Here we want to override the default target schemas for the packages, views, and triggers:
 ```bash
-bin/ora_tapi.sh -To HR -t employees departments -c dev_db -a cbostock -po logic -to core -vo logic
+ora_tapi -To HR -t employees departments -c dev_db -a cbostock -po logic -to core -vo logic
 ```
 
 Based on this last example, the DDL statements in the generated scripts will place the packages and views in the logic 
@@ -718,7 +741,7 @@ If we don't want to use a named connection, the alternative is to specify:
 
 Taking the basic example, we can modify this to:
 ```bash
-ora_tapi.sh -To HR -t employees departments -a cbostock -u cbostock -p <my_password> -d dev-db
+ora_tapi -To HR -t employees departments -a cbostock -u cbostock -p <my_password> -d dev-db
 ```
 In this example, we assume that the dev-db is a TNS Names entry.  
 
@@ -1407,8 +1430,7 @@ wallet to a temporary directory at runtime and uses the aliases from that wallet
 Synopsis:
 
 ```
-cd <OraTAPI-home>
-./bin/conn_mgr.sh -h
+conn_mgr -h
 
 usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-C] [-n NAME]
 
@@ -1437,8 +1459,8 @@ The `-n/--name` option is mandatory when used with all other options, except for
 Examples:
 
 ```bash
-./bin/conn_mgr.sh -l
-./bin/conn_mgr.sh -l -C
+conn_mgr -l
+conn_mgr -l -C
 ```
 
 Using `-C/--print-creds` causes `conn_mgr` to attempt to decrypt and display the stored username and password for each saved connection. This is intended for local inspection on the machine that created the credential store.
@@ -1468,7 +1490,7 @@ ROW_VERSION          NUMBER
 
 The command:
 ```
-bin/ora_tapi.sh --package_owner aut --conn_name TAPI  --tapi_author cbostock
+ora_tapi --package_owner aut --conn_name TAPI  --tapi_author cbostock
 ```
 In the above command, the connection name, `TAPI`, has been configured using the OraTAPI `conn_mgr` command.
 

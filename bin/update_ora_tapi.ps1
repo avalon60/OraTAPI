@@ -23,15 +23,24 @@ $ENTRY_POINT = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath) + "
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PROJECT_DIR = Split-Path -Parent $SCRIPT_DIR
 $BIN_DIR = Join-Path $PROJECT_DIR "bin"
-$CONTROL_DIR = Join-Path $PROJECT_DIR "src\controller"
-$ACTIVATE_SCRIPT = Join-Path $PROJECT_DIR "venv\Scripts\Activate.ps1"
+$CONTROL_DIR = Join-Path $PROJECT_DIR "src\oratapi\controller"
+$activateCandidates = @(
+    (Join-Path $PROJECT_DIR "venv\Scripts\Activate.ps1"),
+    (Join-Path $PROJECT_DIR ".venv\Scripts\Activate.ps1")
+)
+$venvActivated = $false
 
-# Activate the virtual environment if the script exists
-if (Test-Path $ACTIVATE_SCRIPT) {
-    Write-Host "Activating the virtual environment..."
-    . $ACTIVATE_SCRIPT
-    Write-Host "Virtual environment activated successfully."
-} else {
+foreach ($activateScript in $activateCandidates) {
+    if (Test-Path $activateScript) {
+        Write-Host "Activating the virtual environment..."
+        . $activateScript
+        Write-Host "Virtual environment activated successfully."
+        $venvActivated = $true
+        break
+    }
+}
+
+if (-not $venvActivated) {
     Write-Warning "Virtual environment activation script not found. Exiting..."
     exit 1
 }
@@ -51,6 +60,9 @@ if (-not $PYTHON_INTERPRETER) {
     Write-Error "Error: No compatible Python interpreter found (python3, python, or py)!"
     exit 1
 }
+
+$existingPath = if ($env:PYTHONPATH) { [IO.Path]::PathSeparator + $env:PYTHONPATH } else { "" }
+$env:PYTHONPATH = (Join-Path $PROJECT_DIR "src") + $existingPath
 
 # Execute the Python program
 Write-Host "Executing Python script..."

@@ -16,10 +16,25 @@ realpath() {
   fi
 }
 
+find_poetry() {
+  if command -v poetry >/dev/null 2>&1; then
+    echo "poetry"
+  elif [ -x "${HOME}/.local/bin/poetry" ]; then
+    echo "${HOME}/.local/bin/poetry"
+  else
+    echo ""
+  fi
+}
+
 PROG_PATH=$(realpath $0)
 PROG_DIR=$(dirname ${PROG_PATH})
 APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
 echo "App home: ${APP_HOME}"
-source venv/bin/activate
-python -m build --sdist
+POETRY=$(find_poetry)
+if [ -z "${POETRY}" ]; then
+  echo "Poetry is required to package this project."
+  exit 1
+fi
+"${POETRY}" export --format requirements.txt --without-hashes --only main --output requirements.txt
+"${POETRY}" build --format sdist

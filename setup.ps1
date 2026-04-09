@@ -1,4 +1,7 @@
 #------------------------------------------------------------------------------
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 # Author: Clive Bostock
 #   Date: 16 December 2024
 #   Name: setup.ps1
@@ -59,11 +62,12 @@ Write-Host "Activating virtual environment..."
 Write-Host "Upgrading pip..."
 & $venvPython -m pip install --upgrade pip
 
-# Step 5: Perform the packages install
+# Step 5: Install deployment dependencies
 $step++
-$step_desc = "Perform the packages install"
+$step_desc = "Install deployment dependencies"
 Write-Host "Step ${step}: ${step_desc}..."
-& $venvPython -m pip install .
+& $venvPython -m pip install -r requirements.txt
+& $venvPython -m pip install --no-deps .
 
 # Step 6: Set executable permissions for shell scripts (on non-Windows systems)
 $step++

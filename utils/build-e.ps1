@@ -5,6 +5,22 @@
 #  Descr: Performs a build and install of the project as packages in edit mode).
 ##############################################################################
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Get-PoetryCommand {
+    if (Get-Command poetry -ErrorAction SilentlyContinue) {
+        return "poetry"
+    }
+
+    $localPoetry = Join-Path $HOME ".local/bin/poetry"
+    if (Test-Path $localPoetry) {
+        return $localPoetry
+    }
+
+    throw "Poetry is required for development setup."
+}
+
 # Function to emulate 'realpath' behavior
 function Get-RealPath {
     param (
@@ -27,22 +43,6 @@ $AppHome = Split-Path -Parent $ScriptDir
 Push-Location $AppHome
 Write-Output "App home: $AppHome"
 
-# Activate Python virtual environment and install the project
-# Check for the virtual environment directory
-if (Test-Path "venv/bin/activate") {
-    # Activate the virtual environment for Linux/macOS style
-    . "venv/bin/activate"
-} elseif (Test-Path "venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style
-    . "venv/Scripts/activate"
-} elseif (Test-Path ".venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style (if in .venv)
-    . ".venv/Scripts/activate"
-} else {
-    Write-Host "Cannot locate activate script from venv directory!" -ForegroundColor Red
-    Exit 1
-}
-
-# Install the project in editable mode
-python -m pip install -e .
-
+$poetry = Get-PoetryCommand
+& $poetry config virtualenvs.in-project true --local
+& $poetry install --sync

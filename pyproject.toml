@@ -1,43 +1,15 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "oratapi"
 version = "2.4.1"
-requires-python = ">=3.9"
-license = "MIT"
-license-files = ["LICENSE", "ORACLE_INTERNAL_LICENSE.txt"]
 description = "Oracle Table API Generator Application"
-authors = [ {name = "Clive Bostock"} ]
-dependencies = [
-    "beautifulsoup4==4.12.3",
-    "bs4==0.0.2",
-    "Markdown==3.7",
-    "typing_extensions>=4.12.2",
-    "tomli>=2.2.1",
-    "setuptools-scm>=8.1.0",
-    "rich>=13.9.4",
-    "pyproject_hooks>=1.2.0",
-    "Pygments>=2.18.0",
-    "pycparser>=2.22",
-    "packaging>=24.2",
-    "oracledb>=2.5.0",
-    "mdurl>=0.1.2",
-    "markdown-it-py>=3.0.0",
-    "soupsieve==2.6",
-    "cryptography>=43.0.3",
-    "cffi>=1.17.1",
-    "bump2version>=1.0.1",
-    "build>=1.2.2.post1",
-    "requests>=2.32.3",
-    "urllib3==2.5.0",
-    "charset-normalizer>=3.4.1",
-    "configobj>=5.0.9",
-    "idna>=3.10"
-]
-
-# Useful if publishing through PyPI
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Clive Bostock" }]
+requires-python = ">=3.10,<3.12"
 keywords = [
     "python",
     "oracle",
@@ -50,8 +22,6 @@ keywords = [
     "code generator",
     "automation"
 ]
-
-# Metadata
 classifiers = [
     "Programming Language :: Python :: 3",
     "Development Status :: 4 - Beta",
@@ -60,36 +30,62 @@ classifiers = [
     "Topic :: Software Development :: Code Generators",
     "Operating System :: OS Independent"
 ]
+dependencies = [
+    "beautifulsoup4 (==4.12.3)",
+    "bs4 (==0.0.2)",
+    "Markdown (==3.7)",
+    "typing_extensions (>=4.12.2)",
+    "tomli (>=2.2.1)",
+    "rich (>=13.9.4)",
+    "Pygments (>=2.18.0)",
+    "pycparser (>=2.22)",
+    "packaging (>=24.2)",
+    "oracledb (>=2.5.0)",
+    "mdurl (>=0.1.2)",
+    "markdown-it-py (>=3.0.0)",
+    "soupsieve (==2.6)",
+    "cryptography (>=43.0.3)",
+    "cffi (>=1.17.1)",
+    "requests (>=2.32.3)",
+    "urllib3 (==2.5.0)",
+    "charset-normalizer (>=3.4.1)",
+    "configobj (>=5.0.9)",
+    "idna (>=3.10)"
+]
 
-# Specify the package directory
-[tool.setuptools]
-include-package-data = true
+[project.scripts]
+conn_mgr = "oratapi.controller.conn_mgr:main"
+migrate_config = "oratapi.controller.migrate_config:main"
+ora_tapi = "oratapi.controller.ora_tapi:main"
+profile_mgr = "oratapi.controller.profile_mgr:main"
+quick_config = "oratapi.controller.quick_config:main"
+update_ora_tapi = "oratapi.controller.update_ora_tapi:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[project.urls]
+Repository = "https://github.com/avalon60/OraTAPI"
 
 [tool.poetry]
 packages = [
-    { include = "controller", from = "src" },
-    { include = "lib", from = "src" },
-    { include = "model", from = "src" },
-    { include = "ora_tapi_package_data", from = "src" },
-    { include = "view", from = "src" }
+    { include = "oratapi", from = "src" }
+]
+include = [
+    { path = "LICENSE", format = ["sdist"] },
+    { path = "ORACLE_INTERNAL_LICENSE.txt", format = ["sdist"] },
+    { path = "setup.sh", format = ["sdist"] },
+    { path = "setup.ps1", format = ["sdist"] },
+    { path = "requirements.txt", format = ["sdist"] },
+    { path = "bin/*.sh", format = ["sdist"] },
+    { path = "bin/*.ps1", format = ["sdist"] },
+    { path = "resources/**/*", format = ["sdist"] },
+    { path = "src/oratapi/ora_tapi_package_data/resources/**/*", format = ["sdist", "wheel"] }
 ]
 
-[project.urls]
-"Repository" = "https://github.com/avalon60/OraTAPI"
+[tool.poetry.group.dev.dependencies]
+bump2version = ">=1.0.1"
+pytest = ">=8.3.2"
 
-# Include additional resources
-[tool.setuptools.package-data]
-"ora_tapi_package_data" = ["resources/**/*"]
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
 
-
-# Declare scripts as dynamic
-dynamic = ["scripts"]
-
-# Scripts defined under `[project.scripts]`
-[project.scripts]
-conn_mgr = "controller.conn_mgr:main"
-ora_tapi = "controller.ora_tapi:main"
-quick_config = "controller.quick_config:main"
+[tool.pytest.ini_options]
+testpaths = ["tests"]

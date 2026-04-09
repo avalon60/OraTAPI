@@ -12,20 +12,21 @@ realpath() {
 ENTRY_POINT="$(basename $0 .sh).py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
-CONTROL_DIR="${PROJECT_DIR}/src/controller"
+CONTROL_DIR="${PROJECT_DIR}/src/oratapi/controller"
 
-VENV_DIR="$PROJECT_DIR/venv"
+for VENV_DIR in "$PROJECT_DIR/venv" "$PROJECT_DIR/.venv"
+do
+  if [[ "$(uname -s)" =~ ^MINGW64_NT ]]; then
+    ACTIVATE_SCRIPT="$VENV_DIR/Scripts/activate"
+  else
+    ACTIVATE_SCRIPT="$VENV_DIR/bin/activate"
+  fi
 
-if [[ "$(uname -s)" =~ ^MINGW64_NT ]]; then
-  ACTIVATE_SCRIPT="$VENV_DIR/Scripts/activate"
-else
-  ACTIVATE_SCRIPT="$VENV_DIR/bin/activate"
-fi
-
-if [[ -f "$ACTIVATE_SCRIPT" ]]
-then
-  source "$ACTIVATE_SCRIPT"
-fi
+  if [[ -f "$ACTIVATE_SCRIPT" ]]; then
+    source "$ACTIVATE_SCRIPT"
+    break
+  fi
+done
 
 PYTHON_INTERPRETER=""
 if command -v python >/dev/null 2>&1; then
@@ -41,5 +42,5 @@ if [[ -z "$PYTHON_INTERPRETER" ]]; then
   exit 1
 fi
 
-export PYTHONPATH=${PROJECT_DIR}:${PYTHONPATH}
+export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH}"
 "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"

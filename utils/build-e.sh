@@ -16,11 +16,25 @@ realpath() {
   fi
 }
 
+find_poetry() {
+  if command -v poetry >/dev/null 2>&1; then
+    echo "poetry"
+  elif [ -x "${HOME}/.local/bin/poetry" ]; then
+    echo "${HOME}/.local/bin/poetry"
+  else
+    echo ""
+  fi
+}
+
 PROG_PATH=$(realpath "$0")
 PROG_DIR=$(dirname "${PROG_PATH}")
 APP_HOME=$(dirname "${PROG_DIR}")
 pushd "${APP_HOME}" || { echo "Failed to switch to APP_HOME"; exit 1; }
-source utils/utils.env
 echo "App home: ${APP_HOME}"
-source_venv
-python3 -m pip install -e . 
+POETRY=$(find_poetry)
+if [ -z "${POETRY}" ]; then
+  echo "Poetry is required for development setup."
+  exit 1
+fi
+"${POETRY}" config virtualenvs.in-project true --local
+"${POETRY}" install --sync

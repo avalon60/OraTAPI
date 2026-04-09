@@ -2,8 +2,24 @@
 # Author: Clive Bostock
 #   Date: 27 Jan 2024
 #   Name: freeze.ps1
-#  Descr: Generates a Python requirements.txt 
+#  Descr: Generates requirements.txt from the Poetry lock file
 ##############################################################################
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Get-PoetryCommand {
+    if (Get-Command poetry -ErrorAction SilentlyContinue) {
+        return "poetry"
+    }
+
+    $localPoetry = Join-Path $HOME ".local/bin/poetry"
+    if (Test-Path $localPoetry) {
+        return $localPoetry
+    }
+
+    throw "Poetry is required to export requirements.txt."
+}
 
 # Resolve the script's path and directories
 $PROG_PATH = (Get-Item -Path $MyInvocation.MyCommand.Definition).FullName
@@ -13,28 +29,8 @@ $APP_HOME = Split-Path -Path $PROG_DIR -Parent
 # Change to APP_HOME directory
 Set-Location -Path $APP_HOME
 
-# Check for the virtual environment directory
-if (Test-Path "venv/bin/activate") {
-    # Activate the virtual environment for Linux/macOS style
-    . "venv/bin/activate"
-} elseif (Test-Path "venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style
-    . "venv/Scripts/activate"
- elseif (Test-Path ".venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style
-    . ".venv/bin/activate"
-}
- elseif (Test-Path ".venv/Scripts/activate") {
-    # Activate the virtual environment for Windows style
-    . ".venv/Scripts/activate"
-} else {
-    Write-Host "Cannot locate activate script from venv directory!" -ForegroundColor Red
-    Exit 1
-}
-
-# Generate the requirements.txt file, excluding "apt-clone"
-pip freeze | Select-String -NotMatch "apt-clone" | Set-Content -Path "requirements.txt"
+$poetry = Get-PoetryCommand
+& $poetry export --format requirements.txt --without-hashes --only main --output requirements.txt
 
 # Notify the user
 Write-Host "requirements.txt has been generated successfully." -ForegroundColor Green
-

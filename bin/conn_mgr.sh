@@ -18,27 +18,22 @@ realpath() {
 ENTRY_POINT="$(basename $0 .sh).py"
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
-CONTROL_DIR="${PROJECT_DIR}/src/controller"
+CONTROL_DIR="${PROJECT_DIR}/src/oratapi/controller"
 E="-e"
 
-# Virtual environment activation (adjust based on your setup)
-VENV_DIR="$PROJECT_DIR/venv"  # Assuming venv directory is in the parent folder
+for VENV_DIR in "$PROJECT_DIR/venv" "$PROJECT_DIR/.venv"
+do
+  if [[ "$(uname -s)" =~ ^MINGW64_NT ]]; then
+    ACTIVATE_SCRIPT="$VENV_DIR/Scripts/activate"
+  else
+    ACTIVATE_SCRIPT="$VENV_DIR/bin/activate"
+  fi
 
-if [[ "$(uname -s)" =~ ^MINGW64_NT ]]; then  # Check for windows systems
-  ACTIVATE_SCRIPT="$VENV_DIR/Scripts/activate"  # Windows path
-else
-  ACTIVATE_SCRIPT="$VENV_DIR/bin/activate"  # Linux/Mac path
-fi
-
-if [ ! -f "$ACTIVATE_SCRIPT" ]
-then
-  echo "WARNING: Unable locate a venv directory or activate script; no virtual environment activated."
-fi
-# Source virtual environment if it exists
-if [[ -f "$ACTIVATE_SCRIPT" ]]
-then
-  source "$ACTIVATE_SCRIPT"
-fi
+  if [[ -f "$ACTIVATE_SCRIPT" ]]; then
+    source "$ACTIVATE_SCRIPT"
+    break
+  fi
+done
 
 # Detect operating system (Linux, Mac, or Windows)
 OS="$(uname -s)"
@@ -59,6 +54,6 @@ if [[ -z "$PYTHON_INTERPRETER" ]]; then
   exit 1
 fi
 
-export PYTHONPATH=${PROJECT_DIR}:${PYTHONPATH}
+export PYTHONPATH="${PROJECT_DIR}/src:${PYTHONPATH}"
 # Execute the Python program
 "$PYTHON_INTERPRETER" "${CONTROL_DIR}/${ENTRY_POINT}" "$@"

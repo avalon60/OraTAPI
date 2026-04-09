@@ -9,6 +9,27 @@
 #         system.
 #------------------------------------------------------------------------------
 
+set -e
+
+find_python() {
+  if [ "${OS}" = "Windows_NT" ]; then
+    PYTHON="python"
+    SOURCE_DIR="Scripts"
+    PIP="pip"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON="python3"
+    SOURCE_DIR="bin"
+    PIP="pip3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON="python"
+    SOURCE_DIR="bin"
+    PIP="pip"
+  else
+    echo "Error: Neither python3 nor python is installed."
+    exit 1
+  fi
+}
+
 # Function to get the absolute path
 realpath() {
   if command -v readlink >/dev/null 2>&1; then
@@ -24,21 +45,9 @@ step=0
 PROG_PATH=$(realpath "$0")
 APP_HOME=$(dirname "${PROG_PATH}")
 
-# Exit on any error
-set -e
-
 pushd "${APP_HOME}"
 
-# Determine Python interpreter
-if [ "${OS}" = "Windows_NT" ]; then
-    PYTHON="python"
-    SOURCE_DIR="Scripts"
-    PIP="pip"
-elif command -v python3 >/dev/null 2>&1; then
-    PYTHON="python3"
-    SOURCE_DIR="bin"
-    PIP="pip3"
-fi
+find_python
 
 # Verify Python installation
 ${PYTHON} --version 2> /dev/null
@@ -101,15 +110,12 @@ step_desc="Upgrade pip"
 echo "Step ${step}: ${step_desc}..."
 "$VENV_PYTHON" -m pip install --upgrade pip
 
-# Step 5: Install packages safely
+# Step 5: Install deployment dependencies
 let step=${step}+1
-step_desc="Install required packages"
+step_desc="Install deployment dependencies"
 echo "Step ${step}: ${step_desc}..."
-if [[ "$(uname)" == "Darwin" ]]; then
-    "$VENV_PYTHON" -m pip install --break-system-packages .
-else
-    "$VENV_PYTHON" -m pip install .
-fi
+"$VENV_PYTHON" -m pip install -r requirements.txt
+"$VENV_PYTHON" -m pip install --no-deps .
 
 # Step 6: Set executable permissions for shell scripts
 let step=${step}+1
