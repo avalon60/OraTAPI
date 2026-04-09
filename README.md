@@ -274,6 +274,27 @@ Poetry is not required on the target system for wheel installation.
 
 The packaged `.tar.gz` source distribution and `setup.sh` / `setup.ps1` are still available for the legacy extracted-install model. That path remains supported for now, but it is no longer the preferred deployment method.
 
+### Optional: Create A Personal Launcher Script
+
+If you install OraTAPI into a dedicated virtual environment and want a simpler day-to-day command, you can create your own small wrapper script that calls the venv's installed executable directly. This is optional convenience only. It does not change the supported installation model.
+
+For Linux or macOS:
+
+```bash
+#!/usr/bin/env bash
+exec "$HOME/path/to/oratapi-venv/bin/ora_tapi" "$@"
+```
+
+For Windows PowerShell:
+
+```powershell
+& "$HOME\path\to\oratapi-venv\Scripts\ora_tapi.exe" @args
+```
+
+You can do the same for `quick_config`, `profile_mgr`, or `conn_mgr` by replacing the executable name.
+
+This approach is preferred over embedding environment-activation logic in the wrapper. It keeps the launcher simple and makes it obvious which virtual environment OraTAPI is using.
+
 ### Development Checkout
 
 If you cloned the Git repository and want a local development environment instead of installing from a release archive:
