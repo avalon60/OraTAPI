@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "oratapi"
-version = "2.6.6"
+version = "2.6.7"
 description = "Oracle Table API Generator Application"
 readme = "README.md"
 license = "MIT"
