@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "oratapi"
 version = "2.6.7"
-description = "Oracle Table API Generator Application"
+description = "Generate Oracle PL/SQL table APIs, views, triggers, and utPLSQL starter code from database metadata."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Clive Bostock" }]
@@ -24,6 +24,10 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Database",
@@ -68,6 +72,9 @@ update_ora_tapi = "oratapi.controller.update_ora_tapi:main"
 "update-ora-tapi" = "oratapi.controller.update_ora_tapi:main"
 
 [project.urls]
+Homepage = "https://github.com/avalon60/OraTAPI"
+Documentation = "https://github.com/avalon60/OraTAPI#readme"
+Issues = "https://github.com/avalon60/OraTAPI/issues"
 Repository = "https://github.com/avalon60/OraTAPI"
 
 [tool.poetry]

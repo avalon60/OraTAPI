@@ -229,7 +229,7 @@ These values are shown by `profile_mgr --list` and `profile_mgr --show-active`. 
 
 ## Installation
 
-The preferred installation model is now wheel-first. Install OraTAPI into a Python 3.10, 3.11, 3.12, or 3.13 virtual environment and run the installed console scripts from that environment.
+The supported public installation model is wheel-first. Install OraTAPI into a Python 3.10, 3.11, 3.12, or 3.13 virtual environment and run the installed console scripts from that environment. This is the recommended path for both local wheel installs and PyPI installs.
 
 ### Preferred: install from wheel
 
@@ -282,7 +282,7 @@ Poetry is not required on the target system for wheel installation.
 
 ### Legacy: extracted source distribution install
 
-The packaged `.tar.gz` source distribution and `setup.sh` / `setup.ps1` are still available for the legacy extracted-install model. That path remains supported for now, but it is no longer the preferred deployment method.
+The packaged `.tar.gz` source distribution and `setup.sh` / `setup.ps1` are still available for the legacy extracted-install model. This path is retained only for compatibility with existing extracted installs. It is no longer the recommended deployment or upgrade method.
 
 If you are moving away from an older extracted install, you do not need to preserve the old installation directory itself. OraTAPI stores user-owned runtime data under `~/OraTAPI` rather than inside the install tree, so you can remove the old extracted install and perform a fresh install without losing your profiles, active configuration, instantiated templates, CSV files, or profile-local Oracle Instant Client files.
 
@@ -540,13 +540,17 @@ Activate profile 'logger'? [y/N]:
 
 ---
 ### In-situ upgrades
-The `update_ora_tapi` command belongs to the legacy extracted-install model, where OraTAPI updates a writable installation tree in place. It is not the preferred upgrade mechanism for wheel or PyPI installations.
+The `update_ora_tapi` command belongs to the legacy extracted-install model, where OraTAPI updates a writable installation tree in place. It is a compatibility mechanism for older extracted installs, not the primary upgrade path for current releases.
 
-For wheel-first installs, upgrade with `pip install --upgrade oratapi`.
+For wheel and PyPI installs, upgrade with:
+
+```bash
+pip install --upgrade oratapi
+```
 
 If an in-place legacy upgrade fails or leaves the install tree in an inconsistent state, the recommended recovery is to remove the extracted installation directory and install the new release again from scratch. This does not remove your OraTAPI runtime home under `~/OraTAPI`, so existing profiles, runtime configuration, instantiated templates, and profile-local Oracle Instant Client content remain available after reinstall.
 
-`update_ora_tapi` remains relevant only if you are still using an extracted install tree. In that legacy mode you can run it in two ways. If you have a tarball of an OraTAPI release, you can point the command at the tarball, and it will prompt for confirmation before updating OraTAPI.
+Use `update_ora_tapi` only if you are deliberately staying on the extracted-install model. In that legacy mode you can run it in two ways. If you have a tarball of an OraTAPI release, you can point the command at the tarball, and it will prompt for confirmation before updating OraTAPI.
 
 Example:
 ```
