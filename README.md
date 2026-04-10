@@ -265,13 +265,17 @@ The preferred installation model is now wheel-first. Install OraTAPI into a Pyth
    pip install oratapi
    ```
 
-3. Confirm the console scripts are available:
+3. Confirm the console scripts are available. Wheel installs provide both underscore and dashed command names, so `ora_tapi` and `ora-tapi` are equivalent, as are `quick_config` / `quick-config`, `profile_mgr` / `profile-mgr`, and `conn_mgr` / `conn-mgr`.
 
    ```bash
    ora_tapi --help
+   ora-tapi --help
    quick_config --help
+   quick-config --help
    profile_mgr --help
+   profile-mgr --help
    conn_mgr --help
+   conn-mgr --help
    ```
 
 Poetry is not required on the target system for wheel installation.
