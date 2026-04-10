@@ -422,7 +422,10 @@ class CodeManager:
             if check_pypi_for_updates:
                 latest_version = get_latest_pypi_version("oratapi")
                 update_source = "PyPI"
-                install_hint = "Run `pip install --upgrade oratapi` to upgrade."
+                install_hint = (
+                    "Activate the OraTAPI virtual environment, then run "
+                    "`pip install --upgrade oratapi` to upgrade."
+                )
             elif check_github_for_updates:
                 latest_version = get_latest_version(repo_owner='avalon60', repo_name='OraTAPI')
                 if latest_version:
