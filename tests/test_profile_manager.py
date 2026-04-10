@@ -1,4 +1,5 @@
 from pathlib import Path
+from zipfile import ZipFile
 
 from oratapi.controller.quick_config import bootstrap_builtin_profiles
 from oratapi.lib.fsutils import configured_active_profile_name, profile_home
@@ -40,6 +41,28 @@ def test_profile_export_and_import_round_trip(monkeypatch, tmp_path) -> None:
     assert (imported_profile / "resources" / "config" / "OraTAPI.ini").exists()
     assert (imported_profile / "purpose.md").read_text(encoding="utf-8").strip() == "Imported profile"
     assert configured_active_profile_name() == imported_profile_name
+
+
+def test_profile_export_excludes_oracle_client(monkeypatch, tmp_path) -> None:
+    home_dir = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(home_dir))
+
+    bootstrap_builtin_profiles(selected_profile="basic", force=False)
+
+    profile_path = profile_home("basic")
+    client_dir = profile_path / "oracle_client" / "instantclient_23_8"
+    client_dir.mkdir(parents=True, exist_ok=True)
+    (client_dir / "libclntsh.so").write_text("placeholder", encoding="utf-8")
+
+    manager = ProfileManager(current_version="9.9.9")
+    export_path = tmp_path / "basic-profile.zip"
+    manager.export_profile("basic", export_path)
+
+    with ZipFile(export_path, "r") as archive:
+        archived_names = archive.namelist()
+
+    assert "basic/resources/config/OraTAPI.ini" in archived_names
+    assert not any(name.startswith("basic/oracle_client/") for name in archived_names)
 
 
 def test_invalid_profile_name_is_rejected() -> None:

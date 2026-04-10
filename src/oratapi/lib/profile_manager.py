@@ -24,6 +24,7 @@ from oratapi.lib.fsutils import (
 class ProfileManager:
     PURPOSE_FILENAME = "purpose.md"
     CREATED_VERSION_FILENAME = "created_version.md"
+    EXCLUDED_EXPORT_TOP_LEVEL_DIRS = {"oracle_client"}
     WINDOWS_RESERVED_PROFILE_NAMES = {
         "CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
@@ -186,9 +187,13 @@ class ProfileManager:
 
         with zipfile.ZipFile(export_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for file_path in profile_path.rglob("*"):
-                if file_path.is_file():
-                    archive_name = Path(profile_name) / file_path.relative_to(profile_path)
-                    zip_file.write(file_path, archive_name.as_posix())
+                if not file_path.is_file():
+                    continue
+                relative_path = file_path.relative_to(profile_path)
+                if relative_path.parts and relative_path.parts[0] in self.EXCLUDED_EXPORT_TOP_LEVEL_DIRS:
+                    continue
+                archive_name = Path(profile_name) / relative_path
+                zip_file.write(file_path, archive_name.as_posix())
 
         print(f"Exported profile '{profile_name}' to {export_path}")
 

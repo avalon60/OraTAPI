@@ -501,7 +501,7 @@ options:
                         Purpose text to store with a newly created, copied,
                         imported, or migrated profile.
 ```
-You can use `profile_mgr` to back up, restore, or transport named profiles. Export and import work on one profile per ZIP archive. If the imported profile already exists, OraTAPI prompts before overwrite and then prompts again to decide whether to activate the imported profile.
+You can use `profile_mgr` to back up, restore, or transport named profiles. Export and import work on one profile per ZIP archive. If the imported profile already exists, OraTAPI prompts before overwrite and then prompts again to decide whether to activate the imported profile. Profile exports intentionally exclude any profile-local `oracle_client` directory, so embedded Oracle Instant Client files are not bundled into the ZIP archive.
 
 The `-p/--purpose` option can be used with `--create`, `--copy`, `--import-profile`, and `--migrate-old` to set a one-line profile description as part of the operation. Use `-P/--set-purpose` to add or replace the purpose text for an existing profile. Profile listings and `--show-active` also display the recorded creation version from `created_version.md`. If either metadata file is absent, the value is shown as `Unknown`.
 
