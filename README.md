@@ -231,6 +231,22 @@ These values are shown by `profile_mgr --list` and `profile_mgr --show-active`. 
 
 The supported public installation model is wheel-first. Install OraTAPI into a Python 3.10, 3.11, 3.12, or 3.13 virtual environment and run the installed console scripts from that environment. This is the recommended path for both local wheel installs and PyPI installs.
 
+Quick start from PyPI:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install oratapi
+```
+
+On Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install oratapi
+```
+
 ### Preferred: install from wheel
 
 1. Create and activate a virtual environment.
