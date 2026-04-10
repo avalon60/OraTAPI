@@ -27,7 +27,7 @@ PROG_NAME = Path(__file__).name
 
 
 def install_home() -> Path:
-    return Path(__file__).resolve().parents[2]
+    return Path(__file__).resolve().parents[3]
 
 
 
