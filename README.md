@@ -243,6 +243,12 @@ The preferred installation model is now wheel-first. Install OraTAPI into a Pyth
 
    Windows PowerShell
    ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+   If you use the Windows Python launcher and have a specific supported version installed, you can also use:
+   ```powershell
    py -3.11 -m venv .venv
    .\.venv\Scripts\Activate.ps1
    ```
