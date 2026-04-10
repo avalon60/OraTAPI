@@ -288,22 +288,22 @@ If you are moving away from an older extracted install, you do not need to prese
 
 ### Optional: Create A Personal Launcher Script
 
-If you install OraTAPI into a dedicated virtual environment and want a simpler day-to-day command, you can create your own small wrapper script that calls the venv's installed executable directly. This is optional convenience only. It does not change the supported installation model.
+If you install OraTAPI into a dedicated virtual environment and want a simpler day-to-day command, you can create your own small wrapper script that calls the venv's installed executable directly. This is optional convenience only. It does not change the supported installation model. Replace the example paths below with the actual path to your OraTAPI virtual environment.
 
 For Linux or macOS:
 
 ```bash
 #!/usr/bin/env bash
-exec "$HOME/path/to/oratapi-venv/bin/ora_tapi" "$@"
+exec "/path/to/oratapi-venv/bin/ora-tapi" "$@"
 ```
 
 For Windows PowerShell:
 
 ```powershell
-& "$HOME\path\to\oratapi-venv\Scripts\ora_tapi.exe" @args
+& "C:\path\to\oratapi-venv\Scripts\ora-tapi.exe" @args
 ```
 
-You can do the same for `quick_config`, `profile_mgr`, or `conn_mgr` by replacing the executable name.
+You can do the same for `quick-config`, `profile-mgr`, or `conn-mgr` by replacing the executable name.
 
 This approach is preferred over embedding environment-activation logic in the wrapper. It keeps the launcher simple and makes it obvious which virtual environment OraTAPI is using.
 
