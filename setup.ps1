@@ -69,18 +69,6 @@ Write-Host "Step ${step}: ${step_desc}..."
 & $venvPython -m pip install -r requirements.txt
 & $venvPython -m pip install --no-deps .
 
-# Step 6: Set executable permissions for shell scripts (on non-Windows systems)
-$step++
-$step_desc = "Set executable permissions for shell scripts"
-Write-Host "Step ${step}: ${step_desc}..."
-if ($IsWindows -eq $false) {
-    Write-Host "Setting executable permissions for shell scripts..."
-    chmod +x (Join-Path -Path $BIN_DIR -ChildPath "conn_mgr.sh")
-    chmod +x (Join-Path -Path $BIN_DIR -ChildPath "ora_tapi.sh")
-} else {
-    Write-Host "Skipping permission changes on Windows."
-}
-
 Write-Host "Setup completed successfully!"
 
 # Return to the original directory

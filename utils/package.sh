@@ -67,6 +67,71 @@ package_version() {
   grep '^__version__ = ' "${PACKAGE_INIT_FILE}" | head -1 | cut -f2 -d "=" | tr -d ' "'
 }
 
+require_archive_member() {
+  local archive_path="$1"
+  local member_path="$2"
+  local archive_type="$3"
+
+  if [ "${archive_type}" = "sdist" ]; then
+    tar -tf "${archive_path}" | grep -Fx "${member_path}" >/dev/null
+  else
+    unzip -Z -1 "${archive_path}" | grep -Fx "${member_path}" >/dev/null
+  fi
+}
+
+assert_archive_contains_text() {
+  local archive_path="$1"
+  local member_path="$2"
+  local archive_type="$3"
+  local expected_text="$4"
+
+  if [ "${archive_type}" = "sdist" ]; then
+    tar -xOf "${archive_path}" "${member_path}" | grep -F "${expected_text}" >/dev/null
+  else
+    unzip -p "${archive_path}" "${member_path}" | grep -F "${expected_text}" >/dev/null
+  fi
+}
+
+verify_release_samples() {
+  local sdist_file="$1"
+  local wheel_file="$2"
+  local sdist_root="oratapi-${VERSION_TAG}"
+  local sdist_members=(
+    "${sdist_root}/resources/config/OraTAPI.ini.sample"
+    "${sdist_root}/src/oratapi/ora_tapi_package_data/resources/config/OraTAPI.ini.sample"
+  )
+  local wheel_member="oratapi/ora_tapi_package_data/resources/config/OraTAPI.ini.sample"
+  local sentinel_lines=(
+    "enable_ut_code_generation = false"
+    "default_table_owner = hr"
+    "colour_console = true"
+  )
+
+  for member in "${sdist_members[@]}"; do
+    require_archive_member "${sdist_file}" "${member}" "sdist" || {
+      echo "ERROR: Missing expected sample config in sdist: ${member}"
+      exit 1
+    }
+    for sentinel in "${sentinel_lines[@]}"; do
+      assert_archive_contains_text "${sdist_file}" "${member}" "sdist" "${sentinel}" || {
+        echo "ERROR: Incomplete sample config in sdist: ${member} is missing '${sentinel}'."
+        exit 1
+      }
+    done
+  done
+
+  require_archive_member "${wheel_file}" "${wheel_member}" "wheel" || {
+    echo "ERROR: Missing expected sample config in wheel: ${wheel_member}"
+    exit 1
+  }
+  for sentinel in "${sentinel_lines[@]}"; do
+    assert_archive_contains_text "${wheel_file}" "${wheel_member}" "wheel" "${sentinel}" || {
+      echo "ERROR: Incomplete sample config in wheel: ${wheel_member} is missing '${sentinel}'."
+      exit 1
+    }
+  done
+}
+
 POETRY=$(find_poetry)
 if [ -z "${POETRY}" ]; then
   echo "ERROR: Poetry is required to package this project."
@@ -117,6 +182,9 @@ if [ -z "${WHEEL_FILE}" ] || [ -z "${SDIST_FILE}" ]; then
   echo "ERROR: Expected build artefacts were not produced in ${DIST_DIR}."
   exit 1
 fi
+
+echo "Verifying packaged sample configuration..."
+verify_release_samples "${SDIST_FILE}" "${WHEEL_FILE}"
 
 echo
 echo "Built artefacts:"
