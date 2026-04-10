@@ -22,7 +22,12 @@ skip_on_missing_pk = true
 # enable_ut_code_generation, in the ut_controls section, is also set to true.
 enable_tapis_when_ut_enabled = false
 
-# Set check_github_for_updates to true to enable checks for newer versions of OraTAPI, otherwise set to false.
+# Set check_pypi_for_updates to true to enable checks for newer versions of OraTAPI on PyPI, otherwise set to false.
+check_pypi_for_updates = true
+
+# DEPRECATED: check_github_for_updates is retained for legacy extracted-install workflows and will be removed in a
+# future release. Prefer check_pypi_for_updates.
+# Set check_github_for_updates to true to enable checks for newer versions of OraTAPI on GitHub, otherwise set to false.
 check_github_for_updates = true
 
 [formatting]

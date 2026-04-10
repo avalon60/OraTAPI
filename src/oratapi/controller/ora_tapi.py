@@ -26,7 +26,7 @@ from oratapi.view.interactions import Interactions, MsgLvl, MissingParameterErro
 from pathlib import Path
 from oratapi.model.ora_tapi_csv import CSVManager
 from oratapi.model.framework_errors import UnsupportedOption
-from oratapi.lib.app_utils import get_latest_dist_url, get_latest_version
+from oratapi.lib.app_utils import get_latest_pypi_version, get_latest_version
 from oratapi.lib.framework_errors import DatabaseConnectionError
 from packaging.version import Version
 
@@ -227,9 +227,16 @@ class CodeManager:
         self.skip_on_missing_table = self.config_manager.bool_config_value(config_section='behaviour',
                                                                            config_key='skip_on_missing_table')
 
-        check_github_for_updates = self.config_manager.bool_config_value(config_section='behaviour',
-                                                                         config_key='check_github_for_updates',
-                                                                         default=True)
+        check_pypi_for_updates = self.config_manager.bool_config_value(
+            config_section='behaviour',
+            config_key='check_pypi_for_updates',
+            default=True,
+        )
+        check_github_for_updates = self.config_manager.bool_config_value(
+            config_section='behaviour',
+            config_key='check_github_for_updates',
+            default=False,
+        )
 
         self.col_auto_maintain_method = self.config_manager.config_value(config_section='api_controls',
                                                                          config_key='col_auto_maintain_method')
@@ -407,14 +414,30 @@ class CodeManager:
         self.view.print_console(text=f'  Triggers skipped: {results["triggers_skipped"]}',
                                 msg_level=MsgLvl.warning)
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
-        if check_github_for_updates:
-            latest_version = get_latest_version(repo_owner='avalon60', repo_name='OraTAPI')
-            latest_url = get_latest_dist_url(repo_owner='avalon60', repo_name='OraTAPI')
-            if Version(latest_version) > Version(__version__):
-                self.view.print_console(text=f'A newer version, {latest_version}, of OraTAPI is available.',
-                                        msg_level=MsgLvl.warning)
-                self.view.print_console(text=f'Run the update oratapi command to download and install.',
-                                        msg_level=MsgLvl.warning)
+        latest_version = None
+        update_source = None
+        install_hint = None
+
+        try:
+            if check_pypi_for_updates:
+                latest_version = get_latest_pypi_version("oratapi")
+                update_source = "PyPI"
+                install_hint = "Run `pip install --upgrade oratapi` to upgrade."
+            elif check_github_for_updates:
+                latest_version = get_latest_version(repo_owner='avalon60', repo_name='OraTAPI')
+                if latest_version:
+                    latest_version = latest_version.lstrip("v")
+                update_source = "GitHub"
+                install_hint = "Run the legacy update_ora_tapi command to download and install."
+
+            if latest_version and Version(latest_version) > Version(__version__):
+                self.view.print_console(
+                    text=f'A newer version, {latest_version}, of OraTAPI is available on {update_source}.',
+                    msg_level=MsgLvl.warning,
+                )
+                self.view.print_console(text=install_hint, msg_level=MsgLvl.warning)
+        except Exception:
+            pass
 
         exec_end_timestamp = current_timestamp()
         epoc_end_ts = int(time.time())

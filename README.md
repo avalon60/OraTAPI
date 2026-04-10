@@ -634,15 +634,29 @@ options:
   -s STAGING_DIR, --staging-dir STAGING_DIR
                         Specify a staging directory to download the latest version from GitHub.
 ```
-#### The check_github_for_updates Property
-A new property is introduced. This can be used to instruct the `ora_tapi` command to perform a check for new versions 
-of OraTAPI, published to GitHub.
+#### The check_pypi_for_updates Property
+Use this property to instruct the `ora_tapi` command to check PyPI for newer published versions of OraTAPI.
 
 ```
-# Set check_github_for_updates to true to enable checks for newer versions of OraTAPI, otherwise set to false.
+# Set check_pypi_for_updates to true to enable checks for newer versions of OraTAPI on PyPI, otherwise set to false.
+check_pypi_for_updates = true
+```
+When a newer version is found, OraTAPI prints a reminder that you can upgrade with:
+
+```bash
+pip install --upgrade oratapi
+```
+
+#### The check_github_for_updates Property
+This property is deprecated. It is retained only for legacy extracted-install workflows that still follow GitHub release
+updates rather than PyPI publication.
+
+```
+# DEPRECATED: Prefer check_pypi_for_updates for current releases.
 check_github_for_updates = true
 ```
-This property can be found in the `behaviour` section.
+
+Both properties live in the `behaviour` section.
 
 
 ## The Primary Components

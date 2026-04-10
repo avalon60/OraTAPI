@@ -63,6 +63,21 @@ def get_latest_version(repo_owner: str, repo_name: str) -> str:
         version = data.get("tag_name")  # e.g., "v1.4.20"
         return version
 
+
+def get_latest_pypi_version(package_name: str) -> str | None:
+    """
+    Fetches the latest published version of a package from PyPI.
+
+    :param package_name: The PyPI package name.
+    :return: The latest version string if available, otherwise None.
+    """
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("info", {}).get("version")
+    return None
+
 def download_file(url: str, save_dir: Path) -> Path:
     """
     Downloads a file from a URL and saves it to a specified local directory.
