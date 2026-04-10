@@ -247,7 +247,7 @@ python -m venv .venv
 pip install oratapi
 ```
 
-### Preferred: install from wheel
+### Preferred: install from PyPI or wheel
 
 1. Create and activate a virtual environment.
 
