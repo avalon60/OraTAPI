@@ -6,6 +6,7 @@ __description__ = ("Module for managing database and application connection entr
 import configparser
 from pathlib import Path
 import getpass
+import os
 from oratapi.lib.user_security import UserSecurity
 
 
@@ -173,8 +174,23 @@ class ConnectMgr:
 
     @staticmethod
     def _validate_wallet_path(path_str: str) -> str:
-        """Validate that the given wallet path exists and is a ZIP file."""
-        wallet_path = Path(path_str).expanduser().resolve()
+        """Validate that the given wallet path exists and is a ZIP file.
+
+        If the supplied value is not an existing path, try resolving it relative
+        to TNS_ADMIN before rejecting it.
+        """
+        candidate = Path(path_str).expanduser()
+        wallet_path = candidate.resolve() if candidate.exists() else None
+
+        if wallet_path is None:
+            tns_admin = os.environ.get("TNS_ADMIN", "").strip()
+            if tns_admin:
+                tns_wallet = (Path(tns_admin).expanduser() / path_str).resolve()
+                if tns_wallet.exists():
+                    wallet_path = tns_wallet
+
+        if wallet_path is None:
+            wallet_path = candidate.resolve()
         if not wallet_path.exists():
             print(f"Wallet path '{wallet_path}' does not exist.")
             return ""

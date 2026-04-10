@@ -49,6 +49,12 @@ class DBSession(oracledb.Connection):
                 candidate = Path(expanded_path).expanduser()
                 if candidate.is_file():
                     wallet_path = candidate.resolve(strict=False)
+                else:
+                    tns_admin = os.environ.get("TNS_ADMIN", "").strip()
+                    if tns_admin:
+                        tns_candidate = Path(tns_admin).expanduser() / expanded_path
+                        if tns_candidate.is_file():
+                            wallet_path = tns_candidate.resolve(strict=False)
 
             if wallet_path:
                 wallet_dir = self.extract_wallet(wallet_path)

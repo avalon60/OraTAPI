@@ -24,6 +24,39 @@ import subprocess
 import platform
 
 
+def _run_command(command: list[str], input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(command, input=input_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
+def _clean_system_identifier(raw_value: str) -> str:
+    return raw_value.replace("UUID", "").replace("\r", "").replace("\n", "").replace(" ", "").strip()
+
+
+def _windows_system_id() -> str:
+    commands = (
+        ["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_ComputerSystemProduct).UUID"],
+        ["powershell", "-NoProfile", "-Command", "(Get-WmiObject Win32_ComputerSystemProduct).UUID"],
+        ["wmic", "path", "win32_computersystemproduct", "get", "UUID"],
+    )
+
+    for command in commands:
+        try:
+            completed = _run_command(command)
+        except FileNotFoundError:
+            continue
+
+        if completed.returncode != 0:
+            continue
+
+        system_uid = _clean_system_identifier(completed.stdout.decode())
+        if system_uid:
+            return system_uid
+
+    raise RuntimeError(
+        "Unable to determine the Windows system UUID. PowerShell CIM/WMI lookup and legacy wmic lookup both failed."
+    )
+
+
 def _system_id():
     """
     Retrieves a unique system identifier based on the operating system.
@@ -42,30 +75,20 @@ def _system_id():
 
     if operating_system == 'Darwin':
         # macOS: Use ioreg and awk to fetch the IOPlatformUUID
-        command = "ioreg -d2 -c IOPlatformExpertDevice"
         # Run ioreg command to get platform details
-        ioreg_cmd = subprocess.run(["ioreg", "-d2", "-c", "IOPlatformExpertDevice"],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ioreg_cmd = _run_command(["ioreg", "-d2", "-c", "IOPlatformExpertDevice"])
         # Run awk command to extract the IOPlatformUUID
-        awk_cmd = subprocess.run(["awk", '-F\"', "'/IOPlatformUUID/{print $(NF-1)}'"],
-                                 input=ioreg_cmd.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        awk_cmd = _run_command(["awk", '-F\"', "'/IOPlatformUUID/{print $(NF-1)}'"], input_bytes=ioreg_cmd.stdout)
         # Decode the output to get the system UID
         system_uid = awk_cmd.stdout.decode()
 
     elif operating_system == 'Windows':
-        # Windows: Use wmic to get the UUID
-        # Run wmic command to get the system UUID
-        wmic_cmd = subprocess.run(["wmic", "path", "win32_computersystemproduct", "get", "UUID"],
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # Decode and clean up the output to get the system UID
-        system_uid = str(wmic_cmd.stdout.decode())
-        system_uid = system_uid.replace('UUID ', '').replace('\r', '').replace('\n', '').replace(' ', '')
+        system_uid = _windows_system_id()
 
     elif operating_system == 'Linux':
         # Linux: Read the machine-id file
         # Run cat command to read the /etc/machine-id file
-        cat_cmd = subprocess.run(["cat", "/etc/machine-id"],
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cat_cmd = _run_command(["cat", "/etc/machine-id"])
         # Decode the output to get the system UID
         system_uid = cat_cmd.stdout.decode()
 
