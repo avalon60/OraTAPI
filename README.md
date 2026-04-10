@@ -274,6 +274,8 @@ Poetry is not required on the target system for wheel installation.
 
 The packaged `.tar.gz` source distribution and `setup.sh` / `setup.ps1` are still available for the legacy extracted-install model. That path remains supported for now, but it is no longer the preferred deployment method.
 
+If you are moving away from an older extracted install, you do not need to preserve the old installation directory itself. OraTAPI stores user-owned runtime data under `~/OraTAPI` rather than inside the install tree, so you can remove the old extracted install and perform a fresh install without losing your profiles, active configuration, instantiated templates, CSV files, or profile-local Oracle Instant Client files.
+
 ### Optional: Create A Personal Launcher Script
 
 If you install OraTAPI into a dedicated virtual environment and want a simpler day-to-day command, you can create your own small wrapper script that calls the venv's installed executable directly. This is optional convenience only. It does not change the supported installation model.
@@ -531,6 +533,8 @@ Activate profile 'logger'? [y/N]:
 The `update_ora_tapi` command belongs to the legacy extracted-install model, where OraTAPI updates a writable installation tree in place. It is not the preferred upgrade mechanism for wheel or PyPI installations.
 
 For wheel-first installs, upgrade with `pip install --upgrade oratapi`.
+
+If an in-place legacy upgrade fails or leaves the install tree in an inconsistent state, the recommended recovery is to remove the extracted installation directory and install the new release again from scratch. This does not remove your OraTAPI runtime home under `~/OraTAPI`, so existing profiles, runtime configuration, instantiated templates, and profile-local Oracle Instant Client content remain available after reinstall.
 
 `update_ora_tapi` remains relevant only if you are still using an extracted install tree. In that legacy mode you can run it in two ways. If you have a tarball of an OraTAPI release, you can point the command at the tarball, and it will prompt for confirmation before updating OraTAPI.
 
