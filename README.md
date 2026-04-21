@@ -51,6 +51,7 @@ Version 2.8.2
     - [Fine-Grained File Controls](#fine-grained-file-controls)
       - [Controlling File Updates](#controlling-file-updates)
       - [PI (Personal Information) Columns \& Logging](#pi-personal-information-columns--logging)
+  - [Modifying Templates](#modifying-templates)
   - [Auto Column Management](#auto-column-management)
     - [What are Auto-managed Columns?](#what-are-auto-managed-columns)
     - [Configuring the Column Management Method](#configuring-the-column-management-method)
@@ -220,6 +221,8 @@ The packaged defaults remain in the installation, but OraTAPI reads and writes u
 If `~/OraTAPI/active_config` does not yet exist, OraTAPI stops with setup guidance. If no profiles exist yet, it tells you to run `quick_config`. If profile directories already exist, it tells you to activate one with `profile_mgr`.
 
 The profile model allows you to maintain multiple named OraTAPI configurations side by side. For example, you might keep one profile for basic generation, one for Liquibase-enabled output, and one for logger-based templates. Profiles can also be used to support different project requirements, where each project needs its own configuration, template customisations, and control-file settings. Switching profiles updates only `~/OraTAPI/active_config`; it does not copy files or rely on symbolic links.
+
+If you want to experiment with template changes without disturbing an existing working profile, consider cloning the current profile first with `profile_mgr -C <source-profile> <new-profile>`, then make the template changes in the new profile and activate it when ready. For example, one profile might use a trigger template that maintains `created_by`, `created_on`, `updated_by`, `updated_on`, and `row_version`, while another profile might rely on `default on null` table DDL for `created_by` and `created_on` and leave the trigger to maintain only `updated_by`, `updated_on`, and optionally `row_version`.
 
 Each profile may also contain two optional metadata files at the profile root:
 
@@ -638,7 +641,7 @@ The `ora_tapi` command line tool is used to launch the code generation process.
 The code templates form the basic shape of the generated source code files. There are various templates that are read 
 at runtime and constitute regions such as package file headers, footers, and procedures. You can also implement view and 
 trigger templates, and sample templates are provided for you to copy and modify. You should not amend the original sample 
-files. These have a suffix of `.tpt.sample`. There are also `column expression` templates. These are discussed in 
+files. These have a suffix of `.tpt.sample`. Instead, work on the instantiated `.tpt` files under `~/OraTAPI/configs/<active-profile>/resources/templates`. See [Modifying Templates](#modifying-templates) for the recommended workflow. There are also `column expression` templates. These are discussed in 
 the [Maintained by Column Expression](#maintained-by-column-expression) section.
 
 Finally, much of the behaviour of OraTAPI is governed by the configuration of the `OraTAPI.ini` file, which is located 
@@ -646,6 +649,40 @@ in the `config` directory. The OraTAPI.ini file consists of property/value pairs
 sections, which are used to categorise their purpose. Section names are enclosed in square brackets 
 (<i>e.g. [<api_controls]</i>). Specifically, for the OraTAPI framework, each property name in the file must be globally unique, 
 irrespective of which section it belongs to.
+
+## Modifying Templates
+OraTAPI is designed for profile-local template customisation. The packaged defaults are copied into the runtime home by
+`quick_config`, and the files you should edit are the instantiated `.tpt` templates under:
+
+```text
+~/OraTAPI/configs/<active-profile>/resources/templates
+```
+
+Do not edit the packaged defaults in the installation directory, and do not edit the original `.tpt.sample` files.
+Those files act as source material for profile bootstrapping, not as the normal day-to-day customisation point.
+
+If you want to preserve an existing working profile before changing templates, consider cloning it first:
+
+```bash
+profile_mgr -C <source-profile> <new-profile>
+profile_mgr -a <new-profile>
+```
+
+This is especially useful when you want to support different audit-column strategies in different environments. For
+example, one profile might use a trigger template that maintains `created_by`, `created_on`, `updated_by`,
+`updated_on`, and `row_version`, while another profile might assume `created_by` and `created_on` are handled by
+`default on null` clauses in the table DDL and leave the trigger to maintain only `updated_by`, `updated_on`, and
+optionally `row_version`.
+
+The same approach works well when you need different Liquibase, logger, trigger, view, or package-shape conventions
+for different projects. Keep those variations in separate profiles rather than repeatedly editing a single active
+profile back and forth.
+
+For trigger generation specifically, OraTAPI processes every `.tpt` file found in the active profile's trigger
+template directory. That means if you place more than one trigger template in
+`~/OraTAPI/configs/<active-profile>/resources/templates/misc/trigger`, OraTAPI will generate one trigger script per
+matching template for each selected table. The output file name is derived from the template file name, with
+`table_name` replaced by the actual table name.
 
 ### Command-line Tools
 In the preferred wheel/PyPI model, the command-line tools are installed as console scripts into the Python environment. There are two tools that you will need to work with most often, `conn_mgr` and `ora_tapi`. The latter of these will be used more frequently.
