@@ -19,7 +19,8 @@ Version 2.8.2
   - [Performing Upgrades](#performing-upgrades)
     - [Migrations](#migrations)
     - [In-situ upgrades](#in-situ-upgrades)
-      - [The check\_github\_for\_updates Property](#the-check_github_for_updates-property)
+      - [The check\_pypi\_for\_updates Property](#the-check_pypi_for_updates-property)
+      - [The check\_github\_for\_updates Property (Deprecated)](#the-check_github_for_updates-property)
   - [The Primary Components](#the-primary-components)
     - [Command-line Tools](#command-line-tools)
       - [Windows:](#windows)
@@ -165,7 +166,7 @@ These now map to Poetry operations:
 
 - `build-e` runs `poetry install --sync`
 - `freeze` exports `requirements.txt` from `poetry.lock`
-- `package.sh` exports `requirements.txt` and then builds the source distribution archive
+- `package.sh` exports `requirements.txt` and builds the release artefacts used for packaging
 
 Poetry is required only on the development machine. It is not required on the target system when installing from a packaged release.
 
@@ -566,7 +567,7 @@ pip install --upgrade oratapi
 
 If an in-place legacy upgrade fails or leaves the install tree in an inconsistent state, the recommended recovery is to remove the extracted installation directory and install the new release again from scratch. This does not remove your OraTAPI runtime home under `~/OraTAPI`, so existing profiles, runtime configuration, instantiated templates, and profile-local Oracle Instant Client content remain available after reinstall.
 
-Use `update_ora_tapi` only if you are deliberately staying on the extracted-install model. In that legacy mode you can run it in two ways. If you have a tarball of an OraTAPI release, you can point the command at the tarball, and it will prompt for confirmation before updating OraTAPI.
+Use `update_ora_tapi` only if you are deliberately staying on the extracted-install model. In that legacy mode you can either point the command at a release tarball, or let it download a release from GitHub for you.
 
 Example:
 ```
@@ -577,45 +578,11 @@ Current OraTAPI version: 1.4.24
 Tarball OraTAPI version: 1.4.25
 A newer version of OraTAPI is available. Do you want to proceed with the upgrade? [y/n]: 
 ```
-So here we use the -t flag to specify the pathname to a tarball. Entering "y" will cause the update to proceed.
+Here `-t` specifies the pathname to a tarball. Entering `y` allows the legacy upgrade to proceed.
 
-The second, and perhaps more convenient method, is by having `ora_tapi` check for a new version for you. This is 
-where the new OraTAPI.ini setting ([The check\_github\_for\_updates Property](#the-check_github_for_updates-property)) 
-comes somewhat into play. If this is set, then, when you run the ora_tapi.py command, it will reach out to GitHub to 
-check if a newer version exists, and it will print out a warning message, informing you that a newer version is 
-available. You can then have the `update_ora_tapi` download the latest release, and have it apply it to your 
-installation.
-```
-$ update_ora_tapi -s /tmp
-update_ora_tapi.py: OraTAPI upgrade utility version: 1.4.24
-OraTAPI upgrade started...
-Current OraTAPI version: 1.4.24
-Latest OraTAPI version on GitHub: 1.4.25
-A newer version is available on GitHub. Do you want to download it? [y/n]: y
-Downloading to: /tmp/oratapi-1.4.25.tar.gz
-Downloading https://github.com/avalon60/OraTAPI/releases/download/v1.4.25/oratapi-1.4.25.tar.gz...
-File downloaded successfully: /tmp/oratapi-1.4.25.tar.gz
-Download complete. Do you want to proceed with the upgrade? [y/n]: 
-```
-Press 'y' and enter to proceed:
+If you still use the GitHub-based legacy flow, `check_github_for_updates` can tell `ora_tapi` to warn that a newer GitHub release exists. That setting is deprecated and applies only to extracted installs. Current wheel and PyPI installs should instead use `check_pypi_for_updates` and upgrade with `pip install --upgrade oratapi`.
 
-```
-Extracting /tmp/oratapi-1.4.24.tar.gz to /tmp...
-Extraction complete. Root unpacked directory: /tmp/oratapi-1.4.24
-Upgraded: /tmp/oratapi-1.4.24/resources/config/OraTAPI.ini.sample -> resources/config/OraTAPI.ini.sample
-Upgraded: /tmp/oratapi-1.4.24/resources/config/pi_columns.csv.sample -> resources/config/pi_columns.csv.sample
-...
-Upgraded: /tmp/oratapi-1.4.24/setup.ps1 -> /home/clive/PycharmProjects/stage/oratapi/setup.ps1
-Upgraded: /tmp/oratapi-1.4.24/LICENSE -> /home/clive/PycharmProjects/stage/oratapi/LICENSE
-Upgraded: /tmp/oratapi-1.4.24/README.md -> /home/clive/PycharmProjects/stage/oratapi/README.md
-Total files upgraded: 127
-Cleaning up unpacked directory: /tmp/oratapi-1.4.24
-Adjusting permissions for: /home/clive/PycharmProjects/stage/oratapi/setup.sh
-Please run the setup.sh script to complete the upgrade.
-```
-
-NOTE: Irrespective of which option you choose to use, you must then run the `setup` command as advised at the end of 
-      the `update_ora_tapi` command output.
+For legacy extracted installs, you must still run the `setup` command mentioned at the end of `update_ora_tapi` output.
 
 Command Synopsis:
 
@@ -647,7 +614,7 @@ When a newer version is found, OraTAPI prints a reminder that you can upgrade wi
 pip install --upgrade oratapi
 ```
 
-#### The check_github_for_updates Property
+#### The check_github_for_updates Property (Deprecated)
 This property is deprecated. It is retained only for legacy extracted-install workflows that still follow GitHub release
 updates rather than PyPI publication.
 
