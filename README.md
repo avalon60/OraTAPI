@@ -694,10 +694,10 @@ database connections (credentials and DSNs). Such connections are named and can 
 
 The primary launch commands are:
 
-- `ora_tapi`
-- `conn_mgr`
-- `quick_config`
-- `profile_mgr`
+- `ora_tapi` / `ora-tapi` / `oratapi`
+- `conn_mgr` / `conn-mgr`
+- `quick_config` / `quick-config`
+- `profile_mgr` / `profile-mgr`
 
 If you are running from a source checkout or extracted legacy install, equivalent wrapper scripts remain available under `bin/`.
 
