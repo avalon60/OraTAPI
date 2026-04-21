@@ -285,9 +285,10 @@ pip install oratapi
    pip install oratapi
    ```
 
-3. Confirm the console scripts are available. Wheel installs provide both underscore and dashed command names, so `ora_tapi` and `ora-tapi` are equivalent, as are `quick_config` / `quick-config`, `profile_mgr` / `profile-mgr`, and `conn_mgr` / `conn-mgr`.
+3. Confirm the console scripts are available. Wheel installs provide `oratapi`, `ora_tapi`, and `ora-tapi` for the main controller, along with underscore and dashed forms for the companion tools such as `quick_config` / `quick-config`, `profile_mgr` / `profile-mgr`, `conn_mgr` / `conn-mgr`, and `update_ora_tapi` / `update-ora-tapi`.
 
    ```bash
+   oratapi --help
    ora_tapi --help
    ora-tapi --help
    quick_config --help
@@ -296,6 +297,8 @@ pip install oratapi
    profile-mgr --help
    conn_mgr --help
    conn-mgr --help
+   update_ora_tapi --help
+   update-ora-tapi --help
    ```
 
 Poetry is not required on the target system for wheel installation.
@@ -479,9 +482,18 @@ OraTAPI can be used via PowerShell or Git Bash.
 
 ## Performing Upgrades
 ### Migrations
-Wheel-first upgrades should normally be handled by installing a newer package version into the environment, for example:
+Wheel-first upgrades should normally be handled by first activating the virtual environment where OraTAPI is installed,
+then installing a newer package version, for example:
 
 ```bash
+source .venv/bin/activate
+pip install --upgrade oratapi
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
 pip install --upgrade oratapi
 ```
 
@@ -591,7 +603,7 @@ A newer version of OraTAPI is available. Do you want to proceed with the upgrade
 ```
 Here `-t` specifies the pathname to a tarball. Entering `y` allows the legacy upgrade to proceed.
 
-If you still use the GitHub-based legacy flow, `check_github_for_updates` can tell `ora_tapi` to warn that a newer GitHub release exists. That setting is deprecated and applies only to extracted installs. Current wheel and PyPI installs should instead use `check_pypi_for_updates` and upgrade with `pip install --upgrade oratapi`.
+If you still use the GitHub-based legacy flow, `check_github_for_updates` can tell `ora_tapi` to warn that a newer GitHub release exists. That setting is deprecated and applies only to extracted installs. Current wheel and PyPI installs should instead use `check_pypi_for_updates` and then activate the target virtual environment before running `pip install --upgrade oratapi`.
 
 For legacy extracted installs, you must still run the `setup` command mentioned at the end of `update_ora_tapi` output.
 
@@ -619,9 +631,17 @@ Use this property to instruct the `ora_tapi` command to check PyPI for newer pub
 # Set check_pypi_for_updates to true to enable checks for newer versions of OraTAPI on PyPI, otherwise set to false.
 check_pypi_for_updates = true
 ```
-When a newer version is found, OraTAPI prints a reminder that you can upgrade with:
+When a newer version is found, OraTAPI prints a reminder that you can activate the target virtual environment and upgrade with:
 
 ```bash
+source .venv/bin/activate
+pip install --upgrade oratapi
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
 pip install --upgrade oratapi
 ```
 
@@ -706,6 +726,7 @@ The primary launch commands are:
 - `conn_mgr` / `conn-mgr`
 - `quick_config` / `quick-config`
 - `profile_mgr` / `profile-mgr`
+- `update_ora_tapi` / `update-ora-tapi`
 
 If you are running from a source checkout or extracted legacy install, equivalent wrapper scripts remain available under `bin/`.
 
