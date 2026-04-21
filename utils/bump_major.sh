@@ -22,6 +22,11 @@ APP_HOME=$(dirname ${PROG_DIR})
 pushd ${APP_HOME}
 source utils/utils.env
 source_venv
+
+current_version() {
+  sed -n 's/^current_version = //p' .bumpversion.cfg
+}
+
 echo "App home: ${APP_HOME}"
 if [ "$1" = "dirty" ]
 then
@@ -29,3 +34,11 @@ then
 else  
   bump2version major
 fi
+
+status=$?
+if [ ${status} -eq 0 ]
+then
+  echo "New version: $(current_version)"
+fi
+
+exit ${status}

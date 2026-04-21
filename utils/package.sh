@@ -19,12 +19,31 @@ realpath_fallback() {
 
 find_poetry() {
   if command -v poetry >/dev/null 2>&1; then
-    echo "poetry"
-  elif [ -x "${HOME}/.local/bin/poetry" ]; then
-    echo "${HOME}/.local/bin/poetry"
-  else
-    echo ""
+    if poetry --version >/dev/null 2>&1; then
+      echo "poetry"
+      return
+    fi
   fi
+
+  if [ -x "${HOME}/.local/bin/poetry" ]; then
+    if "${HOME}/.local/bin/poetry" --version >/dev/null 2>&1; then
+      echo "${HOME}/.local/bin/poetry"
+      return
+    fi
+  fi
+
+  if command -v pyenv >/dev/null 2>&1; then
+    local pyenv_root
+    pyenv_root=$(pyenv root)
+    local poetry_path
+    poetry_path=$(find "${pyenv_root}/versions" -mindepth 3 -maxdepth 3 -type f -path '*/bin/poetry' 2>/dev/null | sort -V | tail -1)
+    if [ -n "${poetry_path}" ] && [ -x "${poetry_path}" ]; then
+      echo "${poetry_path}"
+      return
+    fi
+  fi
+
+  echo ""
 }
 
 display_usage() {
@@ -132,12 +151,6 @@ verify_release_samples() {
   done
 }
 
-POETRY=$(find_poetry)
-if [ -z "${POETRY}" ]; then
-  echo "ERROR: Poetry is required to package this project."
-  exit 1
-fi
-
 pushd "${APP_HOME}" >/dev/null
 
 if [ "${SHOW_VERSION:-N}" = "Y" ]; then
@@ -148,6 +161,12 @@ fi
 
 if [ -z "${VERSION_TAG:-}" ]; then
   display_usage
+fi
+
+POETRY=$(find_poetry)
+if [ -z "${POETRY}" ]; then
+  echo "ERROR: Poetry is required to package this project."
+  exit 1
 fi
 
 PYPROJECT_VERSION=$(pyproject_version)
