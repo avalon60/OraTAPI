@@ -562,9 +562,17 @@ Activate profile 'logger'? [y/N]:
 ### In-situ upgrades
 The `update_ora_tapi` command belongs to the legacy extracted-install model, where OraTAPI updates a writable installation tree in place. It is a compatibility mechanism for older extracted installs, not the primary upgrade path for current releases.
 
-For wheel and PyPI installs, upgrade with:
+For wheel and PyPI installs, first activate the virtual environment where OraTAPI is installed, then upgrade:
 
 ```bash
+source .venv/bin/activate
+pip install --upgrade oratapi
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
 pip install --upgrade oratapi
 ```
 
