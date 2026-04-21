@@ -1,3 +1,9 @@
+"""Main OraTAPI controller for coordinating CLI-driven code generation."""
+
+# Author: Clive Bostock
+# Date: 2026-04-21
+# Description: Main controller to parse command-line arguments and coordinate API generation flow.
+
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
 __description__ = "Main controller to parse command-line arguments and coordinate API generation flow."
@@ -38,6 +44,7 @@ prog_bin = Path(__file__).resolve().parent
 PROG_NAME = Path(__file__).name
 
 VALID_API_TYPES = ["insert", "select", "update", "delete", "upsert", "merge"]
+PYPI_VERSION_CHECK_TIMEOUT_SECONDS = 2.5
 
 
 def resolve_runtime_relative_path(path_name: Path) -> Path:
@@ -414,13 +421,35 @@ class CodeManager:
         self.view.print_console(text=f'  Triggers skipped: {results["triggers_skipped"]}',
                                 msg_level=MsgLvl.warning)
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
+        self._report_available_update(
+            check_pypi_for_updates=check_pypi_for_updates,
+            check_github_for_updates=check_github_for_updates,
+        )
+
+        exec_end_timestamp = current_timestamp()
+        epoc_end_ts = int(time.time())
+        self.view.print_console(text=f'{PROG_NAME}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
+                                msg_level=MsgLvl.highlight)
+        elapsed_time = format_elapsed_time(start_ts=epoc_start_ts, end_ts=epoc_end_ts)
+        self.view.print_console(text=f'Elapsed time: {elapsed_time}',
+                                msg_level=MsgLvl.highlight)
+
+    def _report_available_update(
+        self,
+        check_pypi_for_updates: bool,
+        check_github_for_updates: bool,
+    ) -> None:
+        """Report a newer OraTAPI version when an update source is reachable."""
         latest_version = None
         update_source = None
         install_hint = None
 
         try:
             if check_pypi_for_updates:
-                latest_version = get_latest_pypi_version("oratapi")
+                latest_version = get_latest_pypi_version(
+                    package_name="oratapi",
+                    timeout=PYPI_VERSION_CHECK_TIMEOUT_SECONDS,
+                )
                 update_source = "PyPI"
                 install_hint = (
                     "Activate the OraTAPI virtual environment, then run "
@@ -440,15 +469,7 @@ class CodeManager:
                 )
                 self.view.print_console(text=install_hint, msg_level=MsgLvl.warning)
         except Exception:
-            pass
-
-        exec_end_timestamp = current_timestamp()
-        epoc_end_ts = int(time.time())
-        self.view.print_console(text=f'{PROG_NAME}: Run Id: {RUN_ID} completed at: {exec_end_timestamp}',
-                                msg_level=MsgLvl.highlight)
-        elapsed_time = format_elapsed_time(start_ts=epoc_start_ts, end_ts=epoc_end_ts)
-        self.view.print_console(text=f'Elapsed time: {elapsed_time}',
-                                msg_level=MsgLvl.highlight)
+            return
 
 
     @staticmethod

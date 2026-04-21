@@ -1,3 +1,9 @@
+"""Shared application utility helpers for OraTAPI."""
+
+# Author: Clive Bostock
+# Date: 2026-04-21
+# Description: Shared application utility helpers for OraTAPI.
+
 __author__ = "Clive Bostock"
 __date__ = "2024-12-11"
 __description__ = "Application utilities"
@@ -11,6 +17,7 @@ from datetime import datetime
 from platform import platform
 import uuid
 import requests
+from requests import RequestException
 from urllib.parse import urlsplit
 
 
@@ -64,19 +71,26 @@ def get_latest_version(repo_owner: str, repo_name: str) -> str:
         return version
 
 
-def get_latest_pypi_version(package_name: str) -> str | None:
-    """
-    Fetches the latest published version of a package from PyPI.
+def get_latest_pypi_version(package_name: str, timeout: float = 2.5) -> str | None:
+    """Fetch the latest published package version from PyPI.
 
-    :param package_name: The PyPI package name.
-    :return: The latest version string if available, otherwise None.
+    Args:
+        package_name: The PyPI package name.
+        timeout: The network timeout, in seconds.
+
+    Returns:
+        The latest version string when available, otherwise ``None``.
     """
     url = f"https://pypi.org/pypi/{package_name}/json"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("info", {}).get("version")
-    return None
+
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+    except RequestException:
+        return None
+
+    data = response.json()
+    return data.get("info", {}).get("version")
 
 def download_file(url: str, save_dir: Path) -> Path:
     """
