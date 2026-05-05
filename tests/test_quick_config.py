@@ -17,7 +17,9 @@ def test_bootstrap_builtin_profiles_creates_runtime_files(monkeypatch, tmp_path)
         assert profile_root.exists()
         config_file = profile_root / "resources" / "config" / "OraTAPI.ini"
         assert config_file.exists()
-        assert "skip_logged_data_types" in config_file.read_text(encoding="utf-8")
+        config_text = config_file.read_text(encoding="utf-8")
+        assert "skip_logged_data_types" in config_text
+        assert "skip_logged_data_types_mode" in config_text
         assert (profile_root / "resources" / "config" / "pi_columns.csv").exists()
         assert (profile_root / "resources" / "templates" / "packages" / "procedures" / "select.tpt").exists()
         assert (profile_root / "purpose.md").exists()
