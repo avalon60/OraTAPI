@@ -45,6 +45,18 @@ NO_OP_DATA_TYPES = (
     "NCLOB"      # National Character Large Object
 )
 
+DEFAULT_LOGGER_SKIP_DATA_TYPES = (
+    "CLOB",
+    "NCLOB",
+    "BLOB",
+    "BFILE",
+    "LONG",
+    "LONG RAW",
+    "XMLTYPE",
+    "JSON",
+    "SDO_GEOMETRY",
+)
+
 def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces:int = 3) -> str:
     """
     Recursively walk through a nested dictionary to replace placeholders in the text template.
@@ -259,6 +271,12 @@ class ApiGenerator:
         self.logger_logs = self.config_manager.config_value(config_section="logger",
                                                                 config_key="logger_logs",
                                                                 default="logger_logs")
+        skip_logged_data_types = self.config_manager.config_value(
+            config_section="logger",
+            config_key="skip_logged_data_types",
+            default=", ".join(DEFAULT_LOGGER_SKIP_DATA_TYPES),
+        )
+        self.logger_skip_data_types = self._parse_data_type_list(skip_logged_data_types)
 
         pi_columns_csv_dir = self.config_manager.config_value(config_section="file_controls",
                                                                 config_key="pi_columns_csv_dir",
@@ -428,12 +446,11 @@ class ApiGenerator:
             column_name_lc = column_name.lower()
             if column_name_lc in self.auto_maintained_cols_lc or column_name_lc == self.row_vers_column_name.lower():
                 continue
+            if column_name_lc in skip_list or self._logger_data_type_blocked(column_name):
+                continue
             parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype'  or column_name_lc in self.table.pk_columns_list_lc else 'p_row.' + column_name_lc
-            data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
             is_pk_column = self.table.column_property_value(column_name=column_name, property_name='is_pk_column')
             param_prefix = '* ' if is_pk_column else '  '
-            if data_type == 'CLOB' or column_name_lc in skip_list:
-                continue
 
             is_pi = self.pi_column_manager.check_column(schema_name=self.table.schema_name_lc,
                                                         table_name=self.table.table_name_lc,
@@ -446,6 +463,40 @@ class ApiGenerator:
                 logger_appends += f"{tabs}{comment}{self.logger_pkg}.append_param(l_params, '{param_prefix}{parameter_name_lc}', {parameter_name_lc});\n"
 
         return logger_appends
+
+    @staticmethod
+    def _normalise_data_type_name(data_type_name: str) -> str:
+        if not data_type_name:
+            return ''
+        return re.sub(r'\s+', ' ', str(data_type_name).strip()).upper()
+
+    @classmethod
+    def _parse_data_type_list(cls, data_type_list: str) -> set[str]:
+        if not data_type_list:
+            return set()
+
+        parsed_data_types = set()
+        for entry in str(data_type_list).split(','):
+            normalised = cls._normalise_data_type_name(entry)
+            if normalised:
+                parsed_data_types.add(normalised)
+        return parsed_data_types
+
+    def _logger_data_type_keys(self, column_name: str) -> set[str]:
+        data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
+        data_type_owner = self.table.column_property_value(column_name=column_name, property_name='data_type_owner')
+
+        type_keys = {self._normalise_data_type_name(data_type)}
+        if data_type_owner:
+            qualified_type = f"{data_type_owner}.{data_type}"
+            type_keys.add(self._normalise_data_type_name(qualified_type))
+
+        return {type_key for type_key in type_keys if type_key}
+
+    def _logger_data_type_blocked(self, column_name: str) -> bool:
+        if not self.logger_skip_data_types:
+            return False
+        return any(type_key in self.logger_skip_data_types for type_key in self._logger_data_type_keys(column_name))
 
 
     def _noop_assignment(self, column_name, soft_tabs:int) -> str:

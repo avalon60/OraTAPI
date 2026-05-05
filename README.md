@@ -1068,6 +1068,9 @@ Here we cover the various sections and properties.
 - **logger_logs**: Specifies the logger_logs table.
   - Example: `logger_logs = logger_logs`
   - **Purpose**: Defines the logger_logs table name (optionally prefixed by the owning schema, e.g. logger_user.logger_logs). This is used purely for data typing inside the generated package code.
+- **skip_logged_data_types**: Specifies a comma-separated list of Oracle datatypes that must not have generated `logger.append_param` calls.
+  - Example: `skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY`
+  - **Purpose**: Prevents large or awkward datatypes from being logged. Entries can be bare datatype names such as `CLOB` or owner-qualified object types such as `MDSYS.SDO_GEOMETRY`.
 ---
 #### [schemas]
 - **default_table_owner**: Specifies the default schema for tables.
@@ -1343,6 +1346,10 @@ Like `OraTAPI.ini` and `OraTAPI.csv`, `pi_columns.csv` is maintained per profile
 `~/OraTAPI/configs/<active-profile>/resources/config/pi_columns.csv`, so different profiles can carry different PI
 column rules.
 This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
+
+Datatype-based suppression is configured separately under `[logger]` via `skip_logged_data_types`. This allows large
+or special-case datatypes such as `CLOB`, `BLOB`, `XMLTYPE`, `JSON`, and `SDO_GEOMETRY` to be omitted from generated
+parameter logging altogether.
 
 The file contains the following columns:
 
@@ -1915,7 +1922,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_row.job_id', p_row.job_id);
       logger_user.logger.append_param(l_params, '  p_row.job_title', p_row.job_title);
       logger_user.logger.append_param(l_params, '  p_row.min_salary', p_row.min_salary);
@@ -1972,7 +1979,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
       logger_user.logger.append_param(l_params, '  p_job_title', p_job_title);
       logger_user.logger.append_param(l_params, '  p_min_salary', p_min_salary);
@@ -2026,7 +2033,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_row.job_id', p_row.job_id);
 
       logger.log('START', l_scope, null, l_params);
@@ -2081,7 +2088,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
 
       logger.log('START', l_scope, null, l_params);
@@ -2131,7 +2138,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_row.job_id', p_row.job_id);
       logger_user.logger.append_param(l_params, '  p_row.job_title', p_row.job_title);
       logger_user.logger.append_param(l_params, '  p_row.min_salary', p_row.min_salary);
@@ -2183,7 +2190,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
       logger_user.logger.append_param(l_params, '  p_job_title', p_job_title);
       logger_user.logger.append_param(l_params, '  p_min_salary', p_min_salary);
@@ -2230,7 +2237,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
 
       logger.log('START', l_scope, null, l_params);
