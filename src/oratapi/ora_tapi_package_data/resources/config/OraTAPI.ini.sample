@@ -170,6 +170,11 @@ logger_logs = logger_user.logger_logs
 # Comma-separated datatype names to suppress from generated logger.append_param calls. Match either bare datatype names
 # such as CLOB or owner-qualified object types such as MDSYS.SDO_GEOMETRY.
 skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY
+# How blocked datatypes should be represented in generated logger code:
+# omit = generate no append_param call
+# comment = emit a comment showing the skipped parameter and datatype
+# redact = emit append_param with a placeholder value
+skip_logged_data_types_mode = omit
 
 [schemas]
 # Set default owners. These can be overridden on the command line.

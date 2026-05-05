@@ -1071,6 +1071,9 @@ Here we cover the various sections and properties.
 - **skip_logged_data_types**: Specifies a comma-separated list of Oracle datatypes that must not have generated `logger.append_param` calls.
   - Example: `skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY`
   - **Purpose**: Prevents large or awkward datatypes from being logged. Entries can be bare datatype names such as `CLOB` or owner-qualified object types such as `MDSYS.SDO_GEOMETRY`.
+- **skip_logged_data_types_mode**: Controls how blocked datatypes are rendered in generated logger parameter code.
+  - Example: `skip_logged_data_types_mode = omit`
+  - **Purpose**: Supports `omit` to generate no `append_param` call, `comment` to emit `-- skipped logger append for p_doc (XMLTYPE)`, and `redact` to emit an `append_param` call with a placeholder such as `[datatype skipped: XMLTYPE]`.
 ---
 #### [schemas]
 - **default_table_owner**: Specifies the default schema for tables.
@@ -1276,6 +1279,8 @@ include_commit = false
 # templates take advantage of these settings.
 logger_pkg = logger_user.logger
 logger_logs = logger_user.logger_logs
+skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY
+skip_logged_data_types_mode = omit
 
 [schemas]
 # Set default owners. These can be overridden on the command line.
@@ -1347,9 +1352,13 @@ Like `OraTAPI.ini` and `OraTAPI.csv`, `pi_columns.csv` is maintained per profile
 column rules.
 This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
 
-Datatype-based suppression is configured separately under `[logger]` via `skip_logged_data_types`. This allows large
-or special-case datatypes such as `CLOB`, `BLOB`, `XMLTYPE`, `JSON`, and `SDO_GEOMETRY` to be omitted from generated
-parameter logging altogether.
+Datatype-based suppression is configured separately under `[logger]` via `skip_logged_data_types` and
+`skip_logged_data_types_mode`. This allows large or special-case datatypes such as `CLOB`, `BLOB`, `XMLTYPE`,
+`JSON`, and `SDO_GEOMETRY` to be handled in one of three ways:
+
+- `omit`: generate no `logger.append_param` call
+- `comment`: generate a comment such as `-- skipped logger append for p_doc (XMLTYPE)`
+- `redact`: generate an `append_param` call that logs a placeholder such as `[datatype skipped: XMLTYPE]`
 
 The file contains the following columns:
 
