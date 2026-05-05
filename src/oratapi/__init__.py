@@ -2,4 +2,4 @@
 
 __author__ = "Clive Bostock"
 __date__ = "2024-11-09"
-__version__ = "2.9.1"
+__version__ = "2.9.2"
