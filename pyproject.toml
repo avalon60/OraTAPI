@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "oratapi"
-version = "2.9.2"
+version = "2.10.0"
 description = "Generate Oracle PL/SQL table APIs, views, triggers, and utPLSQL starter code from database metadata."
 readme = "README.md"
 license = "MIT"
