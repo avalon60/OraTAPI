@@ -5,7 +5,7 @@
 
 %STAB%begin
 
-%STAB%%STAB%-- We don't log any CLOB parameters here.
+%STAB%%STAB%-- Parameter logging is filtered by datatype and PI rules.
 %STAB%%STAB%%logger_params_append_lc%
 %STAB%%STAB%logger.log('START', l_scope, null, l_params);
 
