@@ -41,3 +41,30 @@ def test_templates_only_requires_existing_control_files(monkeypatch, tmp_path) -
     bootstrap_builtin_profiles(selected_profile="logger", force=True, templates_only=True)
 
     assert "# local customisation" in basic_ini.read_text(encoding="utf-8")
+
+
+def test_force_reports_new_config_properties_before_overwrite(monkeypatch, tmp_path, capsys) -> None:
+    home_dir = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(home_dir))
+
+    bootstrap_builtin_profiles(selected_profile="logger", force=False)
+    capsys.readouterr()
+
+    logger_ini = profile_home("logger") / "resources" / "config" / "OraTAPI.ini"
+    logger_ini.write_text(
+        "\n".join(
+            line for line in logger_ini.read_text(encoding="utf-8").splitlines()
+            if not line.startswith("skip_logged_data_types")
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    bootstrap_builtin_profiles(selected_profile="logger", force=True)
+
+    output = capsys.readouterr().out
+    assert "[NEW] logger.skip_logged_data_types " in output
+    assert "[NEW] logger.skip_logged_data_types_mode " in output
+    config_text = logger_ini.read_text(encoding="utf-8")
+    assert "skip_logged_data_types =" in config_text
+    assert "skip_logged_data_types_mode =" in config_text

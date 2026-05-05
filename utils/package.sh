@@ -124,6 +124,8 @@ verify_release_samples() {
     "enable_ut_code_generation = false"
     "default_table_owner = hr"
     "colour_console = true"
+    "skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY"
+    "skip_logged_data_types_mode = omit"
   )
 
   for member in "${sdist_members[@]}"; do
