@@ -1137,18 +1137,29 @@ class ApiGenerator:
             column_name_lc = column_name.lower()
             if column_name_lc in self.auto_maintained_cols:
                 continue
-            if self.table.is_identity_always(column_name):
-                continue
-
-            processed_columns += 1
             is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
+            is_ak_column = self.table.column_property_value(column_name=column_name, property_name="is_ak_column")
             is_row_version_column = self.table.column_property_value(column_name=column_name,
                                                                      property_name="is_row_version_column")
+            is_identity_column = self.table.is_identity(column_name)
+            if is_identity_column:
+                identity_is_returned = (
+                    (is_pk_column and self.return_pk_columns)
+                    or (is_ak_column and self.return_ak_columns)
+                    or is_row_version_column
+                )
+                if not identity_is_returned:
+                    continue
+
+            processed_columns += 1
             default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if column_name_lc in self.table.in_out_column_list_lc:
+            if is_identity_column:
+                in_out = f'{STAB}   out'
+            elif column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
             elif column_name_lc in self.table.out_column_list_lc:
                 in_out = f'{STAB}   out'
