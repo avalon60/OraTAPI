@@ -55,6 +55,11 @@ def copy_files(profile_name: str, template_category: str, force: bool, templates
     config_sample = resolve_default_path(Path("resources") / "config" / "OraTAPI.ini.sample")
     config_target = config_dir / "OraTAPI.ini"
 
+    compared_existing_config = False
+    if config_sample.exists() and config_target.exists():
+        compare_config_files(config_file_path=config_target, config_sample_file=config_sample)
+        compared_existing_config = True
+
     if config_sample.exists() and (force or not config_target.exists()) and not templates_only:
         shutil.copyfile(config_sample, config_target)
         files_copied += 1
@@ -111,7 +116,7 @@ def copy_files(profile_name: str, template_category: str, force: bool, templates
                     files_copied += 1
                     print(f"[{profile_name}] Copied: {sample_file} -> {target_file.with_suffix('.tpt').relative_to(runtime_home())}")
     print(f"[{profile_name}] {files_copied} files instantiated.")
-    if config_target.exists():
+    if config_sample.exists() and config_target.exists() and not compared_existing_config:
         compare_config_files(config_file_path=config_target, config_sample_file=config_sample)
 
 

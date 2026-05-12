@@ -45,6 +45,24 @@ NO_OP_DATA_TYPES = (
     "NCLOB"      # National Character Large Object
 )
 
+DEFAULT_LOGGER_SKIP_DATA_TYPES = (
+    "CLOB",
+    "NCLOB",
+    "BLOB",
+    "BFILE",
+    "LONG",
+    "LONG RAW",
+    "XMLTYPE",
+    "JSON",
+    "SDO_GEOMETRY",
+)
+
+LOGGER_SKIP_DATA_TYPE_MODES = (
+    "omit",
+    "comment",
+    "redact",
+)
+
 def inject_values(substitutions: Dict[str, Any], target_string: str, stab_spaces:int = 3) -> str:
     """
     Recursively walk through a nested dictionary to replace placeholders in the text template.
@@ -259,6 +277,20 @@ class ApiGenerator:
         self.logger_logs = self.config_manager.config_value(config_section="logger",
                                                                 config_key="logger_logs",
                                                                 default="logger_logs")
+        skip_logged_data_types = self.config_manager.config_value(
+            config_section="logger",
+            config_key="skip_logged_data_types",
+            default=", ".join(DEFAULT_LOGGER_SKIP_DATA_TYPES),
+        )
+        self.logger_skip_data_types = self._parse_data_type_list(skip_logged_data_types)
+        skip_logged_data_types_mode = self.config_manager.config_value(
+            config_section="logger",
+            config_key="skip_logged_data_types_mode",
+            default="omit",
+        )
+        self.logger_skip_data_types_mode = self._normalise_logger_skip_data_types_mode(
+            skip_logged_data_types_mode
+        )
 
         pi_columns_csv_dir = self.config_manager.config_value(config_section="file_controls",
                                                                 config_key="pi_columns_csv_dir",
@@ -421,31 +453,100 @@ class ApiGenerator:
             skip_list = []
         skip_list = [item.lower() for item in skip_list]
 
-        logger_appends = ''
+        logger_append_lines = []
         tabs = "%STAB%" * soft_tabs
-        col_id = 0
+        skip_mode = self._normalise_logger_skip_data_types_mode(
+            getattr(self, "logger_skip_data_types_mode", "omit")
+        )
         for column_name in self.table.columns_list:
             column_name_lc = column_name.lower()
             if column_name_lc in self.auto_maintained_cols_lc or column_name_lc == self.row_vers_column_name.lower():
                 continue
+            if column_name_lc in skip_list:
+                continue
             parameter_name_lc = 'p_' + column_name_lc if signature_type == 'coltype'  or column_name_lc in self.table.pk_columns_list_lc else 'p_row.' + column_name_lc
-            data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
             is_pk_column = self.table.column_property_value(column_name=column_name, property_name='is_pk_column')
             param_prefix = '* ' if is_pk_column else '  '
-            if data_type == 'CLOB' or column_name_lc in skip_list:
-                continue
+            blocked_data_type = self._logger_data_type_match(column_name)
 
             is_pi = self.pi_column_manager.check_column(schema_name=self.table.schema_name_lc,
                                                         table_name=self.table.table_name_lc,
                                                         column_name=column_name_lc)
-            comment = '-- PI column: ' if is_pi else ''
-            col_id += 1
-            if col_id == 1:
-                logger_appends = f"{comment}{self.logger_pkg}.append_param(l_params, '{param_prefix}{parameter_name_lc}', {parameter_name_lc});\n"
+            if blocked_data_type:
+                if skip_mode == "omit":
+                    continue
+                if skip_mode == "comment":
+                    logger_append_lines.append(
+                        f"-- skipped logger append for {parameter_name_lc} ({blocked_data_type})"
+                    )
+                    continue
+                append_value = f"'[datatype skipped: {blocked_data_type}]'"
             else:
-                logger_appends += f"{tabs}{comment}{self.logger_pkg}.append_param(l_params, '{param_prefix}{parameter_name_lc}', {parameter_name_lc});\n"
+                append_value = parameter_name_lc
 
-        return logger_appends
+            comment = '-- PI column: ' if is_pi else ''
+            logger_append_lines.append(
+                f"{comment}{self.logger_pkg}.append_param(l_params, '{param_prefix}{parameter_name_lc}', {append_value});"
+            )
+
+        if not logger_append_lines:
+            return ''
+        return logger_append_lines[0] + ''.join(f"\n{tabs}{line}" for line in logger_append_lines[1:]) + "\n"
+
+    @staticmethod
+    def _normalise_data_type_name(data_type_name: str) -> str:
+        if not data_type_name:
+            return ''
+        return re.sub(r'\s+', ' ', str(data_type_name).strip()).upper()
+
+    @classmethod
+    def _parse_data_type_list(cls, data_type_list: str) -> set[str]:
+        if not data_type_list:
+            return set()
+
+        parsed_data_types = set()
+        for entry in str(data_type_list).split(','):
+            normalised = cls._normalise_data_type_name(entry)
+            if normalised:
+                parsed_data_types.add(normalised)
+        return parsed_data_types
+
+    @staticmethod
+    def _normalise_logger_skip_data_types_mode(mode_name: str) -> str:
+        mode = str(mode_name or "omit").strip().lower()
+        if mode not in LOGGER_SKIP_DATA_TYPE_MODES:
+            raise ValueError(
+                "Invalid value for logger.skip_logged_data_types_mode: "
+                f"'{mode_name}'. Valid values: {list(LOGGER_SKIP_DATA_TYPE_MODES)}"
+            )
+        return mode
+
+    def _logger_data_type_keys(self, column_name: str) -> tuple[str, ...]:
+        data_type = self.table.column_property_value(column_name=column_name, property_name='data_type')
+        data_type_owner = self.table.column_property_value(column_name=column_name, property_name='data_type_owner')
+
+        type_keys = []
+        normalised_data_type = self._normalise_data_type_name(data_type)
+        if normalised_data_type:
+            type_keys.append(normalised_data_type)
+        if data_type_owner:
+            qualified_type = f"{data_type_owner}.{data_type}"
+            normalised_qualified_type = self._normalise_data_type_name(qualified_type)
+            if normalised_qualified_type and normalised_qualified_type not in type_keys:
+                type_keys.append(normalised_qualified_type)
+
+        return tuple(type_keys)
+
+    def _logger_data_type_match(self, column_name: str) -> str | None:
+        if not self.logger_skip_data_types:
+            return None
+        for type_key in self._logger_data_type_keys(column_name):
+            if type_key in self.logger_skip_data_types:
+                return type_key
+        return None
+
+    def _logger_data_type_blocked(self, column_name: str) -> bool:
+        return self._logger_data_type_match(column_name) is not None
 
 
     def _noop_assignment(self, column_name, soft_tabs:int) -> str:
@@ -1036,18 +1137,29 @@ class ApiGenerator:
             column_name_lc = column_name.lower()
             if column_name_lc in self.auto_maintained_cols:
                 continue
-            if self.table.is_identity_always(column_name):
-                continue
-
-            processed_columns += 1
             is_key_col = self.table.column_property_value(column_name=column_name, property_name="is_key_column")
+            is_pk_column = self.table.column_property_value(column_name=column_name, property_name="is_pk_column")
+            is_ak_column = self.table.column_property_value(column_name=column_name, property_name="is_ak_column")
             is_row_version_column = self.table.column_property_value(column_name=column_name,
                                                                      property_name="is_row_version_column")
+            is_identity_column = self.table.is_identity(column_name)
+            if is_identity_column:
+                identity_is_returned = (
+                    (is_pk_column and self.return_pk_columns)
+                    or (is_ak_column and self.return_ak_columns)
+                    or is_row_version_column
+                )
+                if not identity_is_returned:
+                    continue
+
+            processed_columns += 1
             default_value = self.table.column_property_value(column_name=column_name, property_name="default_value")
             leader = f', ' if processed_columns > 1 else f'  '
             param = f'{STAB}{STAB}{leader}p_{column_name_lc.ljust(self.table.max_col_name_len + self.indent_spaces, " ")}'
 
-            if column_name_lc in self.table.in_out_column_list_lc:
+            if is_identity_column:
+                in_out = f'{STAB}   out'
+            elif column_name_lc in self.table.in_out_column_list_lc:
                 in_out = f'{STAB}in out'
             elif column_name_lc in self.table.out_column_list_lc:
                 in_out = f'{STAB}   out'

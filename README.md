@@ -1,8 +1,8 @@
-
+![OraTAPI 1.0](./assets/images/OraTAPILogo-readme.png)
 
 # OraTAPI - Oracle Table API Generator 
 
-Version 2.9.0
+Version 2.10.0
 
 - [OraTAPI - Oracle Table API Generator](#oratapi---oracle-table-api-generator)
   - [About OraTAPI](#about-oratapi)
@@ -196,22 +196,22 @@ The runtime home created by `quick_config` looks similar to this:
 ~/OraTAPI
 ├── active_config
 ├── configs
-│   ├── basic
-│   │   ├── created_version.md
-│   │   ├── purpose.md
-│   │   └── resources
-│   │       ├── config
-│   │       │   ├── OraTAPI.csv
-│   │       │   ├── OraTAPI.ini
-│   │       │   └── pi_columns.csv
-│   │       └── templates
-│   │           ├── column_expressions
-│   │           ├── misc
-│   │           ├── packages
-│   │           └── ut_packages
-│   ├── liquibase
-│   ├── logger
-│   └── llogger
+│   ├── basic
+│   │   ├── created_version.md
+│   │   ├── purpose.md
+│   │   └── resources
+│   │       ├── config
+│   │       │   ├── OraTAPI.csv
+│   │       │   ├── OraTAPI.ini
+│   │       │   └── pi_columns.csv
+│   │       └── templates
+│   │           ├── column_expressions
+│   │           ├── misc
+│   │           ├── packages
+│   │           └── ut_packages
+│   ├── liquibase
+│   ├── logger
+│   └── llogger
 ├── staging
 └── ut_staging
 ```
@@ -850,24 +850,26 @@ In this example, we assume that the dev-db is a TNS Names entry.
 **It is recommended that you use the connection manager approach.**
 
 ### Full Command-Line Arguments:
-| Argument                   | Description                                                                                | Default                  |
-|----------------------------|--------------------------------------------------------------------------------------------|--------------------------|
-| `-A`, `--app_name`         | Application name included in the package header.                                           | `Undefined`              |
-| `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
-| `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
-| `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
-| `--oracle-client-dir`      | Oracle Instant Client directory to use for the current run.                                |                          |
+### Full Command-Line Arguments:
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `-A`, `--app_name`   | Application name included in the package header.               | `Undefined`      |
+| `-a`, `--tapi_author`  | Author name for the package header.                    | `OraTAPI generator`  |
+| `-c`, `--conn_name`    | Connection name for saved configuration.                 |          |
+| `-d`, `--dsn`      | Database Data Source Name (TNS entry).                   |          |
+| `--oracle-client-dir`  | Oracle Instant Client directory to use for the current run.            |          |
 | `-g`, `--staging_dir` | Directory for the staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/staging` |
 | `-G`, `--ut_staging_dir` | Directory for the Unit Test staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/ut_staging` |
-| `-p`, `--db_password`      | Database password.                                                                         |                          |
-| `-po`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
-| `-t`, `--table_names`      | A space separated list of table names.                                                      | All tables               |
-| `-To`, `--table_owner`     | The table owner/schema on whose tables the generated APIs are to be based.                 |                          |
-| `-to`, `--trigger_owner`   | The schema in which the generated scripts should create the triggers.                      |                          |
-| `-vo`, `--view_owner`      | The schema in which the generated scripts should create the views.                         |                          |
-| `-u`, `--db_username`      | Database username.                                                                         |                          |
-| `-T`, `--api_types`        | A space separated list of API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
-| `-U`, `--ut_api_types`     | A space separated list of Unit Test API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
+| `-p`, `--db_password`  | Database password.                         |          |
+| `-po`, `--package_owner`  | Schema to own the generated TAPI packages (required).              |          |
+| `-t`, `--table_names`  | A space separated list of table names.                  | All tables     |
+| `-To`, `--table_owner`   | The table owner/schema on whose tables the generated APIs are to be based.       |          |
+| `-to`, `--trigger_owner` | The schema in which the generated scripts should create the triggers.        |          |
+| `-vo`, `--view_owner`  | The schema in which the generated scripts should create the views.         |          |
+| `-u`, `--db_username`  | Database username.                         |          |
+| `-T`, `--api_types`    | A space separated list of API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
+| `-U`, `--ut_api_types`   | A space separated list of Unit Test API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
 
 ---
 
@@ -1068,6 +1070,12 @@ Here we cover the various sections and properties.
 - **logger_logs**: Specifies the logger_logs table.
   - Example: `logger_logs = logger_logs`
   - **Purpose**: Defines the logger_logs table name (optionally prefixed by the owning schema, e.g. logger_user.logger_logs). This is used purely for data typing inside the generated package code.
+- **skip_logged_data_types**: Specifies a comma-separated list of Oracle datatypes that must not have generated `logger.append_param` calls.
+  - Example: `skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY`
+  - **Purpose**: Prevents large or awkward datatypes from being logged. Entries can be bare datatype names such as `CLOB` or owner-qualified object types such as `MDSYS.SDO_GEOMETRY`.
+- **skip_logged_data_types_mode**: Controls how blocked datatypes are rendered in generated logger parameter code.
+  - Example: `skip_logged_data_types_mode = omit`
+  - **Purpose**: Supports `omit` to generate no `append_param` call, `comment` to emit `-- skipped logger append for p_doc (XMLTYPE)`, and `redact` to emit an `append_param` call with a placeholder such as `[datatype skipped: XMLTYPE]`.
 ---
 #### [schemas]
 - **default_table_owner**: Specifies the default schema for tables.
@@ -1273,6 +1281,8 @@ include_commit = false
 # templates take advantage of these settings.
 logger_pkg = logger_user.logger
 logger_logs = logger_user.logger_logs
+skip_logged_data_types = CLOB, NCLOB, BLOB, BFILE, LONG, LONG RAW, XMLTYPE, JSON, SDO_GEOMETRY
+skip_logged_data_types_mode = omit
 
 [schemas]
 # Set default owners. These can be overridden on the command line.
@@ -1343,6 +1353,14 @@ Like `OraTAPI.ini` and `OraTAPI.csv`, `pi_columns.csv` is maintained per profile
 `~/OraTAPI/configs/<active-profile>/resources/config/pi_columns.csv`, so different profiles can carry different PI
 column rules.
 This is only pertinent, if you are working with the `logger` or `llogger` based templates (or similar).  
+
+Datatype-based suppression is configured separately under `[logger]` via `skip_logged_data_types` and
+`skip_logged_data_types_mode`. This allows large or special-case datatypes such as `CLOB`, `BLOB`, `XMLTYPE`,
+`JSON`, and `SDO_GEOMETRY` to be handled in one of three ways:
+
+- `omit`: generate no `logger.append_param` call
+- `comment`: generate a comment such as `-- skipped logger append for p_doc (XMLTYPE)`
+- `redact`: generate an `append_param` call that logs a placeholder such as `[datatype skipped: XMLTYPE]`
 
 The file contains the following columns:
 
@@ -1915,7 +1933,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_row.job_id', p_row.job_id);
       logger_user.logger.append_param(l_params, '  p_row.job_title', p_row.job_title);
       logger_user.logger.append_param(l_params, '  p_row.min_salary', p_row.min_salary);
@@ -1972,7 +1990,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
       logger_user.logger.append_param(l_params, '  p_job_title', p_job_title);
       logger_user.logger.append_param(l_params, '  p_min_salary', p_min_salary);
@@ -2026,7 +2044,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_row.job_id', p_row.job_id);
 
       logger.log('START', l_scope, null, l_params);
@@ -2081,7 +2099,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
 
       logger.log('START', l_scope, null, l_params);
@@ -2131,7 +2149,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_row.job_id', p_row.job_id);
       logger_user.logger.append_param(l_params, '  p_row.job_title', p_row.job_title);
       logger_user.logger.append_param(l_params, '  p_row.min_salary', p_row.min_salary);
@@ -2183,7 +2201,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
       logger_user.logger.append_param(l_params, '  p_job_title', p_job_title);
       logger_user.logger.append_param(l_params, '  p_min_salary', p_min_salary);
@@ -2230,7 +2248,7 @@ as
 
    begin
 
-      -- We don't log any CLOB parameters here.
+      -- Parameter logging is filtered by datatype and PI rules.
       logger_user.logger.append_param(l_params, '* p_job_id', p_job_id);
 
       logger.log('START', l_scope, null, l_params);

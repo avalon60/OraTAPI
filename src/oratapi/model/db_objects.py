@@ -83,7 +83,7 @@ class Table:
 
         :return: A dictionary of dictionaries containing column metadata.
                  Outer key: column_name
-                 Inner dictionary keys: 'data_type', 'default_value', 'nullable'
+                 Inner dictionary keys: 'data_type', 'data_type_owner', 'default_value', 'nullable'
         :rtype: dict
         """
         identity_query = """
@@ -96,6 +96,7 @@ class Table:
                 select 
                     column_name,
                     data_type,
+                    data_type_owner,
                     data_default,
                     nullable
                 from 
@@ -121,7 +122,7 @@ class Table:
                 cursor.execute(query, schema_name=self.schema_name, table_name=self.table_name)
                 # For performance reason - resisted the temptation to implement a TableColumn class.
                 for row in cursor:
-                    column_name, data_type, data_default, nullable = row
+                    column_name, data_type, data_type_owner, data_default, nullable = row
                     # Record whether this is part of a PK or UK
                     if data_default is not None:
                         data_default = str(data_default).strip()
@@ -138,6 +139,7 @@ class Table:
                     is_identity_always = identity_generation_type.upper() == 'ALWAYS' if identity_generation_type else False
                     column_metadata_dict[column_name] = {
                         "data_type": data_type,
+                        "data_type_owner": data_type_owner,
                         "default_value": data_default,
                         "is_nullable": is_nullable,
                         "is_pk_column": is_pk_column,
