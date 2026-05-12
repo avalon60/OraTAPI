@@ -1,4 +1,4 @@
-
+![OraTAPI 1.0](./assets/images/OraTAPILogo-readme.png)
 
 # OraTAPI - Oracle Table API Generator 
 
@@ -196,22 +196,22 @@ The runtime home created by `quick_config` looks similar to this:
 ~/OraTAPI
 ├── active_config
 ├── configs
-│   ├── basic
-│   │   ├── created_version.md
-│   │   ├── purpose.md
-│   │   └── resources
-│   │       ├── config
-│   │       │   ├── OraTAPI.csv
-│   │       │   ├── OraTAPI.ini
-│   │       │   └── pi_columns.csv
-│   │       └── templates
-│   │           ├── column_expressions
-│   │           ├── misc
-│   │           ├── packages
-│   │           └── ut_packages
-│   ├── liquibase
-│   ├── logger
-│   └── llogger
+│   ├── basic
+│   │   ├── created_version.md
+│   │   ├── purpose.md
+│   │   └── resources
+│   │       ├── config
+│   │       │   ├── OraTAPI.csv
+│   │       │   ├── OraTAPI.ini
+│   │       │   └── pi_columns.csv
+│   │       └── templates
+│   │           ├── column_expressions
+│   │           ├── misc
+│   │           ├── packages
+│   │           └── ut_packages
+│   ├── liquibase
+│   ├── logger
+│   └── llogger
 ├── staging
 └── ut_staging
 ```
@@ -850,24 +850,26 @@ In this example, we assume that the dev-db is a TNS Names entry.
 **It is recommended that you use the connection manager approach.**
 
 ### Full Command-Line Arguments:
-| Argument                   | Description                                                                                | Default                  |
-|----------------------------|--------------------------------------------------------------------------------------------|--------------------------|
-| `-A`, `--app_name`         | Application name included in the package header.                                           | `Undefined`              |
-| `-a`, `--tapi_author`      | Author name for the package header.                                                        | `OraTAPI generator`      |
-| `-c`, `--conn_name`        | Connection name for saved configuration.                                                   |                          |
-| `-d`, `--dsn`              | Database Data Source Name (TNS entry).                                                     |                          |
-| `--oracle-client-dir`      | Oracle Instant Client directory to use for the current run.                                |                          |
+### Full Command-Line Arguments:
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `-A`, `--app_name`   | Application name included in the package header.               | `Undefined`      |
+| `-a`, `--tapi_author`  | Author name for the package header.                    | `OraTAPI generator`  |
+| `-c`, `--conn_name`    | Connection name for saved configuration.                 |          |
+| `-d`, `--dsn`      | Database Data Source Name (TNS entry).                   |          |
+| `--oracle-client-dir`  | Oracle Instant Client directory to use for the current run.            |          |
 | `-g`, `--staging_dir` | Directory for the staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/staging` |
 | `-G`, `--ut_staging_dir` | Directory for the Unit Test staging area. Relative paths are resolved below `~/OraTAPI`. | `~/OraTAPI/ut_staging` |
-| `-p`, `--db_password`      | Database password.                                                                         |                          |
-| `-po`, `--package_owner`    | Schema to own the generated TAPI packages (required).                                      |                          |
-| `-t`, `--table_names`      | A space separated list of table names.                                                      | All tables               |
-| `-To`, `--table_owner`     | The table owner/schema on whose tables the generated APIs are to be based.                 |                          |
-| `-to`, `--trigger_owner`   | The schema in which the generated scripts should create the triggers.                      |                          |
-| `-vo`, `--view_owner`      | The schema in which the generated scripts should create the views.                         |                          |
-| `-u`, `--db_username`      | Database username.                                                                         |                          |
-| `-T`, `--api_types`        | A space separated list of API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
-| `-U`, `--ut_api_types`     | A space separated list of Unit Test API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
+| `-p`, `--db_password`  | Database password.                         |          |
+| `-po`, `--package_owner`  | Schema to own the generated TAPI packages (required).              |          |
+| `-t`, `--table_names`  | A space separated list of table names.                  | All tables     |
+| `-To`, `--table_owner`   | The table owner/schema on whose tables the generated APIs are to be based.       |          |
+| `-to`, `--trigger_owner` | The schema in which the generated scripts should create the triggers.        |          |
+| `-vo`, `--view_owner`  | The schema in which the generated scripts should create the views.         |          |
+| `-u`, `--db_username`  | Database username.                         |          |
+| `-T`, `--api_types`    | A space separated list of API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
+| `-U`, `--ut_api_types`   | A space separated list of Unit Test API types (e.g. `insert  select  update  delete  upsert  merge`). | Configured default types |
 
 ---
 
