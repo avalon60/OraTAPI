@@ -1,6 +1,6 @@
-![OraTAPI 1.0](./assets/images/OraTAPILogo-readme.png)
-
 # OraTAPI - Oracle Table API Generator 
+
+![OraTAPI 1.0](./assets/images/OraTAPILogo-readme.png)
 
 Version 2.10.0
 
