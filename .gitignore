@@ -6,6 +6,8 @@ build/
 dist/
 .idea/
 .claude/
+.DS_Store
+*.swp
 OraTAPI.egg-info/
 *.pyc
 resources/config/case_notes.txt
