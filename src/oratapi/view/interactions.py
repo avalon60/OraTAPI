@@ -10,6 +10,7 @@ from pathlib import Path
 from oratapi.model.framework_errors import InvalidParameter
 from oratapi.view.console_display import MsgLvl, ConsoleMgr
 from oratapi.lib.fsutils import resolve_path, runtime_home
+from oratapi.lib.template_overrides import parse_template_definitions
 import os
 import getpass
 
@@ -109,6 +110,9 @@ class Interactions:
 
         parser.add_argument('-a', '--tapi_author', type=str, help="TAPI author", default=default_tapi_author)
 
+        parser.add_argument('-D', '--define', action='append', default=[], metavar='NAME=VALUE',
+                            help="Override metadata or custom template text for this run; repeat for multiple definitions.")
+
         parser.add_argument('-c', '--conn_name', type=str, help="Database connection name (created via OraTAPI connection manager).")
 
         parser.add_argument('-d', '--dsn', type=str, help="Database data source name (TNS name).")
@@ -151,6 +155,14 @@ class Interactions:
         parser.add_argument('-U', '--ut_api_types', type=str, default=api_types, help=help_text, nargs="+")
 
         args = parser.parse_args()
+
+        try:
+            self.template_overrides = parse_template_definitions(
+                args.define, self.config_file_path.parent.parent / 'templates'
+            )
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        del args.define
 
         for api_type in args.api_types:
             if api_type not in VALID_API_TYPES:

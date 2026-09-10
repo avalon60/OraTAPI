@@ -26,6 +26,7 @@ Version 2.10.0
       - [Windows:](#windows)
       - [macOS / Linux:](#macos--linux)
   - [Usage](#usage)
+    - [Template overrides for one run](#template-overrides-for-one-run)
     - [Examples](#examples)
       - [Basic Example](#basic-example)
       - [More Advanced Example](#more-advanced-example)
@@ -717,6 +718,9 @@ sections, which are used to categorise their purpose. Section names are enclosed
 irrespective of which section it belongs to.
 
 ## Modifying Templates
+For application labels and other text that varies between invocations, see
+[Template overrides for one run](#template-overrides-for-one-run). Custom definitions use the same `%name%` placeholders.
+
 OraTAPI is designed for profile-local template customisation. The packaged defaults are copied into the runtime home by
 `quick_config`, and the files you should edit are the instantiated `.tpt` templates under:
 
@@ -773,7 +777,8 @@ To get command line help, you can simply type:
 ```
 ora_tapi -h
 
-usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-c CONN_NAME] [-d DSN]
+usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-D NAME=VALUE]
+                   [-c CONN_NAME] [-d DSN]
                    [--oracle-client-dir ORACLE_CLIENT_DIR] [-g STAGING_DIR]
                    [-G UT_STAGING_DIR] [-u DB_USERNAME] [-p DB_PASSWORD]
                    [-To TABLE_OWNER] [-po PACKAGE_OWNER] [-to TRIGGER_OWNER]
@@ -790,6 +795,9 @@ options:
                         Default: Human Resources
   -a TAPI_AUTHOR, --tapi_author TAPI_AUTHOR
                         TAPI author
+  -D NAME=VALUE, --define NAME=VALUE
+                        Override metadata or custom template text for this
+                        run; repeat for multiple definitions.
   -c CONN_NAME, --conn_name CONN_NAME
                         Database connection name (created via OraTAPI
                         connection manager).
@@ -837,6 +845,76 @@ Oracle `ALL_` data dictionary views.
 ## Usage
 
 Run OraTAPI from the command line with the desired options.
+
+### Template overrides for one run
+
+Use `-D NAME=VALUE` or `--define NAME=VALUE` to override metadata or custom template text for a single invocation.
+Repeat the argument for each definition. The `oratapi`, `ora_tapi` and `ora-tapi` commands all support this option.
+Definitions leave the active profile's `OraTAPI.ini` and templates unchanged.
+
+For example, with `enable_ut_code_generation = true` already set in the active profile:
+
+```bash
+oratapi -c agr_atp \
+  -D ut_suite="Agriculture" \
+  -D ut_prod_code=agr \
+  -D ut_prod_sub_domain_code=applications
+```
+
+With the standard utPLSQL package specification template, this produces:
+
+```sql
+--%suite(Agriculture)
+--%suitepath(agr.applications)
+```
+
+The supported built-in metadata names are:
+
+| Definition name | Template placeholder | Derived lower-case placeholder |
+|-----------------|----------------------|--------------------------------|
+| `app_name` | `%app_name%` | `%app_name_lc%` |
+| `tapi_author` | `%tapi_author%` | `%tapi_author_lc%` |
+| `company_name` | `%company_name%` | `%company_name_lc%` |
+| `copyright_year` | `%copyright_year%` | `%copyright_year_lc%` |
+| `ut_suite` | `%ut_suite%` | `%ut_suite_lc%` |
+| `ut_prod_code` | `%ut_prod_code%` | `%ut_prod_code_lc%` |
+| `ut_prod_sub_domain_code` | `%ut_prod_sub_domain_code%` | `%ut_prod_sub_domain_code_lc%` |
+
+Definitions take precedence over profile substitutions and CLI metadata options such as `-A/--app_name` and
+`-a/--tapi_author`, regardless of argument order. If a name is defined more than once, its last definition wins.
+Define the base name to update its lower-case placeholder; directly defining a built-in `_lc` name is rejected.
+Use `app_name` to override application text, rather than the INI property name `default_app_name`.
+
+Custom names must match a `%name%` placeholder in an instantiated `.tpt` file beneath the active profile's
+`resources/templates` directory. Sample directories are excluded. A match in a template that is not used by the
+current run is sufficient. For example, add this comment to a profile template:
+
+```sql
+-- Release: %release_label%
+```
+
+Then supply its value with:
+
+```bash
+oratapi -c agr_atp --define 'release_label=September release'
+```
+
+Names are case-sensitive and must match `[A-Za-z_][A-Za-z0-9_]*`. Omit the `%` delimiters and any INI section
+prefix. Every definition requires `=`. Values are strings: quote spaces, use `-D 'release_label='` for an empty
+value, or `-D 'release_label=build=42, channel=preview'` to include additional equals signs and commas.
+Only the first `=` separates the name from the value. Definitions do not add INI interpolation or type conversion;
+values such as `current` and `auto_table` are replacement text. An explicit `ut_prod_sub_domain_code` replaces the
+profile's automatically derived subdomain.
+
+Unknown names are rejected before database connection or output creation. Check the spelling or add the corresponding
+placeholder to a profile template. Built-in operational controls, object identifiers and generated SQL fragments
+remain protected even if a template refers to them. For example, `-D enable_ut_code_generation=true` and
+`-D table_name=OTHER_TABLE` are rejected. Use the supported CLI option or profile setting where applicable.
+
+Overrides apply throughout TAPI and utPLSQL rendering, including package headers, footers, procedures, setup/teardown,
+views, triggers and embedded column expressions. The parameter summary lists the definition names. Keep separate
+profiles where schemas, package naming, templates or generation behaviour differ; use definitions for metadata and
+custom text that varies between runs.
 
 ### Examples
 The following examples assume that OraTAPI has been installed into an active virtual environment and the console scripts are on `PATH`.
@@ -894,6 +972,7 @@ In this example, we assume that the dev-db is a TNS Names entry.
 |----------|-------------|---------|
 | `-A`, `--app_name`   | Application name included in the package header.               | `Undefined`      |
 | `-a`, `--tapi_author`  | Author name for the package header.                    | `OraTAPI generator`  |
+| `-D`, `--define NAME=VALUE` | Override metadata or custom template text for one run; repeat for multiple definitions. | No overrides |
 | `-c`, `--conn_name`    | Connection name for saved configuration.                 |          |
 | `-d`, `--dsn`      | Database Data Source Name (TNS entry).                   |          |
 | `--oracle-client-dir`  | Oracle Instant Client directory to use for the current run.            |          |
@@ -1522,6 +1601,9 @@ generation, however, if it is set, <b>ensure that the row_vers_column_name colum
 `auto_maintained_cols` list of columns</b>.
 
 ## utPLSQL Support
+Suite labels and suite-path components can be supplied with [template overrides for one run](#template-overrides-for-one-run).
+The active profile must already have utPLSQL generation enabled.
+
 ### Overview
 OraTAPI provides some support for utPLSQL package generation, providing tests for generated table APIs. This support provides for 
 the generation of the package spec, which includes requisite utPLSQL annotations and configurable %throws codes for table column 
@@ -1542,6 +1624,9 @@ subsection.
 
 ## Template Substitution Strings
 Any properties from the OraTAPI.ini file may be interpolated into the templates.  
+
+[Template overrides for one run](#template-overrides-for-one-run) describes `-D/--define` for overriding selected
+metadata or supplying custom placeholders. Configuration controls and generated SQL substitutions are protected.
 
 **When embedding into the templates, the substitution strings must be delimited by a pair of % characters**.  
 

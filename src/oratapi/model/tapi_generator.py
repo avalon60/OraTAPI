@@ -9,6 +9,7 @@ import re
 
 from oratapi.lib.fsutils import resolve_path
 from oratapi.lib.config_mgr import ConfigManager
+from oratapi.lib.template_overrides import apply_template_overrides
 from oratapi.model.db_objects import Table
 from oratapi.lib.session_manager import DBSession
 from datetime import datetime
@@ -95,7 +96,8 @@ class ApiGenerator:
                  table_name: str,
                  config_manager: ConfigManager,
                  options_dict: dict,
-                 trace: bool = False):
+                 trace: bool = False,
+                 template_overrides: dict[str, str] | None = None):
         """
             Generates Table APIs (TAPI) for Oracle databases.
 
@@ -169,6 +171,7 @@ class ApiGenerator:
         self.view_template_dir = resolve_path(TEMPLATES_LOCATION / 'misc' / 'view')
         self.trigger_template_dir = resolve_path(TEMPLATES_LOCATION / 'misc' / 'trigger')
         self.options_dict = deepcopy(options_dict)
+        self.template_overrides = dict(template_overrides or {})
         self.config_manager = config_manager
         self.table_owner = table_owner
         package_owner_lc = options_dict["package_owner"].lower()
@@ -310,7 +313,7 @@ class ApiGenerator:
         self.view_name_suffix_lc = self.view_name_suffix.lower()
         # Populate self.global_substitutions with the .ini file contents.
         # We will use these to inject values into the templates.
-        self.global_substitutions = self.config_manager.config_dictionary()
+        self.global_substitutions = deepcopy(self.config_manager.config_dictionary())
 
         # Set soft tabs spaces for indent
         self.global_substitutions["STAB"] = ' ' * int(self.global_substitutions["indent_spaces"])
@@ -382,6 +385,12 @@ class ApiGenerator:
         # found in the templates/column_expressions directories.
         self.column_insert_expressions = {}
         self.column_update_expressions = {}
+
+    def _inject_values(self, substitutions: dict, target_string: str, stab_spaces: int = 3) -> str:
+        overrides = getattr(self, "template_overrides", {})
+        if overrides:
+            substitutions = apply_template_overrides(substitutions, overrides)
+        return inject_values(substitutions, target_string, stab_spaces=stab_spaces)
 
     def load_column_expressions(self) -> list:
         messages = []
@@ -2051,7 +2060,7 @@ class ApiGenerator:
                               "table_name_lc": self.api_target_name_lc,
                               "table_name": self.api_target_name_lc.upper()}
 
-        procedure_body_template = inject_values(substitutions=substitutions_dict,
+        procedure_body_template = self._inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
                                                 stab_spaces=self.indent_spaces)
 
@@ -2093,7 +2102,7 @@ class ApiGenerator:
                               "table_name_lc": self.api_target_name_lc,
                               "table_name": self.api_target_name_lc.upper()}
 
-        procedure_body_template = inject_values(substitutions=substitutions_dict,
+        procedure_body_template = self._inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
                                                 stab_spaces=self.indent_spaces)
 
@@ -2144,7 +2153,7 @@ class ApiGenerator:
                               "table_name_lc": self.api_target_name_lc,
                               "table_name": self.api_target_name_lc.upper()}
 
-        procedure_body_template = inject_values(substitutions=substitutions_dict,
+        procedure_body_template = self._inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
                                                 stab_spaces=self.indent_spaces)
 
@@ -2215,7 +2224,7 @@ class ApiGenerator:
                               "table_name_lc": self.api_target_name_lc,
                               "table_name": self.api_target_name_lc.upper()}
 
-        procedure_body_template = inject_values(substitutions=substitutions_dict,
+        procedure_body_template = self._inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
                                                 stab_spaces=self.indent_spaces)
 
@@ -2269,7 +2278,7 @@ class ApiGenerator:
                               "table_name_lc": self.api_target_name_lc,
                               "table_name": self.api_target_name_lc.upper()}
 
-        procedure_body_template = inject_values(substitutions=substitutions_dict,
+        procedure_body_template = self._inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
                                                 stab_spaces=self.indent_spaces)
 
@@ -2336,7 +2345,7 @@ class ApiGenerator:
                               "table_name_lc": self.api_target_name_lc,
                               "table_name": self.api_target_name_lc.upper()}
 
-        procedure_body_template = inject_values(substitutions=substitutions_dict,
+        procedure_body_template = self._inject_values(substitutions=substitutions_dict,
                                                 target_string=procedure_body_template,
                                                 stab_spaces=self.indent_spaces)
 
@@ -2353,7 +2362,7 @@ class ApiGenerator:
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
-        _trigger_template = inject_values(substitutions=substitutions_dict,
+        _trigger_template = self._inject_values(substitutions=substitutions_dict,
                                        target_string=_trigger_template,
                                        stab_spaces=self.indent_spaces)
 
@@ -2370,7 +2379,7 @@ class ApiGenerator:
                               "table_name_lc": self.table.table_name_lc.lower(),
                               "table_name": self.table.table_name.upper()}
 
-        _view_template = inject_values(substitutions=substitutions_dict,
+        _view_template = self._inject_values(substitutions=substitutions_dict,
                                        target_string=_view_template,
                                        stab_spaces=self.indent_spaces)
 
@@ -2415,12 +2424,12 @@ class ApiGenerator:
         merged_dict = self.merged_dict
 
         # Replace placeholders in the header and footer templates
-        package_header_template = inject_values(
+        package_header_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_header_template,
             stab_spaces = self.indent_spaces
         )
-        package_footer_template = inject_values(
+        package_footer_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_footer_template,
             stab_spaces=self.indent_spaces
@@ -2447,7 +2456,7 @@ class ApiGenerator:
                                               procedure_name=procedure_name)
                 else:
                     package_body += f"-- Unknown API type: {api_type}\n"
-            package_body = inject_values(
+            package_body = self._inject_values(
                                             substitutions=merged_dict,
                                             target_string=package_body,
                                             stab_spaces=self.indent_spaces
@@ -2501,7 +2510,7 @@ class ApiGenerator:
         merged_dict = self.merged_dict
 
         # Replace placeholders in the header and footer templates
-        package_header_template = inject_values(
+        package_header_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_header_template,
             stab_spaces=self.indent_spaces
@@ -2516,7 +2525,7 @@ class ApiGenerator:
                 package_header_template,
                 count=1,
             )
-        package_footer_template = inject_values(
+        package_footer_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_footer_template,
             stab_spaces=self.indent_spaces
@@ -2538,7 +2547,7 @@ class ApiGenerator:
                     package_spec += func(signature_type=sig_type, package_spec=True, procedure_name=procedure_name) + "\n"  # Append the generated API fragment
                 else:
                     package_spec += f"-- Unknown API type: {api_type}\n"
-            package_spec = inject_values(
+            package_spec = self._inject_values(
                                             substitutions=merged_dict,
                                             target_string=package_spec,
                                             stab_spaces=self.indent_spaces
@@ -2569,7 +2578,7 @@ class ApiGenerator:
 
 
             view_template = self._create_view_code(view_template=view_template)
-            view_template = inject_values(
+            view_template = self._inject_values(
                 substitutions=self.global_substitutions,
                 target_string=view_template,
                 stab_spaces=self.indent_spaces
@@ -2626,7 +2635,7 @@ class ApiGenerator:
 
 
             trigger_template = self._create_trigger_code(trigger_template=trigger_template)
-            trigger_template = inject_values(
+            trigger_template = self._inject_values(
                 substitutions=self.global_substitutions,
                 target_string=trigger_template,
                 stab_spaces=self.indent_spaces

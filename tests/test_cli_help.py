@@ -19,6 +19,7 @@ class CliHelpTests(unittest.TestCase):
                 self.assertEqual(result.stderr, "")
                 self.assertIn("Oracle Table API Generator", result.stdout)
                 self.assertIn("--conn_name", result.stdout)
+                self.assertIn("--define NAME=VALUE", result.stdout)
                 self.assertTrue(result.stdout.rstrip().endswith(
                     "WARNING: No active OraTAPI profile is configured. "
                     "Run quick_config, or use profile_mgr to activate a profile."

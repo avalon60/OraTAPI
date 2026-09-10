@@ -7,6 +7,7 @@ __description__ = "Generates the utPLSQL test skeleton code - package spec & pac
 import copy
 
 from oratapi.lib.config_mgr import ConfigManager
+from oratapi.lib.template_overrides import apply_template_overrides
 from oratapi.model.db_objects import Table
 from oratapi.model.db_objects import TableConstraints
 from oratapi.lib.session_manager import DBSession
@@ -41,7 +42,8 @@ class UtPLSQLGenerator:
                  table_name: str,
                  config_manager: ConfigManager,
                  options_dict: dict,
-                 trace: bool = False):
+                 trace: bool = False,
+                 template_overrides: dict[str, str] | None = None):
         """
         :param database_session: A DBSession instance for connecting to the database.
         :param table_owner: Schema Name of the table.
@@ -53,6 +55,7 @@ class UtPLSQLGenerator:
         proj_config_file = resolve_path(CONFIG_LOCATION / 'OraTAPI.ini')
 
         self.options_dict = deepcopy(options_dict)
+        self.template_overrides = dict(template_overrides or {})
         self.config_manager = config_manager
         self.table_owner = table_owner
 
@@ -124,7 +127,7 @@ class UtPLSQLGenerator:
 
         # Populate self.global_substitutions with the .ini file contents.
         # We will use these to inject values into the templates.
-        self.global_substitutions = self.config_manager.config_dictionary()
+        self.global_substitutions = deepcopy(self.config_manager.config_dictionary())
 
         # Set soft tabs spaces for indent
         self.global_substitutions["STAB"] = ' ' * int(self.global_substitutions["indent_spaces"])
@@ -267,6 +270,12 @@ class UtPLSQLGenerator:
             "N": {"description": "Not Null constraint"}
         }
 
+    def _inject_values(self, substitutions: dict, target_string: str, stab_spaces: int = 3) -> str:
+        overrides = getattr(self, "template_overrides", {})
+        if overrides:
+            substitutions = apply_template_overrides(substitutions, overrides)
+        return inject_values(substitutions, target_string, stab_spaces=stab_spaces)
+
     def gen_package_body(self) -> str:
         """
         Generates the ut package body for the APIs listed in the options dictionary.
@@ -309,12 +318,12 @@ class UtPLSQLGenerator:
         merged_dict = self.merged_dict
 
         # Replace placeholders in the header and footer templates
-        package_header_template = inject_values(
+        package_header_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_header_template,
             stab_spaces=self.indent_spaces
         )
-        package_footer_template = inject_values(
+        package_footer_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_footer_template,
             stab_spaces=self.indent_spaces
@@ -369,7 +378,7 @@ class UtPLSQLGenerator:
             merged_dict["fk_tables_lc"] = self.table_constraints.fk_tables.lower()
 
             package_body += "\n" + _package_procedure
-            package_body = inject_values(
+            package_body = self._inject_values(
                 substitutions=merged_dict,
                 target_string=package_body,
                 stab_spaces=self.indent_spaces
@@ -398,7 +407,7 @@ class UtPLSQLGenerator:
                                                                  template_type='body')
 
             package_body += "\n" + _package_procedure
-            package_body = inject_values(
+            package_body = self._inject_values(
                 substitutions=merged_dict,
                 target_string=package_body,
                 stab_spaces=self.indent_spaces
@@ -407,7 +416,7 @@ class UtPLSQLGenerator:
         # Append the package footer
         package_body += after_template
         package_body += package_footer_template
-        package_body = inject_values(
+        package_body = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_body,
             stab_spaces=self.indent_spaces
@@ -446,12 +455,12 @@ class UtPLSQLGenerator:
         merged_dict = self.merged_dict
 
         # Replace placeholders in the header and footer templates
-        package_header_template = inject_values(
+        package_header_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_header_template,
             stab_spaces=self.indent_spaces
         )
-        package_footer_template = inject_values(
+        package_footer_template = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_footer_template,
             stab_spaces=self.indent_spaces
@@ -502,7 +511,7 @@ class UtPLSQLGenerator:
             merged_dict["fk_tables_lc"] = self.table_constraints.fk_tables.lower()
 
             package_spec += "\n" + _package_procedure
-            package_spec = inject_values(
+            package_spec = self._inject_values(
                 substitutions=merged_dict,
                 target_string=package_spec,
                 stab_spaces=self.indent_spaces
@@ -528,7 +537,7 @@ class UtPLSQLGenerator:
                                                                  constraint_dict=constraint_dict)
 
             package_spec += "\n" + _package_procedure
-            package_spec = inject_values(
+            package_spec = self._inject_values(
                 substitutions=merged_dict,
                 target_string=package_spec,
                 stab_spaces=self.indent_spaces
@@ -536,7 +545,7 @@ class UtPLSQLGenerator:
 
         # Append the package footer
         package_spec += package_footer_template
-        package_spec = inject_values(
+        package_spec = self._inject_values(
             substitutions=self.global_substitutions,
             target_string=package_spec,
             stab_spaces=self.indent_spaces
@@ -550,7 +559,7 @@ class UtPLSQLGenerator:
                                                template_name='api_test')
         subst_dict = {"api_type": procedure_basename, "procedure_name": procedure_name}
 
-        procedure = inject_values(substitutions=subst_dict,
+        procedure = self._inject_values(substitutions=subst_dict,
                                   target_string=procedure,
                                   stab_spaces=self.indent_spaces)
 
@@ -569,7 +578,7 @@ class UtPLSQLGenerator:
         subst_dict = {"api_type": procedure_basename, "procedure_name": procedure_name} | _constraint_dict
 
 
-        procedure = inject_values(substitutions=subst_dict,
+        procedure = self._inject_values(substitutions=subst_dict,
                                   target_string=procedure,
                                   stab_spaces=self.indent_spaces)
 

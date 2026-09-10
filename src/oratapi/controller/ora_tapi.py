@@ -102,7 +102,9 @@ def help_requested(argv: list[str] | None = None) -> bool:
     return "-h" in args or "--help" in args
 
 
-def warn_on_default_profile_identity(view: Interactions, config_file_path: Path) -> None:
+def warn_on_default_profile_identity(
+    view: Interactions, config_file_path: Path, template_overrides: dict[str, str] | None = None,
+) -> None:
     sample_config_path = resolve_default_path(Path("resources") / "config" / "OraTAPI.ini.sample")
     if not sample_config_path.exists():
         return
@@ -118,6 +120,9 @@ def warn_on_default_profile_identity(view: Interactions, config_file_path: Path)
     )
 
     for section, option, label in checks:
+        metadata_name = "app_name" if option == "default_app_name" else option
+        if metadata_name in (template_overrides or {}):
+            continue
         if not active_config.has_option(section, option) or not sample_config.has_option(section, option):
             continue
         if active_config.get(section, option).strip() == sample_config.get(section, option).strip():
@@ -171,6 +176,7 @@ class CodeManager:
             )
             exit(1)  # Exit with an error status
         args_dict = self.view.args_dict
+        self.template_overrides = self.view.template_overrides
 
         options_dict = copy.deepcopy(args_dict)
         config_manager = ConfigManager(config_file_path=config_file_path)
@@ -200,6 +206,9 @@ class CodeManager:
             elif isinstance(value, list):
                 value = ', '.join(str(item) for item in value)
             self.view.print_console(msg_level=MsgLvl.highlight, text=f"{key:<40} = {value}")
+        if self.template_overrides:
+            names = ', '.join(sorted(self.template_overrides))
+            self.view.print_console(msg_level=MsgLvl.highlight, text=f"{'template_overrides':<40} = {names}")
         self.view.print_console(msg_level=MsgLvl.highlight, text=f"=" * 79)
 
 
@@ -230,7 +239,9 @@ class CodeManager:
         self.runtime_home = active_profile_home()
 
         self.config_manager = config_manager
-        warn_on_default_profile_identity(view=self.view, config_file_path=config_file_path)
+        warn_on_default_profile_identity(
+            view=self.view, config_file_path=config_file_path, template_overrides=self.template_overrides
+        )
         ora_tapi_csv_dir = self.config_manager.config_value(config_section='file_controls',
                                                     config_key='ora_tapi_csv_dir',
                                                     default="resources/config")
@@ -721,7 +732,8 @@ class CodeManager:
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,
-            trace=self.trace
+            trace=self.trace,
+            template_overrides=self.template_overrides
         )
 
         if self.col_auto_maintain_method == 'expression':
@@ -769,7 +781,8 @@ class CodeManager:
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,
-            trace=self.trace
+            trace=self.trace,
+            template_overrides=self.template_overrides
         )
 
         table_domain = table_name[:table_name.find("_")]
@@ -817,7 +830,8 @@ class CodeManager:
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,
-            trace=self.trace
+            trace=self.trace,
+            template_overrides=self.template_overrides
         )
         triggers_dict = api_controller.gen_triggers()
         for trigger_file_name, code in triggers_dict.items():
@@ -851,7 +865,8 @@ class CodeManager:
             table_name=table_name,
             config_manager=self.config_manager,
             options_dict=self.options_dict,
-            trace=self.trace
+            trace=self.trace,
+            template_overrides=self.template_overrides
         )
 
         views_dict = api_controller.gen_views()
