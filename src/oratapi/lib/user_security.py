@@ -10,6 +10,7 @@ __description__: User/Security module. This is responsible for managing develope
 """
 
 from base64 import b64encode, b64decode
+from dataclasses import dataclass
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -22,6 +23,29 @@ import configparser
 import os
 import subprocess
 import platform
+
+
+PASSWORD_AUTHENTICATION = "password"
+OCI_IAM_TOKEN_AUTHENTICATION = "oci_iam_token"
+SUPPORTED_AUTHENTICATION_TYPES = (
+    PASSWORD_AUTHENTICATION,
+    OCI_IAM_TOKEN_AUTHENTICATION,
+)
+DEFAULT_OCI_TOKEN_LOCATION = Path.home() / ".oci" / "db-token"
+
+
+@dataclass(frozen=True)
+class NamedConnection:
+    """Complete configuration for a saved OraTAPI database connection."""
+
+    name: str
+    authentication_type: str
+    dsn: str
+    username: str | None = None
+    password: str | None = None
+    wallet_path: str = ""
+    wallet_password: str = ""
+    token_location: str = ""
 
 
 def _run_command(command: list[str], input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
@@ -130,7 +154,79 @@ class UserSecurity:
         if property_key == "resource_id":
             return config.get(connection_name, "resource_id", fallback=config.get(connection_name, "dsn", fallback=default_value))
 
+        if property_key == "authentication_type":
+            return config.get(
+                connection_name,
+                "authentication_type",
+                fallback=PASSWORD_AUTHENTICATION,
+            )
+
+        if property_key == "wallet_path":
+            return config.get(
+                connection_name,
+                "wallet_path",
+                fallback=config.get(connection_name, "wallet_zip_path", fallback=default_value),
+            )
+
         return config.get(connection_name, property_key, fallback=default_value)
+
+    def named_connection(self, connection_name: str) -> NamedConnection:
+        """Return the complete configuration for a saved connection."""
+        if not self.user_config_file_path.exists():
+            raise FileNotFoundError(f"Configuration file '{self.user_config_file_path}' not found.")
+
+        config = configparser.ConfigParser()
+        config.read(self.user_config_file_path)
+        valid_connection_names = config.sections()
+        if connection_name not in valid_connection_names:
+            valid_keys_str = ", ".join(valid_connection_names) if valid_connection_names else \
+                "No connection names have been saved."
+            raise KeyError(
+                f"Connection '{connection_name}' does not exist in the credentials store. "
+                f"Valid connection names are: {valid_keys_str}."
+            )
+
+        section = config[connection_name]
+        authentication_type = section.get("authentication_type", PASSWORD_AUTHENTICATION).strip().lower()
+        if authentication_type not in SUPPORTED_AUTHENTICATION_TYPES:
+            supported = ", ".join(SUPPORTED_AUTHENTICATION_TYPES)
+            raise ValueError(
+                f"Connection '{connection_name}' has unsupported authentication type "
+                f"'{authentication_type}'. Supported values are: {supported}."
+            )
+
+        dsn = section.get("resource_id", section.get("dsn", "")).strip()
+        if not dsn:
+            raise KeyError(f"Connection '{connection_name}' does not define a DSN/TNS connect identifier.")
+
+        username = None
+        password = None
+        if authentication_type == PASSWORD_AUTHENTICATION:
+            username = self.user_credential(connection_name=connection_name, credential_key="username")
+            password = self.user_credential(connection_name=connection_name, credential_key="password")
+
+        wallet_password = ""
+        if section.get("wallet_password", ""):
+            wallet_password = self.user_credential(
+                connection_name=connection_name,
+                credential_key="wallet_password",
+            )
+
+        wallet_path = section.get("wallet_path", section.get("wallet_zip_path", ""))
+        token_location = section.get("token_location", "")
+        if authentication_type == OCI_IAM_TOKEN_AUTHENTICATION and not token_location:
+            token_location = str(DEFAULT_OCI_TOKEN_LOCATION)
+
+        return NamedConnection(
+            name=connection_name,
+            authentication_type=authentication_type,
+            dsn=dsn,
+            username=username,
+            password=password,
+            wallet_path=wallet_path,
+            wallet_password=wallet_password,
+            token_location=token_location,
+        )
 
     def named_connection_creds(self, connection_name: str) -> tuple[str, str, str]:
         """
@@ -141,37 +237,27 @@ class UserSecurity:
         :raises FileNotFoundError: If the credential configuration file does not exist.
         :raises KeyError: If the connection name does not exist in the credential configuration file.
         """
-        # Check if the configuration file exists
-        if not self.user_config_file_path.exists():
-            raise FileNotFoundError(f"Configuration file '{self.user_config_file_path}' not found.")
-
-        # Load the configuration file
-        config = configparser.ConfigParser()
-        config.read(self.user_config_file_path)
-
-        # Get all valid connection names (sections in the config)
-        valid_connection_names = config.sections()
-
-        # Check if the connection name exists in the configuration
-        if connection_name not in valid_connection_names:
-            valid_keys_str = ", ".join(valid_connection_names) if valid_connection_names else "No connection names have been saved."
-            raise KeyError(
-                f"Connection '{connection_name}' does not exist in the credentials store. "
-                f"Valid connection names are: {valid_keys_str}."
+        connection = self.named_connection(connection_name=connection_name)
+        if connection.authentication_type != PASSWORD_AUTHENTICATION:
+            raise ValueError(
+                f"Connection '{connection_name}' uses {connection.authentication_type} authentication and "
+                "does not have database username/password credentials."
             )
+        return connection.username, connection.password, connection.dsn
 
-        # Retrieve and decrypt the username and password
-        encrypted_username = config.get(connection_name, "username")
-        encrypted_password = config.get(connection_name, "password")
-        dsn = config.get(connection_name, "resource_id", fallback=config.get(connection_name, "dsn"))
-
-        username = _decrypted_user_credential(encrypted_credential=encrypted_username)
-        password = _decrypted_user_credential(encrypted_credential=encrypted_password)
-
-        return username, password, dsn
-
-    def update_named_connection(self, connection_name:str, username: str, password:str, dsn: str,
-                                wallet_zip_path: str = "", resource_id: str = None):
+    def update_named_connection(
+            self,
+            connection_name: str,
+            username: str | None,
+            password: str | None,
+            dsn: str,
+            wallet_zip_path: str = "",
+            resource_id: str = None,
+            authentication_type: str = PASSWORD_AUTHENTICATION,
+            wallet_path: str = "",
+            wallet_password: str = "",
+            token_location: str = "",
+    ):
         """Create (or update, if already exists) a connection entry, fo the supplied connection details.
         :param connection_name: The named connection.This is effectively a section in a config file.
         :param username: The username to encrypt and store.
@@ -179,18 +265,68 @@ class UserSecurity:
         :param dsn: The data source name (TNS string)
         """
 
-        self._create_new_connection_section(connection_name= connection_name)
-        encrypted_username = _encrypted_user_credential(credential=username)
-        encrypted_password = _encrypted_user_credential(credential=password)
+        authentication_type = authentication_type.strip().lower()
+        if authentication_type not in SUPPORTED_AUTHENTICATION_TYPES:
+            supported = ", ".join(SUPPORTED_AUTHENTICATION_TYPES)
+            raise ValueError(f"Unsupported authentication type '{authentication_type}'. Expected one of: {supported}.")
+        if authentication_type == PASSWORD_AUTHENTICATION and (username is None or password is None):
+            raise ValueError("Password-authenticated connections require a username and password.")
+
+        self._create_new_connection_section(connection_name=connection_name)
         resource_id = resource_id or dsn
-        self._update_credential_entry(connection_name=connection_name, credential_key="username", credential_value=encrypted_username)
-        self._update_credential_entry(connection_name=connection_name, credential_key="password", credential_value=encrypted_password)
+        self._update_credential_entry(
+            connection_name=connection_name,
+            credential_key="authentication_type",
+            credential_value=authentication_type,
+        )
         self._update_credential_entry(connection_name=connection_name, credential_key="dsn", credential_value=dsn)
         self._update_credential_entry(connection_name=connection_name, credential_key="resource_id", credential_value=resource_id)
-        if wallet_zip_path:
-            self._update_credential_entry(connection_name=connection_name, credential_key="wallet_zip_path", credential_value=wallet_zip_path)
+
+        if authentication_type == PASSWORD_AUTHENTICATION:
+            encrypted_username = _encrypted_user_credential(credential=username)
+            encrypted_password = _encrypted_user_credential(credential=password)
+            self._update_credential_entry(
+                connection_name=connection_name,
+                credential_key="username",
+                credential_value=encrypted_username,
+            )
+            self._update_credential_entry(
+                connection_name=connection_name,
+                credential_key="password",
+                credential_value=encrypted_password,
+            )
+            self._delete_credential_entry(connection_name=connection_name, credential_key="token_location")
         else:
+            self._delete_credential_entry(connection_name=connection_name, credential_key="username")
+            self._delete_credential_entry(connection_name=connection_name, credential_key="password")
+            token_location = token_location or str(DEFAULT_OCI_TOKEN_LOCATION)
+            self._update_credential_entry(
+                connection_name=connection_name,
+                credential_key="token_location",
+                credential_value=token_location,
+            )
+
+        actual_wallet_path = wallet_path or wallet_zip_path
+        if actual_wallet_path:
+            self._update_credential_entry(
+                connection_name=connection_name,
+                credential_key="wallet_path",
+                credential_value=actual_wallet_path,
+            )
             self._delete_credential_entry(connection_name=connection_name, credential_key="wallet_zip_path")
+        else:
+            self._delete_credential_entry(connection_name=connection_name, credential_key="wallet_path")
+            self._delete_credential_entry(connection_name=connection_name, credential_key="wallet_zip_path")
+
+        if wallet_password:
+            encrypted_wallet_password = _encrypted_user_credential(credential=wallet_password)
+            self._update_credential_entry(
+                connection_name=connection_name,
+                credential_key="wallet_password",
+                credential_value=encrypted_wallet_password,
+            )
+        else:
+            self._delete_credential_entry(connection_name=connection_name, credential_key="wallet_password")
 
     def _create_user_credentials_file(self, new_connection_name: str | None = None) -> None:
         """

@@ -5,6 +5,12 @@ from time import time_ns
 
 from oratapi.lib.framework_errors import PLSQLScriptError, DatabaseConnectionError
 from oratapi.lib.fsutils import resolve_path
+from oratapi.lib.user_security import (
+    DEFAULT_OCI_TOKEN_LOCATION,
+    OCI_IAM_TOKEN_AUTHENTICATION,
+    PASSWORD_AUTHENTICATION,
+    SUPPORTED_AUTHENTICATION_TYPES,
+)
 import os
 import platform
 import oracledb
@@ -20,18 +26,90 @@ ERROR = '❗'
 WARNING = '⚠️'
 
 
+class OCIIAMTokenProvider:
+    """Read user-managed OCI IAM database token material for python-oracledb."""
+
+    def __init__(self, token_location: str | Path = DEFAULT_OCI_TOKEN_LOCATION):
+        expanded_location = os.path.expandvars(str(token_location or DEFAULT_OCI_TOKEN_LOCATION).strip())
+        self.token_location = Path(expanded_location).expanduser().resolve(strict=False)
+
+    def __call__(self, refresh: bool) -> tuple[str, str]:
+        if refresh:
+            raise DatabaseConnectionError(
+                "The OCI IAM database token has expired. OraTAPI does not renew tokens automatically.\n"
+                f"Token directory: {self.token_location}\n"
+                "Renew it with 'oci iam db-token get' using the OCI profile and authentication options appropriate "
+                "to your environment, or reconnect with a database tool that refreshes this directory, then retry."
+            )
+
+        token_path = self.token_location / "token"
+        private_key_path = self.token_location / "oci_db_key.pem"
+        missing_files = [
+            str(path)
+            for path in (token_path, private_key_path)
+            if not path.is_file()
+        ]
+        if missing_files:
+            missing_display = "\n".join(f"  {path}" for path in missing_files)
+            raise DatabaseConnectionError(
+                "OCI IAM database token material is incomplete. Missing file(s):\n"
+                f"{missing_display}\n"
+                "Renew the token with 'oci iam db-token get' using the OCI profile and authentication options "
+                "appropriate to your environment, then retry."
+            )
+
+        try:
+            token = token_path.read_text(encoding="utf-8").strip()
+            private_key = private_key_path.read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            raise DatabaseConnectionError(
+                f"Unable to read OCI IAM token material under '{self.token_location}'. "
+                "Check the file permissions or renew the token, then retry."
+            ) from exc
+        if not token or not private_key:
+            raise DatabaseConnectionError(
+                f"OCI IAM token material under '{self.token_location}' contains an empty token or private key. "
+                "Renew the token and retry."
+            )
+
+        if not oracledb.is_thin_mode():
+            private_key = "".join(
+                line.strip()
+                for line in private_key.splitlines()
+                if line.strip() not in {
+                    "-----BEGIN PRIVATE KEY-----",
+                    "-----END PRIVATE KEY-----",
+                }
+            )
+
+        return token, private_key
+
+
 class DBSession(oracledb.Connection):
     """
     A database session class subclassing `oracledb.Connection`,
     with methods to execute queries and fetch results in different formats.
     """
 
-    def __init__(self, wallet_zip_path: str = '', verbose: bool = True, **kwargs):
+    def __init__(
+            self,
+            wallet_zip_path: str = '',
+            wallet_path: str = '',
+            wallet_password: str = '',
+            authentication_type: str = PASSWORD_AUTHENTICATION,
+            token_location: str = '',
+            verbose: bool = True,
+            **kwargs,
+    ):
         """
         Initialises the DBSession with optional wallet support.
 
         Args:
-            wallet_zip_path (str): Path to the zipped Oracle wallet.
+            wallet_zip_path (str): Legacy path to a zipped Oracle wallet.
+            wallet_path (str): Path to a zipped or extracted Oracle wallet.
+            wallet_password (str): Password for an encrypted PEM wallet in thin mode.
+            authentication_type (str): Password or OCI IAM token authentication.
+            token_location (str): Directory containing an OCI IAM database token and private key.
             **kwargs: Parameters passed to oracledb.Connection.
         """
         self.connection_succeeded = False
@@ -42,43 +120,58 @@ class DBSession(oracledb.Connection):
             self.user = kwargs.get("user")
             self.password = kwargs.get("password")
             self.dsn_string = kwargs.get("dsn")
+            self.authentication_type = authentication_type.strip().lower()
+            if self.authentication_type not in SUPPORTED_AUTHENTICATION_TYPES:
+                supported = ", ".join(SUPPORTED_AUTHENTICATION_TYPES)
+                raise DatabaseConnectionError(
+                    f"Unsupported authentication type '{self.authentication_type}'. Expected one of: {supported}."
+                )
 
-            wallet_path = None
-            if wallet_zip_path.strip():
-                expanded_path = os.path.expandvars(wallet_zip_path.strip())
-                candidate = Path(expanded_path).expanduser()
-                if candidate.is_file():
-                    wallet_path = candidate.resolve(strict=False)
-                else:
-                    tns_admin = os.environ.get("TNS_ADMIN", "").strip()
-                    if tns_admin:
-                        tns_candidate = Path(tns_admin).expanduser() / expanded_path
-                        if tns_candidate.is_file():
-                            wallet_path = tns_candidate.resolve(strict=False)
+            supplied_wallet_path = wallet_path or wallet_zip_path
+            resolved_wallet_path = self._resolve_wallet_path(supplied_wallet_path)
+            if self.authentication_type == OCI_IAM_TOKEN_AUTHENTICATION and resolved_wallet_path is None:
+                raise DatabaseConnectionError(
+                    "OCI IAM token authentication requires an Oracle wallet ZIP or extracted wallet directory."
+                )
 
-            if wallet_path:
-                wallet_dir = self.extract_wallet(wallet_path)
+            if resolved_wallet_path:
+                wallet_dir = (
+                    resolved_wallet_path
+                    if resolved_wallet_path.is_dir()
+                    else self.extract_wallet(resolved_wallet_path)
+                )
                 os.environ["TNS_ADMIN"] = str(wallet_dir)
-                kwargs["config_dir"] = str(wallet_dir)
-                # for item in wallet_dir.iterdir():
-                #    print(item)
-
+                self._validate_wallet_for_mode(wallet_dir=wallet_dir, wallet_password=wallet_password)
                 if not self.validate_dsn_alias(wallet_dir, self.dsn_string):
-                    raise ValueError(f"DSN alias '{self.dsn_string}' not found in wallet tnsnames.ora.")
-
-                if oracledb.is_thin_mode():
-                    oracledb.defaults.thick_mode_dsn_passthrough = False
-                    params = oracledb.ConnectParams(
-                        config_dir=str(wallet_dir),
-                        wallet_location=str(wallet_dir),
+                    raise DatabaseConnectionError(
+                        f"DSN alias '{self.dsn_string}' was not found in '{wallet_dir / 'tnsnames.ora'}'."
                     )
-                    params.parse_connect_string(self.dsn_string)
-                    kwargs["params"] = params
-                    kwargs.pop("dsn", None)
+
+                oracledb.defaults.thick_mode_dsn_passthrough = False
+                params_kwargs = {
+                    "config_dir": str(wallet_dir),
+                    "wallet_location": str(wallet_dir),
+                }
+                if oracledb.is_thin_mode() and wallet_password:
+                    params_kwargs["wallet_password"] = wallet_password
+                params = oracledb.ConnectParams(**params_kwargs)
+                params.parse_connect_string(self.dsn_string)
+                kwargs["params"] = params
+                kwargs.pop("dsn", None)
             else:
                 tns_admin = os.environ.get("TNS_ADMIN")
                 if tns_admin:
                     kwargs["config_dir"] = str(tns_admin)
+
+            if self.authentication_type == OCI_IAM_TOKEN_AUTHENTICATION:
+                self.user = None
+                self.password = None
+            kwargs = self._configure_authentication(
+                authentication_type=self.authentication_type,
+                token_location=token_location,
+                connection_kwargs=kwargs,
+            )
+
             # Handle dsn prefixed with 'ldap:' - resolve into full LDAP DSN
             if self.dsn_string and self.dsn_string.lower().startswith("ldap:"):
                 alias = self.dsn_string[5:]
@@ -121,6 +214,72 @@ class DBSession(oracledb.Connection):
             self.connection_succeeded = False
             raise self._translate_connection_error(e) from e
 
+    @staticmethod
+    def _configure_authentication(
+            authentication_type: str,
+            token_location: str,
+            connection_kwargs: dict,
+    ) -> dict:
+        """Apply mode-specific authentication arguments to an Oracle connection."""
+        if authentication_type != OCI_IAM_TOKEN_AUTHENTICATION:
+            return connection_kwargs
+
+        connection_kwargs.pop("user", None)
+        connection_kwargs.pop("password", None)
+        connection_kwargs["access_token"] = OCIIAMTokenProvider(
+            token_location=token_location or DEFAULT_OCI_TOKEN_LOCATION,
+        )
+        if not oracledb.is_thin_mode():
+            connection_kwargs["externalauth"] = True
+        return connection_kwargs
+
+    @staticmethod
+    def _resolve_wallet_path(wallet_path: str) -> Path | None:
+        """Resolve a wallet path directly or relative to TNS_ADMIN."""
+        if not wallet_path or not wallet_path.strip():
+            return None
+
+        expanded_path = os.path.expandvars(wallet_path.strip())
+        candidate = Path(expanded_path).expanduser()
+        if candidate.exists():
+            return candidate.resolve(strict=False)
+
+        tns_admin = os.environ.get("TNS_ADMIN", "").strip()
+        if tns_admin:
+            tns_candidate = Path(tns_admin).expanduser() / expanded_path
+            if tns_candidate.exists():
+                return tns_candidate.resolve(strict=False)
+
+        raise DatabaseConnectionError(f"Oracle wallet path '{candidate.resolve(strict=False)}' does not exist.")
+
+    @staticmethod
+    def _validate_wallet_for_mode(wallet_dir: Path, wallet_password: str) -> None:
+        """Ensure an extracted wallet contains the files required by the active driver mode."""
+        tnsnames_path = wallet_dir / "tnsnames.ora"
+        if not tnsnames_path.is_file():
+            raise DatabaseConnectionError(f"Oracle wallet directory '{wallet_dir}' does not contain tnsnames.ora.")
+
+        if oracledb.is_thin_mode():
+            pem_path = wallet_dir / "ewallet.pem"
+            if not pem_path.is_file():
+                raise DatabaseConnectionError(
+                    f"Oracle wallet directory '{wallet_dir}' does not contain ewallet.pem, which is required "
+                    "for thin mode. Use a complete wallet ZIP/directory or configure Oracle Instant Client."
+                )
+            pem_header = pem_path.read_text(encoding="utf-8", errors="ignore")[:100]
+            if "ENCRYPTED PRIVATE KEY" in pem_header and not wallet_password:
+                raise DatabaseConnectionError(
+                    "The wallet contains an encrypted ewallet.pem but no wallet password is saved. "
+                    "Edit the connection with conn_mgr and enter its wallet password, or use thick mode."
+                )
+        else:
+            sso_path = wallet_dir / "cwallet.sso"
+            if not sso_path.is_file():
+                raise DatabaseConnectionError(
+                    f"Oracle wallet directory '{wallet_dir}' does not contain cwallet.sso, which is required "
+                    "for thick mode. Use a complete wallet ZIP/directory or run in thin mode."
+                )
+
     def _translate_connection_error(self, error: oracledb.DatabaseError) -> Exception:
         """Return a more actionable OraTAPI error for common connection failures."""
         error_text = str(error)
@@ -154,7 +313,9 @@ class DBSession(oracledb.Connection):
             Path: Path to the extracted temporary directory.
         """
         if not wallet_zip_path.is_file():
-            raise FileNotFoundError(f"{CRITICAL} Wallet zip file not found: {wallet_zip_path}")
+            raise DatabaseConnectionError(f"Oracle wallet ZIP file '{wallet_zip_path}' does not exist.")
+        if wallet_zip_path.suffix.lower() != ".zip" or not zipfile.is_zipfile(wallet_zip_path):
+            raise DatabaseConnectionError(f"Oracle wallet path '{wallet_zip_path}' is not a valid ZIP file.")
 
         temp_dir = Path(tempfile.mkdtemp(prefix="oracle_wallet_"))
         with zipfile.ZipFile(wallet_zip_path, 'r') as zip_ref:
@@ -444,10 +605,10 @@ def _looks_like_instant_client(path: str) -> bool:
     return os.path.isfile(os.path.join(path, marker))
 
 
-def try_init_thick_mode(verbose:bool = False, lib_dir: Path = None) -> bool:
-    client_dir = os.getenv("ORACLE_IC_HOME") if lib_dir is None else lib_dir
+def try_init_thick_mode(verbose:bool = False, lib_dir: str | Path | None = None) -> bool:
+    client_dir = os.getenv("ORACLE_IC_HOME") if lib_dir is None else os.fspath(lib_dir)
     if client_dir and os.path.isdir(client_dir) and _looks_like_instant_client(client_dir):
-        source = "ORACLE_IC_HOME"
+        source = "ORACLE_IC_HOME" if lib_dir is None else "explicit client directory"
     else:
         fallback_dir = str(resolve_path("oracle_client"))
         if os.path.isdir(fallback_dir) and _looks_like_instant_client(fallback_dir):

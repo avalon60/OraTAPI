@@ -95,13 +95,17 @@ OraTAPI is a versatile tool that offers the following configurable options:
 - **Auto-Maintained Column Support**: Offers a flexible solution for managing auto-maintained columns, either through generated triggers or configurable column expressions.  
 - **Organised Output**: Output files are neatly arranged in staging directories for streamlined deployment.  
 - **Error Handling**: Configurable behaviour for handling missing tables, with options to skip or halt processing.  
-- **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing credentials to be securely stored and used transparently.  
+- **Connection Manager**: Includes a connection manager (similar to named connections in SQLcl), allowing password and OCI IAM token connections to be stored and used transparently.
 
 ### Limitations
 LDAP-based connections require thick mode.
 
 Wallet-based connections can work in thin mode, but if the target database requires Oracle Native Network Encryption
 or checksumming, you must use thick mode with Oracle Instant Client.
+
+OCI IAM database token connections use token and private-key files maintained outside OraTAPI. OraTAPI reads these
+files but never creates or renews them. Thin mode requires an `ewallet.pem` file and its wallet password when the PEM
+is encrypted. Thick mode requires `cwallet.sso` and a compatible Oracle Instant Client.
 
 To configure thick mode, OraTAPI can use any of the following:
 
@@ -716,7 +720,7 @@ matching template for each selected table. The output file name is derived from 
 In the preferred wheel/PyPI model, the command-line tools are installed as console scripts into the Python environment. There are two tools that you will need to work with most often, `conn_mgr` and `ora_tapi`. The latter of these will be used more frequently.
 
 In respect of the `conn_mgr` tool (see [Connection Manager](#connection-manager)), this is used to securely store 
-database connections (credentials and DSNs). Such connections are named and can be used in conjunction with the 
+database connections (authentication settings, credentials where applicable, and DSNs). Such connections are named and can be used in conjunction with the
 `-c/--conn_name` option of the `ora_tapi` command. This is a secure alternative to specifying the `-u/--db_username`, 
 `-p/--db_password` and `-d/--dsn` options.
 
@@ -1526,13 +1530,14 @@ In addition, the following may be used.
 
 ## Connection Manager
 
-The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection credentials and DSN (TNS) strings can be stored and retrieved locally, by use of a convenient name. Credentials are transparently encrypted/decrypted from a locally maintained store. The `conn_mgr` command allows you to save credentials and a connect string, by using a combination of the following command line arguments:
+The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection settings and DSN (TNS) strings can be stored and retrieved locally by use of a convenient name. Passwords are transparently encrypted/decrypted from a locally maintained store. OraTAPI maintains its own connection store and does not read SQLcl's `.dbtools` files. The `conn_mgr` command allows you to save a connection by using a combination of the following command line arguments:
 
 - -c / --create
 - -e / --edit
 - -d / --delete
 - -l / --list
 - -C / --print-creds
+- --auth-type password / oci_iam_token
 
 This allows you to:
 
@@ -1544,8 +1549,10 @@ This allows you to:
 
 The Add and Update options cause the `conn_mgr` to enter an interactive dialog mode.
 
-When creating or editing a saved connection, you may optionally provide a wallet ZIP path. OraTAPI extracts the
-wallet to a temporary directory at runtime and uses the aliases from that wallet's `tnsnames.ora`.
+When creating or editing a saved connection, you may provide either a wallet ZIP path or an extracted wallet
+directory. OraTAPI extracts ZIP files to a temporary directory at runtime and uses aliases from the wallet's
+`tnsnames.ora`. A wallet directory is used read-only. Thin mode requires `ewallet.pem`; thick mode requires
+`cwallet.sso`.
 
 Synopsis:
 
@@ -1553,6 +1560,7 @@ Synopsis:
 conn_mgr -h
 
 usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-C] [-n NAME]
+                   [-t {dsn,url}] [--auth-type {password,oci_iam_token}]
 
 Database connection manager.
 
@@ -1564,10 +1572,15 @@ options:
   -e, --edit            Edit an existing connection.
   -d, --delete          Delete an existing connection.
   -l, --list            List all connections.
-  -C, --print-creds     If used with --list, includes decrypted credentials.
+  -C, --print-creds     If used with --list, includes decrypted password
+                        credentials; IAM secrets are never displayed.
   -n NAME, --name NAME  Name of the connection.
   -t {dsn,url}, --credential-type {dsn,url}
                         Type of credential to use (default: dsn).
+  --auth-type {password,oci_iam_token}
+                        Authentication type. New connections default to
+                        password; existing connections retain their stored
+                        type unless this option is supplied.
 
 Used to create/edit/delete or store named database connections. Database connections are stored, encrypted, in a local store.
 
@@ -1584,6 +1597,43 @@ conn_mgr -l -C
 ```
 
 Using `-C/--print-creds` causes `conn_mgr` to attempt to decrypt and display the stored username and password for each saved connection. This is intended for local inspection on the machine that created the credential store.
+
+For OCI IAM connections, `-C/--print-creds` reports only whether a wallet password has been saved. It never prints
+the wallet password, IAM token, or private key.
+
+### OCI IAM token connections
+
+Before using an OCI IAM connection, obtain or renew the database token using the OCI profile and authentication method
+appropriate to your environment. For example:
+
+```bash
+oci iam db-token get
+```
+
+Security-token profiles may instead require options such as `--auth security_token` and `--profile`. OraTAPI does not
+run this command automatically. By default it reads `token` and `oci_db_key.pem` from `~/.oci/db-token`; a different
+directory can be recorded when the connection is created or edited.
+
+Create the OraTAPI connection as follows:
+
+```bash
+conn_mgr --create --name dev_iam --auth-type oci_iam_token
+```
+
+Enter the TNS alias, the original wallet ZIP or a suitable extracted wallet directory, and the wallet password if an
+encrypted PEM wallet will be used in thin mode. Then use the connection normally:
+
+```bash
+ora_tapi --conn_name dev_iam --table_owner HR --table_names employees
+```
+
+SQLcl connection directories can be used as extracted wallet directories when they contain the files required by the
+selected driver mode. A directory containing only `cwallet.sso` is thick-mode only. Prefer the original wallet ZIP
+when the connection must work in both thin and thick modes.
+
+For the inspected SI001 `si001_mcp_dev_dba` and `si001_mcp_ro_dba` connections, use the original wallet ZIP where
+possible. Their SQLcl connection directories contain `cwallet.sso` but not `ewallet.pem`, so those extracted
+directories can only be used in thick mode.
 
 Connection credentials are stored with 256-bit AES encryption, to a local store, at: `<USER_HOME_DIR>/.OraTAPI/dsn_credentials.ini`.  
 

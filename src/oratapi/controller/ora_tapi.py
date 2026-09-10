@@ -27,7 +27,7 @@ from oratapi.lib.fsutils import (
     runtime_home,
 )
 from oratapi.lib.app_utils import current_timestamp, format_elapsed_time
-from oratapi.lib.user_security import UserSecurity
+from oratapi.lib.user_security import PASSWORD_AUTHENTICATION, UserSecurity
 from oratapi.view.interactions import Interactions, MsgLvl, MissingParameterError
 from pathlib import Path
 from oratapi.model.ora_tapi_csv import CSVManager
@@ -349,13 +349,19 @@ class CodeManager:
         self.table_names_list = self.table_names
 
         user_security = UserSecurity(project_identifier="OraTAPI")
-        wallet_zip_path = ""
+        authentication_type = PASSWORD_AUTHENTICATION
+        wallet_path = ""
+        wallet_password = ""
+        token_location = ""
         if self.conn_name:
-            self.db_username, self.db_password, self.dsn \
-                = user_security.named_connection_creds(connection_name=self.conn_name)
-            wallet_zip_path = user_security.connection_property(connection_name=self.conn_name,
-                                                                property_key="wallet_zip_path",
-                                                                default_value="")
+            named_connection = user_security.named_connection(connection_name=self.conn_name)
+            authentication_type = named_connection.authentication_type
+            self.db_username = named_connection.username
+            self.db_password = named_connection.password
+            self.dsn = named_connection.dsn
+            wallet_path = named_connection.wallet_path
+            wallet_password = named_connection.wallet_password
+            token_location = named_connection.token_location
 
         oracle_client_dir = None
         if self.oracle_client_dir:
@@ -363,7 +369,7 @@ class CodeManager:
 
         try_init_thick_mode(verbose=True, lib_dir=oracle_client_dir)
         self.view.print_console(msg_level=MsgLvl.info, text=DBSession.get_client_mode_info())
-        if wallet_zip_path and DBSession.is_thick_mode() is False:
+        if wallet_path and DBSession.is_thick_mode() is False:
             self.view.print_console(
                 msg_level=MsgLvl.warning,
                 text=(
@@ -375,8 +381,15 @@ class CodeManager:
 
         # Database session setup
         try:
-            self.db_session: DBSession = DBSession(dsn=self.dsn, user=self.db_username, password=self.db_password,
-                                                   wallet_zip_path=wallet_zip_path)
+            self.db_session: DBSession = DBSession(
+                dsn=self.dsn,
+                user=self.db_username,
+                password=self.db_password,
+                authentication_type=authentication_type,
+                wallet_path=wallet_path,
+                wallet_password=wallet_password,
+                token_location=token_location,
+            )
         except DatabaseConnectionError as e:
             self.view.print_console(msg_level=MsgLvl.error, text=str(e))
             exit(1)
