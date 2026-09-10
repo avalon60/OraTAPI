@@ -1651,9 +1651,9 @@ In addition, the following may be used.
 
 The connection manager allows you to treat database connections in a similar manner to named connections in `SQLcl`. Connection settings and DSN (TNS) strings can be stored and retrieved locally by use of a convenient name. Passwords are transparently encrypted/decrypted from a locally maintained store. OraTAPI maintains its own connection store and does not read SQLcl's `.dbtools` files. The `conn_mgr` command allows you to save a connection by using a combination of the following command line arguments:
 
-- -c / --create
-- -e / --edit
-- -d / --delete
+- -c NAME / --create NAME
+- -e NAME / --edit NAME
+- -d NAME / --delete NAME
 - -l / --list
 - -C / --print-creds
 - --auth-type password / oci_iam_token
@@ -1678,22 +1678,21 @@ Synopsis:
 ```
 conn_mgr -h
 
-usage: conn_mgr.py [-h] (-c | -e | -d | -l) [-C] [-n NAME]
-                   [-t {dsn,url}] [--auth-type {password,oci_iam_token}]
-
-Database connection manager.
+usage: conn_mgr.py [-h] (-c NAME | -e NAME | -d NAME | -l) [-C] [-t {dsn,url}]
+                   [--auth-type {password,oci_iam_token}]
 
 Database connection manager.
 
 options:
   -h, --help            show this help message and exit
-  -c, --create          Create a new connection.
-  -e, --edit            Edit an existing connection.
-  -d, --delete          Delete an existing connection.
+  -c NAME, --create NAME
+                        Create a new connection.
+  -e NAME, --edit NAME  Edit an existing connection.
+  -d NAME, --delete NAME
+                        Delete an existing connection.
   -l, --list            List all connections.
   -C, --print-creds     If used with --list, includes decrypted password
                         credentials; IAM secrets are never displayed.
-  -n NAME, --name NAME  Name of the connection.
   -t {dsn,url}, --credential-type {dsn,url}
                         Type of credential to use (default: dsn).
   --auth-type {password,oci_iam_token}
@@ -1701,16 +1700,22 @@ options:
                         password; existing connections retain their stored
                         type unless this option is supplied.
 
-Used to create/edit/delete or store named database connections. Database connections are stored, encrypted, in a local store.
+Used to create/edit/delete or store named database connections. Database
+connections are stored, encrypted, in a local store.
 
 NOTE: For OraTAPI, you should not use the -t flag, if you do, you should specify dsn.
 
 ```
-The `-n/--name` option is mandatory when used with all other options, except for the `-l/--list` option. Additionally, the `-c/--create`, `-e/--edit`, and `-d/--delete` options are mutually exclusive. The `-C/--print-creds` option is only meaningful with `-l/--list`.
+Supply the connection name directly after `-c/--create`, `-e/--edit`, or `-d/--delete`. Exactly one of these actions or `-l/--list` is required. The `-C/--print-creds` option is only meaningful with `-l/--list`.
+
+The separate `-n/--name` option has been removed. Existing scripts must replace forms such as `conn_mgr -c -n dev` with `conn_mgr -c dev`. Both `conn_mgr` and `conn-mgr` accept the same options.
 
 Examples:
 
 ```bash
+conn_mgr -c dev
+conn_mgr --edit dev
+conn_mgr -d dev
 conn_mgr -l
 conn_mgr -l -C
 ```
@@ -1736,7 +1741,7 @@ directory can be recorded when the connection is created or edited.
 Create the OraTAPI connection as follows:
 
 ```bash
-conn_mgr --create --name dev_iam --auth-type oci_iam_token
+conn_mgr --create dev_iam --auth-type oci_iam_token
 ```
 
 Enter the TNS alias, the original wallet ZIP or a suitable extracted wallet directory, and the wallet password if an

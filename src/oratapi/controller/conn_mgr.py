@@ -13,6 +13,11 @@ from oratapi.lib.user_security import (
 PROG_NAME = Path(__file__).name
 
 
+def connection_name(value: str) -> str:
+    if not value:
+        raise argparse.ArgumentTypeError("Connection name must not be empty.")
+    return value
+
 
 def main():
     print(f"{PROG_NAME}: OraTAPI connection manager utility version: {__version__}")
@@ -22,9 +27,9 @@ def main():
                "Database connections are stored, encrypted, in a local store.")
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-c', '--create', action='store_true', help="Create a new connection.")
-    group.add_argument('-e', '--edit', action='store_true', help="Edit an existing connection.")
-    group.add_argument('-d', '--delete', action='store_true', help="Delete an existing connection.")
+    group.add_argument('-c', '--create', type=connection_name, metavar='NAME', help="Create a new connection.")
+    group.add_argument('-e', '--edit', type=connection_name, metavar='NAME', help="Edit an existing connection.")
+    group.add_argument('-d', '--delete', type=connection_name, metavar='NAME', help="Delete an existing connection.")
     group.add_argument('-l', '--list', action='store_true', help="List all connections.")
 
     parser.add_argument(
@@ -33,7 +38,6 @@ def main():
         action='store_true',
         help="If used with --list, includes decrypted password credentials; IAM secrets are never displayed.",
     )
-    parser.add_argument('-n', '--name', type=str, help="Name of the connection.")
     parser.add_argument('-t', '--credential-type', type=str, choices=['dsn', 'url'], default='dsn',
                         help="Type of credential to use (default: dsn).")
     parser.add_argument(
@@ -55,20 +59,11 @@ def main():
     elif args.print_creds:
         print("Error: --print-creds must be used with --list.")
     elif args.create:
-        if not args.name:
-            print("The --name option is required for creating a connection.")
-        else:
-            conn_mgr.create_connection(args.name, authentication_type=args.auth_type or PASSWORD_AUTHENTICATION)
+        conn_mgr.create_connection(args.create, authentication_type=args.auth_type or PASSWORD_AUTHENTICATION)
     elif args.edit:
-        if not args.name:
-            print("The --name option is required for editing a connection.")
-        else:
-            conn_mgr.edit_connection(args.name, authentication_type=args.auth_type)
+        conn_mgr.edit_connection(args.edit, authentication_type=args.auth_type)
     elif args.delete:
-        if not args.name:
-            print("The --name option is required for deleting a connection.")
-        else:
-            conn_mgr.delete_connection(args.name)
+        conn_mgr.delete_connection(args.delete)
 
 
 if __name__ == "__main__":
