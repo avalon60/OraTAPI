@@ -334,6 +334,39 @@ You can do the same for `quick-config`, `profile-mgr`, or `conn-mgr` by replacin
 
 This approach is preferred over embedding environment-activation logic in the wrapper. It keeps the launcher simple and makes it obvious which virtual environment OraTAPI is using.
 
+### Optional: Use Shell Aliases On macOS Or Linux
+
+For interactive terminal use, aliases can call the installed commands directly without activating the virtual environment. Add the following to `~/.zshrc` for Zsh (the default shell on macOS), or `~/.bashrc` for Bash on Linux. This example assumes OraTAPI is installed in `~/apps/OraTAPI/.venv`; adjust the paths for your installation.
+
+```bash
+# OraTAPI commands from the dedicated pip virtual environment.
+alias conn_mgr='"$HOME/apps/OraTAPI/.venv/bin/conn_mgr"'
+alias conn-mgr='"$HOME/apps/OraTAPI/.venv/bin/conn-mgr"'
+alias migrate_config='"$HOME/apps/OraTAPI/.venv/bin/migrate_config"'
+alias migrate-config='"$HOME/apps/OraTAPI/.venv/bin/migrate-config"'
+alias oratapi='"$HOME/apps/OraTAPI/.venv/bin/oratapi"'
+alias ora_tapi='"$HOME/apps/OraTAPI/.venv/bin/ora_tapi"'
+alias ora-tapi='"$HOME/apps/OraTAPI/.venv/bin/ora-tapi"'
+alias profile_mgr='"$HOME/apps/OraTAPI/.venv/bin/profile_mgr"'
+alias profile-mgr='"$HOME/apps/OraTAPI/.venv/bin/profile-mgr"'
+alias quick_config='"$HOME/apps/OraTAPI/.venv/bin/quick_config"'
+alias quick-config='"$HOME/apps/OraTAPI/.venv/bin/quick-config"'
+alias update_ora_tapi='"$HOME/apps/OraTAPI/.venv/bin/update_ora_tapi"'
+alias update-ora-tapi='"$HOME/apps/OraTAPI/.venv/bin/update-ora-tapi"'
+```
+
+These aliases cover all OraTAPI console commands, including their underscore and dashed forms. Arguments pass through normally, for example `oratapi --help` or `profile_mgr --list`.
+
+Open a new terminal or reload your shell configuration:
+
+```bash
+source ~/.zshrc
+# For Bash:
+source ~/.bashrc
+```
+
+For scripts and scheduled jobs, use the executable's full path or a personal launcher script, since these environments generally do not load interactive shell aliases.
+
 ### Development Checkout
 
 If you cloned the Git repository and want a local development environment instead of installing from a release archive:
