@@ -183,6 +183,11 @@ class ProfileManager:
     def export_profile(self, profile_name: str, export_path: Path) -> None:
         profile_path = self._ensure_profile_exists(profile_name)
         export_path = Path(export_path).expanduser()
+        if export_path.is_dir():
+            _, created_version = self._read_profile_metadata(profile_path)
+            export_version = created_version or self.current_version or "Unknown"
+            safe_export_version = re.sub(r'[\\/:*?"<>|]', "_", export_version).rstrip(" .") or "Unknown"
+            export_path = export_path / f"{profile_name}.{safe_export_version}.zip"
         export_path.parent.mkdir(parents=True, exist_ok=True)
 
         with zipfile.ZipFile(export_path, "w", zipfile.ZIP_DEFLATED) as zip_file:

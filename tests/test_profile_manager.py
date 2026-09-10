@@ -65,6 +65,35 @@ def test_profile_export_excludes_oracle_client(monkeypatch, tmp_path) -> None:
     assert not any(name.startswith("basic/oracle_client/") for name in archived_names)
 
 
+def test_profile_export_to_directory_uses_created_version(monkeypatch, tmp_path) -> None:
+    home_dir = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(home_dir))
+
+    bootstrap_builtin_profiles(selected_profile="basic", force=False)
+    (profile_home("basic") / "created_version.md").write_text("2.3.0\n", encoding="utf-8")
+
+    manager = ProfileManager(current_version="9.9.9")
+    manager.export_profile("basic", tmp_path)
+
+    export_path = tmp_path / "basic.2.3.0.zip"
+    assert export_path.exists()
+    with ZipFile(export_path, "r") as archive:
+        assert "basic/resources/config/OraTAPI.ini" in archive.namelist()
+
+
+def test_profile_export_to_directory_falls_back_to_current_version(monkeypatch, tmp_path) -> None:
+    home_dir = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(home_dir))
+
+    bootstrap_builtin_profiles(selected_profile="basic", force=False)
+    (profile_home("basic") / "created_version.md").unlink()
+
+    manager = ProfileManager(current_version="9.9.9")
+    manager.export_profile("basic", tmp_path)
+
+    assert (tmp_path / "basic.9.9.9.zip").exists()
+
+
 def test_invalid_profile_name_is_rejected() -> None:
     try:
         ProfileManager._validate_profile_name("bad/name")

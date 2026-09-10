@@ -573,7 +573,8 @@ options:
   -P PROFILE PURPOSE, --set-purpose PROFILE PURPOSE
                         Set or replace the one-line purpose text for a profile.
   -e PROFILE ZIP_PATH, --export PROFILE ZIP_PATH
-                        Export a profile to a ZIP file.
+                        Export a profile to a ZIP file, or use a directory to
+                        generate a versioned filename.
   -i ZIP_PATH, --import-profile ZIP_PATH
                         Import a profile from a ZIP file.
   -m OLD_INSTALL_DIR TARGET_PROFILE, --migrate-old OLD_INSTALL_DIR TARGET_PROFILE
@@ -582,7 +583,7 @@ options:
                         Purpose text to store with a newly created, copied,
                         imported, or migrated profile.
 ```
-You can use `profile_mgr` to back up, restore, or transport named profiles. Export and import work on one profile per ZIP archive. If the imported profile already exists, OraTAPI prompts before overwrite and then prompts again to decide whether to activate the imported profile. Profile exports intentionally exclude any profile-local `oracle_client` directory, so embedded Oracle Instant Client files are not bundled into the ZIP archive.
+You can use `profile_mgr` to back up, restore, or transport named profiles. Export and import work on one profile per ZIP archive. If the export path is an existing directory, `profile_mgr` generates the filename as `<profile>.<created-version>.zip`, using the current OraTAPI version when the profile has no recorded creation version. An explicit file path is used unchanged. If the imported profile already exists, OraTAPI prompts before overwrite and then prompts again to decide whether to activate the imported profile. Profile exports intentionally exclude any profile-local `oracle_client` directory, so embedded Oracle Instant Client files are not bundled into the ZIP archive.
 
 The `-p/--purpose` option can be used with `--create`, `--copy`, `--import-profile`, and `--migrate-old` to set a one-line profile description as part of the operation. Use `-P/--set-purpose` to add or replace the purpose text for an existing profile. Profile listings and `--show-active` also display the recorded creation version from `created_version.md`. If either metadata file is absent, the value is shown as `Unknown`.
 
@@ -596,8 +597,8 @@ OraTAPI profiles:
 
 Example export:
 ```
-$ profile_mgr --export logger /tmp/logger-profile.zip
-Exported profile 'logger' to /tmp/logger-profile.zip
+$ profile_mgr --export basic /tmp
+Exported profile 'basic' to /tmp/basic.2.0.1.zip
 ```
 
 Example import:

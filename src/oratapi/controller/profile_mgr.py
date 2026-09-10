@@ -26,7 +26,10 @@ def main():
     group.add_argument("-a", "--activate", metavar="PROFILE", help="Activate a profile.")
     group.add_argument("-P", "--set-purpose", nargs=2, metavar=("PROFILE", "PURPOSE"),
                        help="Set or replace the one-line purpose text for a profile.")
-    group.add_argument("-e", "--export", nargs=2, metavar=("PROFILE", "ZIP_PATH"), help="Export a profile to a ZIP file.")
+    group.add_argument(
+        "-e", "--export", nargs=2, metavar=("PROFILE", "ZIP_PATH"),
+        help="Export a profile to a ZIP file, or use a directory to generate a versioned filename."
+    )
     group.add_argument("-i", "--import-profile", metavar="ZIP_PATH", help="Import a profile from a ZIP file.")
     group.add_argument("-m", "--migrate-old", nargs=2, metavar=("OLD_INSTALL_DIR", "TARGET_PROFILE"),
                        help="Migrate a legacy install tree into a named profile.")
