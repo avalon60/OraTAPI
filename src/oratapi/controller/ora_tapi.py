@@ -899,6 +899,11 @@ class CodeManager:
             return result[0] > 0
 
 def main():
+    args = sys.argv[1:]
+    option_args = args[:args.index('--')] if '--' in args else args
+    if '-v' in option_args or '--version' in option_args:
+        print(f'oratapi {__version__}')
+        return
     CodeManager()
 
 if __name__ == "__main__":

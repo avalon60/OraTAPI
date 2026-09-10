@@ -772,12 +772,15 @@ The primary launch commands are:
 
 If you are running from a source checkout or extracted legacy install, equivalent wrapper scripts remain available under `bin/`.
 
+Use `oratapi -v` or `oratapi --version` to display the installed version and exit.
+This also works without an active profile or database connection.
+
 To get command line help, you can simply type:
 
 ```
 ora_tapi -h
 
-usage: ora_tapi.py [-h] [-A APP_NAME] [-a TAPI_AUTHOR] [-D NAME=VALUE]
+usage: ora_tapi.py [-h] [-v] [-A APP_NAME] [-a TAPI_AUTHOR] [-D NAME=VALUE]
                    [-c CONN_NAME] [-d DSN]
                    [--oracle-client-dir ORACLE_CLIENT_DIR] [-g STAGING_DIR]
                    [-G UT_STAGING_DIR] [-u DB_USERNAME] [-p DB_PASSWORD]
@@ -790,6 +793,7 @@ Oracle Table API Generator
 
 options:
   -h, --help            show this help message and exit
+  -v, --version         Display the version and exit.
   -A APP_NAME, --app_name APP_NAME
                         Application name - included to the package header.
                         Default: Human Resources

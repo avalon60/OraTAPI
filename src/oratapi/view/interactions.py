@@ -4,6 +4,7 @@ __description__ = "Module responsible for user interactions, including argument 
 
 import argparse
 
+from oratapi import __version__
 from oratapi.lib.config_mgr import ConfigManager
 from pathlib import Path
 
@@ -104,6 +105,9 @@ class Interactions:
         # Argument parser setup
         parser = argparse.ArgumentParser(description="Oracle Table API Generator",
                                          epilog="The majority of defaults can be changed via the OraTAPI.ini file.")
+
+        parser.add_argument('-v', '--version', action='version', version=f'oratapi {__version__}',
+                            help="Display the version and exit.")
 
         help_text = f"Application name - included to the package header. Default: {default_app_name}"
         parser.add_argument('-A', '--app_name', type=str, help=help_text, default=default_app_name)
