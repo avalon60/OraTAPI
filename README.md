@@ -26,6 +26,7 @@ Version 2.10.0
       - [Windows:](#windows)
       - [macOS / Linux:](#macos--linux)
   - [Usage](#usage)
+    - [Profile bundles with oratapi-orc](#profile-bundles-with-oratapi-orc)
     - [Template overrides for one run](#template-overrides-for-one-run)
     - [Examples](#examples)
       - [Basic Example](#basic-example)
@@ -765,6 +766,7 @@ database connections (authentication settings, credentials where applicable, and
 The primary launch commands are:
 
 - `ora_tapi` / `ora-tapi` / `oratapi`
+- `oratapi-orc` / `oratapi_orc`
 - `conn_mgr` / `conn-mgr`
 - `quick_config` / `quick-config`
 - `profile_mgr` / `profile-mgr`
@@ -781,6 +783,7 @@ To get command line help, you can simply type:
 ora_tapi -h
 
 usage: ora_tapi.py [-h] [-v] [-A APP_NAME] [-a TAPI_AUTHOR] [-D NAME=VALUE]
+                   [--profile PROFILE] [--outputs {tapi,utplsql,view,trigger} ...]
                    [-c CONN_NAME] [-d DSN]
                    [--oracle-client-dir ORACLE_CLIENT_DIR] [-g STAGING_DIR]
                    [-G UT_STAGING_DIR] [-u DB_USERNAME] [-p DB_PASSWORD]
@@ -794,6 +797,9 @@ Oracle Table API Generator
 options:
   -h, --help            show this help message and exit
   -v, --version         Display the version and exit.
+  --profile PROFILE    Use a profile for this run without changing active_config.
+  --outputs {tapi,utplsql,view,trigger} [{tapi,utplsql,view,trigger} ...]
+                        Restrict generation to these profile-enabled categories.
   -A APP_NAME, --app_name APP_NAME
                         Application name - included to the package header.
                         Default: Human Resources
@@ -849,6 +855,130 @@ Oracle `ALL_` data dictionary views.
 ## Usage
 
 Run OraTAPI from the command line with the desired options.
+
+### Profile bundles with oratapi-orc
+
+`oratapi-orc` (also available as `oratapi_orc`) generates complementary components from a named bundle of profiles.
+Profiles run sequentially in separate processes, using the same Python interpreter and source-table selection.
+Their configurations are not merged, and the saved `active_config` selection is never changed.
+
+Each component has its own package owner. The connection account, source-table schema, TAPI schema,
+data-utility schema and unit-test schema need not be the same. Existing SQL templates and synonym conventions
+are preserved: assigning an owner does not create schemas, synonyms or grants, or verify that the output will compile.
+
+Create a bundle at `~/OraTAPI/bundles/agr.toml`. A complete example is supplied as
+[`resources/bundles/agr.toml.sample`](resources/bundles/agr.toml.sample), also included in wheel package data.
+For an installed wheel, this read-only command locates the supplied example:
+
+```bash
+python -c "from oratapi.lib.fsutils import resolve_default_path; print(resolve_default_path('resources/bundles/agr.toml.sample'))"
+```
+
+Copy the example to the bundle directory and review it before use. Neither installation nor the orchestrator
+automatically creates bundles or modifies existing profiles.
+
+```toml
+version = 1
+description = "Agriculture TAPIs, utilities and test stubs"
+
+[[components]]
+name = "tapi"
+profile = "agr"
+outputs = ["tapi", "view", "trigger"]
+package_owner = "agr_api"
+view_owner = "agr_api"
+trigger_owner = "agr_core"
+
+[[components]]
+name = "data_utility"
+profile = "agr_ut"
+outputs = ["tapi"]
+package_owner = "data_utility"
+
+[[components]]
+name = "utplsql"
+profile = "agr_tapi_tests"
+outputs = ["utplsql"]
+package_owner = "unit_test"
+```
+
+`outputs = ["tapi"]` means the ordinary package generator, including when a profile configures it to produce
+`du_...` utility packages. Use separate components for ordinary and utPLSQL packages. Each component's
+`package_owner`, `view_owner` and `trigger_owner` may override that profile's defaults; omitted owners retain
+their profile defaults. There is deliberately no global package-owner option on the orchestrator.
+Only one component may emit views, and only one may emit triggers.
+
+For a utPLSQL component, optional `[ut_controls] tested_tapi_owner` profile metadata identifies the production
+TAPI owner separately in diagnostics and reports. It is never inferred from the source or test-package schema;
+an unset value is reported as unspecified (`null` in JSON). This metadata does not qualify existing SQL references
+or redirect calls. A customised template can use `%tested_tapi_owner%`, while unqualified references still depend
+on the deployment's synonyms and grants.
+
+Bundle and component names use letters, digits, underscores and hyphens. Output subdirectories must be relative,
+distinct paths within their component directory; absolute paths and parent traversal are rejected. Owner and
+table arguments use unquoted Oracle identifiers. Component order is the order of the `[[components]]` entries.
+
+Before using the Agriculture example:
+
+1. Prepare `agr_tapi_tests` by cloning the regular TAPI profile, not the data-utility profile. For example:
+   `profile_mgr -C agr agr_tapi_tests -p "Agriculture TAPI utPLSQL specifications and stubbed bodies"`.
+   Decline activation if you want to keep the current selection.
+2. In the new profile, set `[ut_controls] enable_ut_code_generation = true` and
+   `[behaviour] enable_tapis_when_ut_enabled = false`. Retain the production TAPI package/procedure naming and
+   configure `ut_..._tapi` test-package naming, appropriate suite metadata and `[schemas] default_package_owner = unit_test`.
+   Set `[ut_controls] tested_tapi_owner = agr_api` to identify the production TAPI schema, independently of `unit_test`.
+3. Review inherited defaults. The profiles examined during development contained Food Security/DQU defaults,
+   ATP-labelled application/staging values and placeholder product codes. Bundle schema overrides do not correct
+   application labels, suite metadata or other inherited settings.
+4. Review the inherited UT specification header: close the explanatory `/* ... */` comment before `--%suitepath`,
+   and use `--%displayname`, not `-- %displayname`. Check test API labels against the production TAPI owner,
+   not the source-table or unit-test owner, using `%tested_tapi_owner%` where appropriate.
+   These existing template defects are not automatically repaired.
+
+Validate the complete bundle without opening a connection or writing files:
+
+```bash
+oratapi-orc --bundle agr -c MY_CONNECTION -To agr_core -t TABLE_ONE TABLE_TWO --dry-run
+```
+
+Remove `--dry-run` to generate. Use `-t '%'` to select all tables: the first component resolves the table list,
+which is then passed explicitly to subsequent components. Each profile's `OraTAPI.csv` still controls exclusions;
+those exclusions can differ between components and are reported. Normal generation can create or update the
+profile's CSV control file, just as a standalone OraTAPI run does. The INI, templates and active selection are not edited.
+
+The default staging root is `~/OraTAPI/staging`; override it with `-g/--staging_dir`. Relative staging roots resolve
+under `~/OraTAPI`, not the current working directory. Every run creates a timestamp-and-identifier directory:
+
+```text
+<staging-root>/agr/<run-id>/
+  tapi/package_spec/       tapi/package_body/       tapi/view/       tapi/trigger/
+  data_utility/package_spec/                        data_utility/package_body/
+  utplsql/package_spec/                             utplsql/package_body/
+  run-summary.json
+```
+
+Components use their profile's specification/body directory names. Earlier runs, including any manual edits,
+are preserved. `run-summary.json` records profiles, resolved schema owners, generated files, skipped objects,
+counts and completion status. Each component also has a `.generation-report.json` containing its generation results.
+Reports do not contain credentials or generated SQL text. A failure stops later components, preserves partial
+output and returns a non-zero exit status. Review skipped-object reasons even when the run is complete.
+
+Source-checkout wrappers are `bin/oratapi_orc.sh` and `bin/oratapi_orc.ps1`. They prefer a project virtual
+environment; set `ORATAPI_PYTHON` to choose another interpreter containing OraTAPI's dependencies.
+
+The same selection/filtering capabilities are available independently:
+
+```bash
+oratapi --profile agr -c MY_CONNECTION -To agr_core -t TABLE_ONE --outputs tapi view trigger
+oratapi --profile agr_tapi_tests -c MY_CONNECTION -To agr_core -t TABLE_ONE --outputs utplsql -po unit_test
+```
+
+`--outputs` restricts generation; it cannot enable categories disabled in the profile. In particular,
+`-U/--ut_api_types` selects operations to test but does not enable utPLSQL generation. Omitting `--profile`
+or `--outputs` preserves the existing saved-profile and generation-mode behaviour.
+
+This command generates files only. It does not deploy, compile or execute them, resolve fixture data with AI,
+or generate complete tests. Test/data-binding enhancements and XAPI testing are separate work.
 
 ### Template overrides for one run
 

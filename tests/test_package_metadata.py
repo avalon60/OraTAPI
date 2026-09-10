@@ -28,3 +28,5 @@ def test_console_script_aliases_include_oratapi() -> None:
     assert scripts["oratapi"] == "oratapi.controller.ora_tapi:main"
     assert scripts["ora_tapi"] == "oratapi.controller.ora_tapi:main"
     assert scripts["ora-tapi"] == "oratapi.controller.ora_tapi:main"
+    assert scripts["oratapi-orc"] == "oratapi.controller.oratapi_orc:main"
+    assert scripts["oratapi_orc"] == "oratapi.controller.oratapi_orc:main"

@@ -10,6 +10,8 @@ from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 import shutil
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 
 RUNTIME_HOME_DIRNAME = "OraTAPI"
@@ -17,6 +19,7 @@ PACKAGE_RESOURCE_ANCHOR = "oratapi.ora_tapi_package_data"
 _PACKAGE_HOME_STACK = ExitStack()
 CONFIGS_DIRNAME = "configs"
 ACTIVE_PROFILE_FILENAME = "active_config"
+_RUN_PROFILE = ContextVar("oratapi_run_profile", default=None)
 RUNTIME_REQUIRED_RELATIVE_PATHS = [
     Path("resources/config/OraTAPI.ini"),
     Path("resources/config/pi_columns.csv"),
@@ -78,8 +81,28 @@ def configured_active_profile_name() -> str | None:
     return profile_name or None
 
 
+def selected_profile_name() -> str | None:
+    """Return the process-local selection, falling back to the saved selection."""
+    return _RUN_PROFILE.get() or configured_active_profile_name()
+
+
+@contextmanager
+def use_profile(profile_name: str | None):
+    """Select a profile for one invocation without writing active_config."""
+    if profile_name is not None:
+        if (not profile_name.strip() or profile_name in {".", ".."}
+                or re.search(r'[\\/:*?"<>|\x00]', profile_name)
+                or profile_name.endswith((" ", "."))):
+            raise ValueError(f"Invalid profile name: {profile_name!r}")
+    token = _RUN_PROFILE.set(profile_name)
+    try:
+        yield
+    finally:
+        _RUN_PROFILE.reset(token)
+
+
 def active_profile_name() -> str:
-    profile_name = configured_active_profile_name()
+    profile_name = selected_profile_name()
     if not profile_name:
         raise FileNotFoundError(
             "No active OraTAPI profile is configured. Run quick_config, or use profile_mgr to activate a profile."

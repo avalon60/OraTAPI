@@ -1,0 +1,29 @@
+# Author: cbostock / DGGIU
+# Created: 10-Sep-2026
+# Example Agriculture bundle; review schemas and prepare profiles before use.
+
+version = 1
+description = "Agriculture TAPIs, data utilities and utPLSQL test stubs"
+
+[[components]]
+name = "tapi"
+profile = "agr"
+outputs = ["tapi", "view", "trigger"]
+package_owner = "agr_api"
+view_owner = "agr_api"
+trigger_owner = "agr_core"
+
+[[components]]
+name = "data_utility"
+profile = "agr_ut"
+outputs = ["tapi"]
+package_owner = "data_utility"
+
+# This profile must be prepared separately. Copy regular TAPI naming, enable UT
+# generation and disable accompanying TAPI generation. See the README checklist.
+# Set its [ut_controls] tested_tapi_owner = agr_api independently of the test owner.
+[[components]]
+name = "utplsql"
+profile = "agr_tapi_tests"
+outputs = ["utplsql"]
+package_owner = "unit_test"

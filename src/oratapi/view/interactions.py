@@ -12,6 +12,7 @@ from oratapi.model.framework_errors import InvalidParameter
 from oratapi.view.console_display import MsgLvl, ConsoleMgr
 from oratapi.lib.fsutils import resolve_path, runtime_home
 from oratapi.lib.template_overrides import parse_template_definitions
+from oratapi.lib.generation_controls import OUTPUT_CATEGORIES, select_outputs
 import os
 import getpass
 
@@ -56,11 +57,14 @@ class Interactions:
     def write_file(self, staging_dir:Path, directory:Path, file_name, code:str):
         file_path = staging_dir / directory / file_name
         try:
-            with open(file_path, 'w') as f:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(code)
+            if hasattr(self.controller, 'generated_files'):
+                self.controller.generated_files.append(str(file_path.resolve()))
         except Exception as e:
             print(f"An error occurred writing {file_path} : {e}")
-            exit (0)
+            raise SystemExit(1) from e
 
 
     def parse_arguments(self) -> argparse.Namespace:
@@ -104,7 +108,13 @@ class Interactions:
 
         # Argument parser setup
         parser = argparse.ArgumentParser(description="Oracle Table API Generator",
-                                         epilog="The majority of defaults can be changed via the OraTAPI.ini file.")
+                                         epilog="The majority of defaults can be changed via the OraTAPI.ini file.",
+                                         allow_abbrev=False)
+
+        parser.add_argument('--profile', help="Use this profile for this run without changing active_config.")
+        parser.add_argument('--outputs', nargs='+', choices=OUTPUT_CATEGORIES,
+                            help="Restrict generation to these profile-enabled output categories.")
+        parser.add_argument('--run-report', type=Path, help=argparse.SUPPRESS)
 
         parser.add_argument('-v', '--version', action='version', version=f'oratapi {__version__}',
                             help="Display the version and exit.")
@@ -149,7 +159,7 @@ class Interactions:
         parser.add_argument('-vo', '--view_owner', type=str, help=help_text, default=view_owner)
 
         parser.add_argument('-t', '--table_names', type=str, help="A space separated list of table names. Default: all",
-                            nargs="+", default='%')
+                            nargs="+", default=['%'])
 
         api_types = default_api_types.replace(' ','').split(',')
         help_text = f"Space-separated list of API types. Valid options: insert, select, update, upsert, delete or merge.\n (Default setting: {default_api_types})"
@@ -159,6 +169,11 @@ class Interactions:
         parser.add_argument('-U', '--ut_api_types', type=str, default=api_types, help=help_text, nargs="+")
 
         args = parser.parse_args()
+
+        try:
+            args.outputs = select_outputs(self.config_manager, args.outputs)
+        except ValueError as exc:
+            parser.error(str(exc))
 
         try:
             self.template_overrides = parse_template_definitions(

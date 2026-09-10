@@ -36,7 +36,7 @@ _PROTECTED_BASE_NAMES = frozenset("""
     success_colour colour_console help conn_name dsn oracle_client_dir staging_dir
     ut_staging_dir db_username db_password table_owner package_owner trigger_owner
     view_owner table_names api_types ut_api_types config_file_path version trace
-    define template_overrides active_profile run_id run_date_time
+    define template_overrides active_profile profile outputs run_report run_id run_date_time
     api_target_name api_target_owner base_table_name table_name table_domain
     api_type api_type_desc column_list_string fk_tables ins_returning_clause
     key_predicates_string logger_params_append mrg_param_alias_list

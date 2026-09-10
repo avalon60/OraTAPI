@@ -11,6 +11,8 @@ from oratapi import __version__
 import copy
 import sys
 import time
+import argparse
+import json
 
 from oratapi.model.tapi_generator import ApiGenerator, inject_values
 from oratapi.model.utplsql_generator import UtPLSQLGenerator
@@ -20,7 +22,8 @@ from oratapi.lib.fsutils import (
     active_profile_home,
     active_profile_name,
     available_profiles,
-    configured_active_profile_name,
+    selected_profile_name,
+    use_profile,
     missing_runtime_paths,
     resolve_default_path,
     resolve_path,
@@ -55,7 +58,7 @@ def resolve_runtime_relative_path(path_name: Path) -> Path:
 
 
 def print_runtime_initialisation_message() -> None:
-    configured_profile = configured_active_profile_name()
+    configured_profile = selected_profile_name()
     if not configured_profile:
         print("ERROR: No active OraTAPI profile is configured.")
         profiles = available_profiles()
@@ -143,11 +146,15 @@ def warn_on_default_profile_identity(
 class CodeManager:
     """PLSQL code generation manager class"""
     def __init__(self, trace: bool = False):
-        if not help_requested() and (not configured_active_profile_name() or missing_runtime_paths()):
+        self.generated_files = []
+        self.skipped_objects = []
+        self.generation_results = {}
+        self.run_report = None
+        if not help_requested() and (not selected_profile_name() or missing_runtime_paths()):
             print_runtime_initialisation_message()
             exit(1)
 
-        help_without_profile = help_requested() and not configured_active_profile_name()
+        help_without_profile = help_requested() and not selected_profile_name()
         if help_without_profile:
             config_file_path = resolve_default_path(CONFIG_LOCATION / 'OraTAPI.ini')
         else:
@@ -176,6 +183,8 @@ class CodeManager:
             )
             exit(1)  # Exit with an error status
         args_dict = self.view.args_dict
+        self.run_report = args_dict['run_report']
+        self.output_categories = set(args_dict['outputs'])
         self.template_overrides = self.view.template_overrides
 
         options_dict = copy.deepcopy(args_dict)
@@ -185,6 +194,12 @@ class CodeManager:
             config_key="api_surface",
             default="view"
         )
+        self.tested_tapi_owner = None
+        if 'utplsql' in self.output_categories:
+            self.tested_tapi_owner = self.template_overrides.get(
+                'tested_tapi_owner', config_manager.config_value('ut_controls', 'tested_tapi_owner', '')
+            ).strip() or None
+            options_dict['tested_tapi_owner'] = self.tested_tapi_owner or 'unspecified (profile references/synonyms)'
 
         exec_start_timestamp = current_timestamp()
         self.view.print_console(text=f'{PROG_NAME}: Version: {__version__}',
@@ -332,38 +347,20 @@ class CodeManager:
         self.staging_dir = resolve_runtime_relative_path(self.staging_dir)
         self.ut_staging_dir = resolve_runtime_relative_path(self.ut_staging_dir)
 
-        if not self.staging_dir.exists():
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Creating staging root directory: {self.staging_dir}")
-            self.staging_dir.mkdir(parents=True, exist_ok=True)
-
-        if not self.ut_staging_dir.exists() and self.enable_ut_code_generation:
-            self.view.print_console(msg_level=MsgLvl.info, text=f"Creating unit test staging root directory: {self.ut_staging_dir}")
-            self.ut_staging_dir.mkdir(parents=True, exist_ok=True)
-
-        if not self.staging_dir.is_dir():
-            self.view.print_console(msg_level=MsgLvl.error, text=f'TAPI staging pathname provide, "{self.staging_dir}", is not a directory - bailing out!')
-            exit(0)
-
-        if not self.ut_staging_dir.is_dir() and self.enable_ut_code_generation:
-            self.view.print_console(msg_level=MsgLvl.error, text=f'Unit test staging pathname provide, "{self.staging_dir}", is not a directory - bailing out!')
-            exit(0)
-
         if self.spec_dir == self.body_dir and self.spec_file_ext == self.body_file_ext:
             self.view.print_console(msg_level=MsgLvl.error, text=f'Conflicting OraTAPI.ini properties. The spec_dir and body_dir must be distinct when spec_file_ext and body_file_ext are the same!')
-            exit(0)
+            exit(1)
 
-        for directory in (self.spec_dir, self.body_dir, self.trigger_dir, self.view_dir):
-            dir_path = self.staging_dir / directory
-            if directory and not dir_path.exists():
-                self.view.print_console(msg_level=MsgLvl.info, text=f"Creating staging sub directory: {dir_path}")
-                dir_path.mkdir(parents=False, exist_ok=True)
-
-        if self.enable_ut_code_generation:
-            for directory in (self.spec_dir, self.body_dir):
-                dir_path = self.ut_staging_dir / directory
-                if directory and not dir_path.exists():
-                    self.view.print_console(msg_level=MsgLvl.info, text=f"Creating ut staging sub directory: {dir_path}")
-                    dir_path.mkdir(parents=False, exist_ok=True)
+        output_dirs = {
+            'tapi': (self.staging_dir, (self.spec_dir, self.body_dir)),
+            'utplsql': (self.ut_staging_dir, (self.spec_dir, self.body_dir)),
+            'view': (self.staging_dir, (self.view_dir,)),
+            'trigger': (self.staging_dir, (self.trigger_dir,)),
+        }
+        for category in self.output_categories:
+            root, directories = output_dirs[category]
+            for directory in directories:
+                (root / directory).mkdir(parents=True, exist_ok=True)
 
         # Process table names as a list
         self.table_names_list = self.table_names
@@ -418,12 +415,12 @@ class CodeManager:
         if not self.schema_exists(schema_name=self.table_owner):
             self.view.print_console(msg_level=MsgLvl.error,
                                     text=f"Cannot find table schema by the name of: {self.table_owner}")
-            exit(0)
+            exit(1)
 
         if not self.table_schema_has_tables():
             self.view.print_console(msg_level=MsgLvl.error,
                                     text=f"The nominated table owner schema, {self.table_owner}, has no tables!")
-            exit(0)
+            exit(1)
 
         # Validate table names and process. We get a dictionary of results returned.
         results = self.process_table_names()
@@ -540,19 +537,23 @@ class CodeManager:
 
         table_count = len(self.table_names_list)
         self.view.print_console(text=f'{table_count} tables selected.', msg_level=MsgLvl.info)
-        packages_skipped = 0
-        views_skipped = 0
-        triggers_skipped = 0
+        generators = {
+            'tapi': ('packages', 'package', self.generate_api_for_table),
+            'utplsql': ('ut_packages', 'package', self.generate_ut_for_table),
+            'view': ('views', 'view', self.generate_views_for_table),
+            'trigger': ('triggers', 'trigger', self.generate_triggers_for_table),
+        }
+        result = {f'{prefix}_{status}': 0 for prefix, _, _ in generators.values()
+                  for status in ('generated', 'skipped')}
+        self.generation_results = result
 
-        packages_generated = 0
-        views_generated = 0
-        triggers_generated = 0
-        ut_packages_generated = 0
-        ut_packages_skipped = 0
-
-        schemas = {"Package Owner": self.package_owner,
-                   "View Owner": self.view_owner,
-                   "Trigger Owner": self.trigger_owner}
+        schemas = {}
+        if self.output_categories & {'tapi', 'utplsql'}:
+            schemas['Package Owner'] = self.package_owner
+        if 'view' in self.output_categories:
+            schemas['View Owner'] = self.view_owner
+        if 'trigger' in self.output_categories:
+            schemas['Trigger Owner'] = self.trigger_owner
 
         for descriptor, schema_name in schemas.items():  # Use .items() to iterate over key-value pairs
             if not self.schema_exists(schema_name=schema_name):
@@ -562,17 +563,12 @@ class CodeManager:
                 )
 
         for table_name in self.table_names_list:
-            package_enabled = self.csv_manager.csv_dict_property(self.table_owner_lc, table_name=table_name,
-                                                                 property_selector='package')
-            view_enabled = self.csv_manager.csv_dict_property(self.table_owner_lc, table_name=table_name,
-                                                                 property_selector='view')
-            trigger_enabled = self.csv_manager.csv_dict_property(self.table_owner_lc, table_name=table_name,
-                                                                 property_selector='trigger')
-
             exists_status = self.check_table_exists(schema_name=self.table_owner, table_name=table_name)
+            skip_reason = None
             if not exists_status and self.skip_on_missing_table:
                 self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} does not exist - skipping!',
                                         msg_level=MsgLvl.warning)
+                skip_reason = 'missing_table'
             elif not exists_status and not self.skip_on_missing_table:
                 self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} does not exist - bailing out!',
                                         msg_level=MsgLvl.error)
@@ -580,42 +576,44 @@ class CodeManager:
             elif not self.table_has_pk(table_name=table_name) and self.skip_on_missing_pk:
                 self.view.print_console(text=f'Table {self.table_owner.lower()}.{table_name} has no primary key - skipping!',
                                         msg_level=MsgLvl.warning)
-            else:
-                if package_enabled and self.enable_tapi_generation:
-                    self.generate_api_for_table(table_name)
-                    packages_generated += 1
+                skip_reason = 'missing_primary_key'
+            for category, (prefix, csv_selector, generate) in generators.items():
+                if category not in self.output_categories:
+                    result[f'{prefix}_skipped'] += 1
+                    continue
+                reason = skip_reason
+                if reason is None and not self.csv_manager.csv_dict_property(
+                    self.table_owner_lc, table_name=table_name, property_selector=csv_selector
+                ):
+                    reason = 'csv_disabled'
+                if reason:
+                    result[f'{prefix}_skipped'] += 1
+                    self.skipped_objects.append({'table': table_name, 'category': category, 'reason': reason})
                 else:
-                    packages_skipped += 1
-                if view_enabled and self.enable_tapi_generation:
-                    self.generate_views_for_table(table_name)
-                    views_generated += 1
-                else:
-                    views_skipped += 1
-                if trigger_enabled and self.enable_tapi_generation:
-                    self.generate_triggers_for_table(table_name)
-                    triggers_generated += 1
-                else:
-                    triggers_skipped += 1
-
-                if self.enable_ut_code_generation and package_enabled:
-                    self.generate_ut_for_table(table_name)
-                    ut_packages_generated += 1
-                else:
-                    ut_packages_skipped += 1
-
-
-        result = {
-            "packages_generated": packages_generated,
-            "packages_skipped": packages_skipped,
-            "ut_packages_generated": ut_packages_generated,
-            "ut_packages_skipped": ut_packages_skipped,
-            "views_generated": views_generated,
-            "views_skipped": views_skipped,
-            "triggers_generated": triggers_generated,
-            "triggers_skipped": triggers_skipped,
-        }
+                    generate(table_name)
+                    result[f'{prefix}_generated'] += 1
 
         return result
+
+    def write_run_report(self, complete: bool) -> None:
+        """Write only generation metadata, never connection credentials or SQL text."""
+        if not self.run_report:
+            return
+        report = {
+            'status': 'complete' if complete else 'incomplete',
+            'profile': active_profile_name(),
+            'source_table_owner': getattr(self, 'table_owner', None),
+            'package_owner': getattr(self, 'package_owner', None),
+            'view_owner': getattr(self, 'view_owner', None),
+            'trigger_owner': getattr(self, 'trigger_owner', None),
+            'tested_tapi_owner': getattr(self, 'tested_tapi_owner', None),
+            'selected_tables': getattr(self, 'table_names_list', []),
+            'outputs': sorted(self.output_categories),
+            'generated_files': self.generated_files,
+            'skipped_objects': self.skipped_objects,
+            'counts': self.generation_results,
+        }
+        self.run_report.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
 
     def schema_exists(self, schema_name: str) -> bool:
         """
@@ -904,7 +902,21 @@ def main():
     if '-v' in option_args or '--version' in option_args:
         print(f'oratapi {__version__}')
         return
-    CodeManager()
+    selector = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    selector.add_argument('--profile')
+    selection, _ = selector.parse_known_args(option_args)
+    try:
+        with use_profile(selection.profile):
+            manager = CodeManager.__new__(CodeManager)
+            complete = False
+            try:
+                manager.__init__()
+                complete = True
+            finally:
+                manager.write_run_report(complete)
+    except (ValueError, OSError) as exc:
+        print(f'ERROR: {exc}')
+        raise SystemExit(1) from exc
 
 if __name__ == "__main__":
     main()
