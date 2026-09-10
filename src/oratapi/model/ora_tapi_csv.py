@@ -9,7 +9,6 @@ import csv
 from oratapi.view.console_display import MsgLvl, ConsoleMgr
 from oratapi.lib.fsutils import resolve_path
 
-config_path = resolve_path(Path("resources") / "config" / "OraTAPI.ini")
 CSV_HEADERS = ["Schema Name", "Table Name", "Domain", "Packages Enabled", "Views Enabled", "Triggers Enabled"]
 
 
@@ -159,6 +158,7 @@ class CSVManager:
 
 # Example usage
 if __name__ == "__main__":
+    config_path = resolve_path(Path("resources") / "config" / "OraTAPI.ini")
     csv_path = Path("/tmp/example.csv")
     csv_mgr = CSVManager(csv_pathname=csv_path, config_file_path=config_path)
     csv_mgr.csv_dict_property("TestSchema", "TestTable", "package")

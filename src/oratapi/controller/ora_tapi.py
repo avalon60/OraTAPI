@@ -142,13 +142,22 @@ class CodeManager:
             print_runtime_initialisation_message()
             exit(1)
 
-        config_file_path = resolve_path(CONFIG_LOCATION / 'OraTAPI.ini')
+        help_without_profile = help_requested() and not configured_active_profile_name()
+        if help_without_profile:
+            config_file_path = resolve_default_path(CONFIG_LOCATION / 'OraTAPI.ini')
+        else:
+            config_file_path = resolve_path(CONFIG_LOCATION / 'OraTAPI.ini')
         if not config_file_path.exists():
             print(f'ERROR: Unable to locate config file: {config_file_path}')
             print(f'This is possibly due to an incomplete installation. Did you run the quick config command?')
             exit(1)
         try:
             self.view = Interactions(controller=self, config_file_path=config_file_path)
+        except SystemExit as exc:
+            if help_without_profile and exc.code == 0:
+                print("\nWARNING: No active OraTAPI profile is configured. "
+                      "Run quick_config, or use profile_mgr to activate a profile.")
+            raise
         except MissingParameterError as e:
             print(
                 f"\n[ERROR] {e}\n\nRequired:\n\n    <ora_tapi> -c CONN_NAME\n    or\n    <ora_tapi> -d "
